@@ -1,0 +1,174 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 1 Foundation Contract
+  version: 1.0.0
+  description: >-
+    Contract for Phase 1 cross-cutting API behavior: uniform envelope,
+    preserved HTTP semantics, global safe errors, correlation header policy,
+    and standardized rate-limit rejection behavior when policies are applied.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /weatherforecast:
+    get:
+      summary: Sample endpoint used to verify Phase 1 contract behavior
+      operationId: getWeatherForecast
+      parameters:
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+          description: >-
+            Optional correlation identifier. If missing or invalid, server generates one.
+      responses:
+        '200':
+          description: Successful response with standardized envelope.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationIdHeader'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseEnvelopeWeather'
+        '400':
+          description: Validation or request failure with standardized envelope.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationIdHeader'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseEnvelopeValidation'
+        '500':
+          description: Unhandled failure transformed to safe standardized envelope.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationIdHeader'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseEnvelopeError'
+        '429':
+          description: Rate-limit rejection when a named policy is applied to an endpoint.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationIdHeader'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseEnvelopeRateLimit'
+components:
+  headers:
+    CorrelationIdHeader:
+      description: Effective correlation identifier used for tracing this request.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+  schemas:
+    ResponseEnvelopeWeather:
+      type: object
+      additionalProperties: false
+      required:
+        - Code
+        - Message
+        - Data
+      properties:
+        Code:
+          type: integer
+          description: Application-level status code.
+          example: 200
+        Message:
+          type: string
+          description: Human-readable summary.
+          example: Success
+        Data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeatherForecastItem'
+    ResponseEnvelopeError:
+      type: object
+      additionalProperties: false
+      required:
+        - Code
+        - Message
+        - Data
+      properties:
+        Code:
+          type: integer
+          description: Application-level error code.
+          example: 500
+        Message:
+          type: string
+          description: Safe, non-sensitive error message.
+          example: An unexpected error occurred.
+        Data:
+          type: object
+          nullable: true
+          description: No payload for this error response.
+          example: null
+    ResponseEnvelopeValidation:
+      type: object
+      additionalProperties: false
+      required:
+        - Code
+        - Message
+        - Data
+      properties:
+        Code:
+          type: integer
+          description: Application-level status code.
+          example: 400
+        Message:
+          type: string
+          description: Human-readable validation summary.
+          example: Validation failed.
+        Data:
+          type: object
+          nullable: true
+          description: No payload for this validation response.
+          example: null
+    ResponseEnvelopeRateLimit:
+      type: object
+      additionalProperties: false
+      required:
+        - Code
+        - Message
+        - Data
+      properties:
+        Code:
+          type: integer
+          description: Application-level status code matching HTTP 429 semantics.
+          example: 429
+        Message:
+          type: string
+          description: Human-readable rate-limit summary.
+          example: Too many requests.
+        Data:
+          type: object
+          nullable: true
+          description: No payload for this rate-limit response.
+          example: null
+    WeatherForecastItem:
+      type: object
+      additionalProperties: false
+      required:
+        - Date
+        - TemperatureC
+        - TemperatureF
+        - Summary
+      properties:
+        Date:
+          type: string
+          format: date
+        TemperatureC:
+          type: integer
+        TemperatureF:
+          type: integer
+        Summary:
+          type: string

@@ -1,0 +1,6 @@
+@MediBridge.APIs_HostAddress = http://localhost:5246
+
+GET {{MediBridge.APIs_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
