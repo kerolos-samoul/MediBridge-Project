@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="MediBridge.APIs/MediBridge.APIs.csproj" />
+  <Project Path="MediBridge.Core/MediBridge.Core.csproj" />
+  <Project Path="MediBridge.Repository/MediBridge.Repository.csproj" />
+  <Project Path="MediBridge.Services/MediBridge.Services.csproj" />
+  <Project Path="tests/contract/MediBridge.ContractTests/MediBridge.ContractTests.csproj" />
+  <Project Path="tests/integration/MediBridge.IntegrationTests/MediBridge.IntegrationTests.csproj" />
+</Solution>
