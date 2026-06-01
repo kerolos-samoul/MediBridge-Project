@@ -12,8 +12,9 @@ description: "Task list template for feature implementation"
 them if explicitly requested in the feature specification.
 
 **Constitution Note**: Tasks MUST enforce Onion layering, service-owned business logic,
-Repository + Unit of Work persistence discipline, JWT/role security on secured routes,
-the standard API response envelope, and global exception middleware handling.
+SQL Server persistence through EF Core in `MediBridge.Repository` behind Repository +
+Unit of Work abstractions, JWT/role security on secured routes, the standard API
+response envelope, and global exception middleware handling.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -67,7 +68,7 @@ the standard API response envelope, and global exception middleware handling.
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup database schema and migrations framework
+- [ ] T004 Setup SQL Server EF Core DbContext, entity configurations, and migrations framework in Repository
 - [ ] T005 [P] Implement authentication/authorization framework
 - [ ] T006 [P] Setup API routing and middleware structure
 - [ ] T007 Create base models/entities that all stories depend on
@@ -76,7 +77,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T010 Define/verify layer boundaries across Core/Repository/Services/APIs
 - [ ] T011 [P] Add global exception middleware returning standard response envelope
 - [ ] T012 [P] Configure JWT auth and role policies (Doctor/Company/Admin)
-- [ ] T013 [P] Establish repository and unit-of-work interfaces in Core/Repository
+- [ ] T013 [P] Establish Core repository/unit-of-work contracts and EF Core-backed Repository implementations
 - [ ] T014 Define queue invariants (ordering, limits, expiry) and enforcement tests
 - [ ] T015 [P] Define wallet invariants (debit/credit/fees) and transactional boundaries
 

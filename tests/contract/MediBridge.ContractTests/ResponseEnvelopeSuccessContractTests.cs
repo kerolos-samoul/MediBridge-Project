@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
+using MediBridge.ContractTests.TestHost;
 using Xunit;
 
 namespace MediBridge.ContractTests;
@@ -10,7 +10,7 @@ public sealed class ResponseEnvelopeSuccessContractTests
     [Fact]
     public async Task GetWeatherForecast_ReturnsStandardEnvelope()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        using var factory = new ContractWebAppFactory();
         using var client = factory.CreateClient();
 
         using var response = await client.GetAsync("/weatherforecast");

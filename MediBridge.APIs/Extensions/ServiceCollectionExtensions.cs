@@ -2,8 +2,11 @@ using MediBridge.APIs.Config;
 using MediBridge.APIs.Contracts;
 using MediBridge.APIs.Security;
 using MediBridge.Core.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 
@@ -30,12 +33,55 @@ public static class ServiceCollectionExtensions
             .Bind(configuration.GetSection(RateLimitingOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<RateLimitingOptions>, RateLimitingOptionsValidator>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
         services.AddSingleton<IAuditLogger, NoopAuditLogger>();
         services.AddSingleton<IOwnershipAuthorizationService, OwnershipAuthorizationService>();
+        services.AddMediBridgeJwtAuthentication(configuration);
         services.AddMediBridgeRateLimiting(configuration);
+
+        return services;
+    }
+
+    private static IServiceCollection AddMediBridgeJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
+        var jwtOptions = new JwtOptions();
+        configuration.GetSection(JwtOptions.SectionName).Bind(jwtOptions);
+
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.MapInboundClaims = false;
+                options.RequireHttpsMetadata = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.FromMinutes(1),
+                    RoleClaimType = "role"
+                };
+            });
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(
+                AuthorizationPolicies.AdminOnly,
+                policy => policy.RequireRole(AuthorizationPolicies.Admin));
+            options.AddPolicy(
+                AuthorizationPolicies.DoctorOnly,
+                policy => policy.RequireRole(AuthorizationPolicies.Doctor));
+            options.AddPolicy(
+                AuthorizationPolicies.CompanyOnly,
+                policy => policy.RequireRole(AuthorizationPolicies.Company));
+        });
 
         return services;
     }

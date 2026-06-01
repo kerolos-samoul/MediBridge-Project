@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/unit/">
+    <Project Path="tests/unit/MediBridge.UnitTests/MediBridge.UnitTests.csproj" />
+  </Folder>
   <Project Path="MediBridge.APIs/MediBridge.APIs.csproj" />
   <Project Path="MediBridge.Core/MediBridge.Core.csproj" />
   <Project Path="MediBridge.Repository/MediBridge.Repository.csproj" />

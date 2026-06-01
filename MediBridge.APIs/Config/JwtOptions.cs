@@ -14,4 +14,10 @@ public sealed class JwtOptions
 
     [Required]
     public string SigningKey { get; set; } = string.Empty;
+
+    [Range(1, 1440)]
+    public int AccessTokenMinutes { get; set; } = 60;
+
+    [Range(1, 365)]
+    public int RefreshTokenDays { get; set; } = 7;
 }

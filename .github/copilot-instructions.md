@@ -39,6 +39,9 @@ Linting: no dedicated lint command/tooling is configured in this repo. Treat `do
 - Keep root service/middleware wiring centralized in `Program.cs`; add new services to `builder.Services` and middleware to the app pipeline in order.
 - Use repository and unit-of-work abstractions for persistence concerns; avoid direct
   data access in controllers.
+- Persistence is SQL Server through Entity Framework Core implementations in
+  `MediBridge.Repository`; keep EF Core types out of `MediBridge.Core` and out of
+  controller/service public contracts.
 - Use the standard API response envelope
   `{ "Code": <int>, "Message": <string>, "Data": <object|null> }` and global
   exception handling middleware for API errors.

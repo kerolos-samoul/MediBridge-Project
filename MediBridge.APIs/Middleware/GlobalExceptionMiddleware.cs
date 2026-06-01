@@ -1,18 +1,18 @@
 using MediBridge.APIs.Contracts;
+using System.Text.Json;
 
 namespace MediBridge.APIs.Middleware;
 
 public sealed class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
 
     public GlobalExceptionMiddleware(RequestDelegate next, IWebHostEnvironment environment, ILogger<GlobalExceptionMiddleware> logger)
     {
         _next = next;
-        _environment = environment;
         _logger = logger;
+        _ = environment;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -34,8 +34,10 @@ public sealed class GlobalExceptionMiddleware
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             context.Response.ContentType = "application/json";
 
-            var message = _environment.IsDevelopment() ? ex.Message : "An unexpected error occurred.";
-            await context.Response.WriteAsJsonAsync(ApiEnvelopeFactory.Create(500, message, data: (object?)null), context.RequestAborted);
+            await context.Response.WriteAsJsonAsync(
+                ApiEnvelopeFactory.Create(500, "An unexpected error occurred.", data: (object?)null),
+                new JsonSerializerOptions { PropertyNamingPolicy = null },
+                context.RequestAborted);
         }
     }
 }

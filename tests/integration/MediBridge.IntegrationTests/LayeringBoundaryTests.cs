@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using MediBridge.APIs.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Xunit;
@@ -47,5 +48,19 @@ public class LayeringBoundaryTests
                 Assert.DoesNotContain(bodyText, name => name.Contains("IServiceProvider", StringComparison.Ordinal));
             }
         }
+    }
+
+    [Theory]
+    [InlineData(typeof(AuthController), typeof(MediBridge.Services.Interfaces.IAuthService))]
+    [InlineData(typeof(AdminAccountsController), typeof(MediBridge.Services.Interfaces.IAdminAccountService))]
+    public void IdentityControllers_Should_DeclareOnlyServiceInterfaceConstructorDependencies(Type controllerType, Type expectedServiceInterface)
+    {
+        var constructors = controllerType.GetConstructors();
+        var constructor = Assert.Single(constructors);
+        var parameter = Assert.Single(constructor.GetParameters());
+
+        Assert.Equal(expectedServiceInterface, parameter.ParameterType);
+        Assert.Equal("MediBridge.Services.Interfaces", parameter.ParameterType.Namespace);
+        Assert.True(parameter.ParameterType.IsInterface);
     }
 }

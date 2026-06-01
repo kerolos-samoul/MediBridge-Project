@@ -1,0 +1,582 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 2 Identity and Approval API
+  version: 1.0.0
+  description: >-
+    Contract for Phase 2 identity, account approval, token lifecycle,
+    password reset, contact verification, and rejected-account resubmission.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /api/auth/register-doctor:
+    post:
+      summary: Register a Doctor account as pending approval
+      operationId: registerDoctor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDoctorRequest'
+      responses:
+        '201':
+          description: Doctor account created with account status Pending.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeRegistrationResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+  /api/auth/register-company:
+    post:
+      summary: Register a Company account as pending approval
+      operationId: registerCompany
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCompanyRequest'
+      responses:
+        '201':
+          description: Company account created with account status Pending.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeRegistrationResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+  /api/auth/login:
+    post:
+      summary: Issue tokens only for Approved accounts
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login succeeded for Approved account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeTokenResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthDenied'
+        '403':
+          $ref: '#/components/responses/AccountStatusDenied'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+  /api/auth/refresh:
+    post:
+      summary: Rotate a refresh credential
+      operationId: refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Refresh succeeded and old credential was rotated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeTokenResult'
+        '401':
+          $ref: '#/components/responses/AuthDenied'
+        '409':
+          description: Refresh reuse detected and credential family revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+  /api/auth/logout:
+    post:
+      summary: Revoke current refresh credential
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Logout succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
+        '401':
+          $ref: '#/components/responses/AuthDenied'
+  /api/auth/forgot-password:
+    post:
+      summary: Start non-enumerating password reset
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '202':
+          description: Reset request accepted without revealing account existence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+  /api/auth/reset-password:
+    post:
+      summary: Complete password reset and revoke refresh credentials
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthDenied'
+  /api/auth/verify-contact:
+    post:
+      summary: Complete email or phone verification
+      operationId: verifyContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyContactRequest'
+      responses:
+        '200':
+          description: Contact verification completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+  /api/auth/resubmit-registration:
+    post:
+      summary: Resubmit corrected metadata for a rejected Doctor or Company account
+      operationId: resubmitRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResubmissionRequest'
+      responses:
+        '200':
+          description: Account returned to Pending for Admin review.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeRegistrationResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/AccountStatusDenied'
+  /api/admin/pending-accounts:
+    get:
+      summary: List pending Doctor and Company accounts
+      operationId: listPendingAccounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Pending account page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopePendingAccounts'
+        '401':
+          $ref: '#/components/responses/AuthDenied'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/admin/accounts/{id}/decision:
+    put:
+      summary: Approve, reject, suspend, inactivate, or reactivate an account
+      operationId: decideAccount
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminDecisionRequest'
+      responses:
+        '200':
+          description: Decision applied and audited.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeAccountDecision'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthDenied'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PageNumber:
+      name: PageNumber
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: PageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    ValidationError:
+      description: Validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    ConflictError:
+      description: Duplicate email, phone, or license.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    AuthDenied:
+      description: Invalid, missing, expired, or revoked credentials.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    AccountStatusDenied:
+      description: Account status does not allow token issuance or requested action.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Forbidden:
+      description: Authenticated user lacks required role.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    NotFound:
+      description: Target resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    RateLimitError:
+      description: Rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+  schemas:
+    EnvelopeEmpty:
+      type: object
+      additionalProperties: false
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    EnvelopeRegistrationResult:
+      type: object
+      additionalProperties: false
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          $ref: '#/components/schemas/RegistrationResult'
+    EnvelopeTokenResult:
+      type: object
+      additionalProperties: false
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          $ref: '#/components/schemas/TokenResult'
+    EnvelopePendingAccounts:
+      type: object
+      additionalProperties: false
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          $ref: '#/components/schemas/PendingAccountPage'
+    EnvelopeAccountDecision:
+      type: object
+      additionalProperties: false
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          $ref: '#/components/schemas/AccountDecisionResult'
+    VerificationMetadata:
+      type: object
+      additionalProperties: false
+      required: [documentType, originalFileName, contentType, sizeBytes, reference]
+      properties:
+        documentType:
+          type: string
+        originalFileName:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          minimum: 1
+        reference:
+          type: string
+          description: Client-provided reference or placeholder; not stored file content.
+    RegisterDoctorRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, phoneNumber, specialization, experienceYears, location, verificationMetadata]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        phoneNumber:
+          type: string
+        specialization:
+          type: string
+        experienceYears:
+          type: integer
+          minimum: 0
+        location:
+          type: string
+        verificationMetadata:
+          $ref: '#/components/schemas/VerificationMetadata'
+    RegisterCompanyRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password, phoneNumber, companyName, licenseNumber, contactName, verificationMetadata]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        phoneNumber:
+          type: string
+        companyName:
+          type: string
+        licenseNumber:
+          type: string
+        contactName:
+          type: string
+        verificationMetadata:
+          $ref: '#/components/schemas/VerificationMetadata'
+    RegistrationResult:
+      type: object
+      required: [userId, role, accountStatus]
+      properties:
+        userId:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        accountStatus:
+          $ref: '#/components/schemas/AccountStatus'
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    TokenResult:
+      type: object
+      required: [accessToken, refreshToken, role, expiresAtUtc]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        expiresAtUtc:
+          type: string
+          format: date-time
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    ForgotPasswordRequest:
+      type: object
+      required: [contact]
+      properties:
+        contact:
+          type: string
+    ResetPasswordRequest:
+      type: object
+      required: [resetToken, newPassword]
+      properties:
+        resetToken:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+    VerifyContactRequest:
+      type: object
+      required: [channel, verificationToken]
+      properties:
+        channel:
+          type: string
+          enum: [Email, Phone]
+        verificationToken:
+          type: string
+    ResubmissionRequest:
+      type: object
+      required: [resubmissionToken, verificationMetadata]
+      properties:
+        resubmissionToken:
+          type: string
+          description: Time-limited, single-use token issued for the rejected account.
+        specialization:
+          type: string
+        experienceYears:
+          type: integer
+          minimum: 0
+        location:
+          type: string
+        companyName:
+          type: string
+        licenseNumber:
+          type: string
+        contactName:
+          type: string
+        verificationMetadata:
+          $ref: '#/components/schemas/VerificationMetadata'
+    AdminDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [Approve, Reject, Suspend, Inactivate, Reactivate]
+        reason:
+          type: string
+        notes:
+          type: string
+    AccountDecisionResult:
+      type: object
+      required: [userId, accountStatus]
+      properties:
+        userId:
+          type: string
+        accountStatus:
+          $ref: '#/components/schemas/AccountStatus'
+    PendingAccountPage:
+      type: object
+      required: [items, pageNumber, pageSize, totalCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendingAccountItem'
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+    PendingAccountItem:
+      type: object
+      required: [userId, role, accountStatus, submittedAtUtc]
+      properties:
+        userId:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        accountStatus:
+          $ref: '#/components/schemas/AccountStatus'
+        submittedAtUtc:
+          type: string
+          format: date-time
+        verificationMetadata:
+          $ref: '#/components/schemas/VerificationMetadata'
+    Role:
+      type: string
+      enum: [Admin, Doctor, Company]
+    AccountStatus:
+      type: string
+      enum: [Pending, Approved, Rejected, Suspended, Inactive]
