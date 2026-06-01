@@ -4,11 +4,11 @@ using MediBridge.APIs.Middleware;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging.Abstractions;
+using MediBridge.IntegrationTests.TestHost;
 using Xunit;
 
 namespace MediBridge.IntegrationTests;
@@ -99,8 +99,7 @@ public class UnhandledExceptionEnvelopeTests
     [Fact]
     public void ProductionRouteSurface_DoesNotExposeDiagnosticOrTestRoutes()
     {
-        using var factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
+        using var factory = new ProductionWebAppFactory();
 
         var endpointSources = factory.Services.GetRequiredService<IEnumerable<EndpointDataSource>>();
         var routePatterns = endpointSources

@@ -16,11 +16,11 @@ public sealed class RateLimitEnvelopeTests
 
         for (var i = 0; i < 10; i++)
         {
-            using var acceptedResponse = await client.GetAsync("/__test/rate-limit/login");
+            using var acceptedResponse = await client.GetAsync("/__test/rate-limit/envelope");
             Assert.Equal(HttpStatusCode.OK, acceptedResponse.StatusCode);
         }
 
-        using var rejectedResponse = await client.GetAsync("/__test/rate-limit/login");
+        using var rejectedResponse = await client.GetAsync("/__test/rate-limit/envelope");
 
         Assert.Equal(HttpStatusCode.TooManyRequests, rejectedResponse.StatusCode);
 

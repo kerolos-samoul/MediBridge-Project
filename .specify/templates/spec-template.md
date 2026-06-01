@@ -97,17 +97,20 @@
   `MediBridge.APIs`.
 - **CA-002 Controller Boundary**: Confirm controller requirements are HTTP-only and
   contain no business logic.
-- **CA-003 Response Contract**: Confirm responses use
+- **CA-003 SQL Persistence Boundary**: Confirm data requirements use SQL Server through
+  EF Core-backed Repository + Unit of Work abstractions in `MediBridge.Repository`;
+  controllers and services must not depend on EF Core directly.
+- **CA-004 Response Contract**: Confirm responses use
   `{ "Code": <int>, "Message": <string>, "Data": <object|null> }`.
-- **CA-004 Error Handling**: Confirm errors are handled by global exception middleware,
+- **CA-005 Error Handling**: Confirm errors are handled by global exception middleware,
   with no raw stack traces exposed.
-- **CA-005 Security**: Confirm secured flows require JWT and role-aware authorization
+- **CA-006 Security**: Confirm secured flows require JWT and role-aware authorization
   (Doctor / Pharmaceutical Company / Admin where applicable).
-- **CA-006 Ambiguity Control**: Explicitly list any queue or wallet ambiguity using
+- **CA-007 Ambiguity Control**: Explicitly list any queue or wallet ambiguity using
   `[NEEDS CLARIFICATION: ...]` before planning.
-- **CA-007 Queue Determinism**: If queueing is in scope, define ordering, daily limits,
+- **CA-008 Queue Determinism**: If queueing is in scope, define ordering, daily limits,
   expiry behavior, and retry/carry-over rules.
-- **CA-008 Wallet Determinism**: If walleting is in scope, define debit/credit triggers,
+- **CA-009 Wallet Determinism**: If walleting is in scope, define debit/credit triggers,
   fee handling, transaction types, and atomicity guarantees.
 
 *Example of marking unclear requirements:*

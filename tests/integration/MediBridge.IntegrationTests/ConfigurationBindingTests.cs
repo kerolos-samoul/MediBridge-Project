@@ -19,7 +19,8 @@ public class ConfigurationBindingTests
             ["Jwt:Issuer"] = "test-issuer",
             ["Jwt:Audience"] = "test-aud",
             ["Jwt:SigningKey"] = "super-secret-key",
-            ["ConnectionStrings:DefaultConnection"] = "Server=.;Database=Test;Trusted_Connection=True;"
+            ["ConnectionStrings:DefaultConnection"] = "Server=.;Database=Test;Trusted_Connection=True;",
+            ["Identity:SeedDevelopmentAdmin"] = "false"
         };
 
         using var factory = new WebAppFactory();
@@ -47,7 +48,8 @@ public class ConfigurationBindingTests
             ["Jwt:Issuer"] = "",
             ["Jwt:Audience"] = "",
             ["Jwt:SigningKey"] = "",
-            ["ConnectionStrings:DefaultConnection"] = ""
+            ["ConnectionStrings:DefaultConnection"] = "",
+            ["Identity:SeedDevelopmentAdmin"] = "false"
         };
 
         using var factory = new WebAppFactory();

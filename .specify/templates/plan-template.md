@@ -18,8 +18,8 @@
 -->
 
 **Language/Version**: C# / .NET 8 (MUST unless constitution is amended)  
-**Primary Dependencies**: ASP.NET Core Web API, DI, JWT Bearer auth, Swagger/OpenAPI  
-**Storage**: SQL Server via `MediBridge.Repository` abstractions (MUST)  
+**Primary Dependencies**: ASP.NET Core Web API, DI, JWT Bearer auth, Swagger/OpenAPI, Entity Framework Core SQL Server  
+**Storage**: SQL Server via EF Core implementations in `MediBridge.Repository` behind Repository + Unit of Work abstractions (MUST)  
 **Testing**: `dotnet test` with project-selected .NET test framework  
 **Target Platform**: ASP.NET Core HTTP APIs on server-hosted runtime
 **Project Type**: Layered web service (Onion Architecture)  
@@ -36,6 +36,7 @@
 - Controller gate: Controllers contain HTTP-only concerns and delegate business logic
   to services.
 - Data gate: Repository and Unit of Work patterns are used for persistence changes;
+  SQL persistence targets SQL Server through EF Core in `MediBridge.Repository`;
   direct data access from controllers is absent.
 - Security gate: Secured routes specify JWT authentication and role-aware
   authorization requirements.

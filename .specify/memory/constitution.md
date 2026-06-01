@@ -1,14 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 -> 1.1.0
+- Version change: 1.1.0 -> 1.2.0
 - Modified principles:
-  - V. Clarification-First, Scope-Strict Delivery ->
-    V. Deterministic Queue and Wallet Rules
-  - Expanded I-IV with explicit role, contract, and transaction constraints
+  - I. Onion Layer Separation (NON-NEGOTIABLE): clarified Repository as SQL Server + EF Core persistence boundary
+  - III. Repository and Unit of Work Transaction Discipline: explicitly requires EF Core-backed repositories for SQL persistence
+  - Technical Standards & Architecture: added SQL Server + Entity Framework Core as required persistence stack
 - Added principles:
-  - VI. Scope-Strict and Clarification-First Delivery
+  - None
 - Added sections:
-  - Domain and Financial Directives
+  - None
 - Removed sections:
   - None
 - Templates requiring updates:
@@ -16,7 +16,7 @@ Sync Impact Report
   - ✅ .specify/templates/spec-template.md
   - ✅ .specify/templates/tasks-template.md
   - ✅ .github/copilot-instructions.md
-  - ✅ reviewed: .opencode/command/*.md (no stale agent-specific references found)
+  - ✅ reviewed: .opencode/command/*.md (no SQL-specific command drift found)
 - Follow-up TODOs:
   - None
 -->
@@ -27,9 +27,10 @@ Sync Impact Report
 ### I. Onion Layer Separation (NON-NEGOTIABLE)
 MediBridge MUST implement strict Onion Architecture boundaries:
 `MediBridge.Core` (entities, interfaces, domain logic), `MediBridge.Repository`
-(SQL Server persistence), `MediBridge.Services` (business orchestration), and
-`MediBridge.APIs` (HTTP controllers and API wiring). Dependencies MUST point inward
-only. `MediBridge.Core` MUST remain free from infrastructure and HTTP concerns.
+(SQL Server persistence through Entity Framework Core), `MediBridge.Services`
+(business orchestration), and `MediBridge.APIs` (HTTP controllers and API wiring).
+Dependencies MUST point inward only. `MediBridge.Core` MUST remain free from
+infrastructure and HTTP concerns.
 Rationale: strict boundaries preserve domain integrity and keep the platform maintainable.
 
 ### II. Service-Owned Use Cases and Thin Controllers
@@ -41,9 +42,11 @@ Rationale: thin controllers and centralized services produce consistent and test
 ### III. Repository and Unit of Work Transaction Discipline
 All persistence MUST be performed through Repository and Unit of Work abstractions in
 `MediBridge.Repository`, defined by contracts in `MediBridge.Core` and consumed by
-`MediBridge.Services`. Direct SQL or ORM access from controllers is prohibited.
-Wallet and delivery state mutations that belong to one business action MUST be committed
-atomically in a single unit of work.
+`MediBridge.Services`. SQL persistence MUST target SQL Server and MUST use Entity
+Framework Core in `MediBridge.Repository` as the ORM implementation. Direct SQL,
+Entity Framework `DbContext`, or other ORM access from controllers is prohibited.
+Wallet and delivery state mutations that belong to one business action MUST be
+committed atomically in a single unit of work.
 Rationale: disciplined persistence patterns reduce data inconsistency and scaling risk.
 
 ### IV. Secure and Uniform API Contract
@@ -75,7 +78,10 @@ Rationale: scope discipline and early clarifications prevent costly rework.
 ## Technical Standards & Architecture
 
 - Framework and language MUST be .NET 8 with C#.
-- Data storage MUST be SQL Server through `MediBridge.Repository` abstractions.
+- Data storage MUST be SQL Server.
+- SQL persistence MUST use Entity Framework Core in `MediBridge.Repository`.
+- Repository and Unit of Work abstractions MUST remain the service-facing persistence
+  boundary even when EF Core is the underlying implementation.
 - Authentication for secured routes MUST be JWT.
 - User role model MUST include Doctor, Pharmaceutical Company, and Admin.
 - API orchestration MUST reside in `MediBridge.Services`; `MediBridge.APIs` remains HTTP-only.
@@ -119,4 +125,4 @@ This constitution supersedes conflicting development practices for MediBridge.
   request review, and before release promotion. Non-compliant changes MUST be blocked or
   remediated before merge.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-23 | **Last Amended**: 2026-04-23
+**Version**: 1.2.0 | **Ratified**: 2026-04-23 | **Last Amended**: 2026-05-31

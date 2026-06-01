@@ -1,10 +1,14 @@
 using MediBridge.APIs.Contracts;
 using MediBridge.APIs.Extensions;
+using MediBridge.Repository.Data.Identity;
+using MediBridge.Repository.Extensions;
+using MediBridge.Services.Extensions;
 using MediBridge.Services.Interfaces;
 using MediBridge.Services.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,8 +32,14 @@ if (builder.Environment.IsDevelopment())
 }
 
 builder.Services.AddFoundationServices(builder.Configuration);
+builder.Services.AddMediBridgeRepository(builder.Configuration);
+builder.Services.AddMediBridgeIdentityServices(builder.Configuration);
 builder.Services.AddScoped<IWeatherForecastQueryService, WeatherForecastQueryService>();
-builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var app = builder.Build();
 
@@ -39,10 +49,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Identity:SeedDevelopmentAdmin"))
+{
+    await AdminIdentitySeed.EnsureDevelopmentAdminAsync(app.Services, builder.Configuration);
+}
+
 app.UseFoundationPipeline();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseHttpsRedirection();
+app.UseEnvelopeStatusCodePages();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

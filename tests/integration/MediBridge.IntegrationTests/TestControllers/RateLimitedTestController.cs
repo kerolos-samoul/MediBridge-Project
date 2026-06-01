@@ -32,4 +32,8 @@ public sealed class RateLimitedTestController : ControllerBase
     [HttpGet("doctor-interaction")]
     [EnableRateLimiting(RateLimitPolicyNames.DoctorInteraction)]
     public IActionResult DoctorInteraction() => Ok(ApiEnvelopeFactory.Create(200, "Success", "doctor-interaction"));
+
+    [HttpGet("envelope")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    public IActionResult Envelope() => Ok(ApiEnvelopeFactory.Create(200, "Success", "envelope"));
 }

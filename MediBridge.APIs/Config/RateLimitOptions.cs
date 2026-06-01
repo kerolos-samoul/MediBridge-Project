@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Options;
 
 namespace MediBridge.APIs.Config;
 
@@ -10,6 +11,7 @@ public static class RateLimitPolicyNames
     public const string CompanyTopUp = "company-top-up";
     public const string DoctorWithdrawal = "doctor-withdrawal";
     public const string DoctorInteraction = "doctor-interaction";
+    public const string Envelope = "rate-limit-envelope";
 
     public static readonly string[] All =
     [
@@ -18,7 +20,8 @@ public static class RateLimitPolicyNames
         Refresh,
         CompanyTopUp,
         DoctorWithdrawal,
-        DoctorInteraction
+        DoctorInteraction,
+        Envelope
     ];
 }
 
@@ -33,14 +36,15 @@ public sealed class RateLimitingOptions
         [RateLimitPolicyNames.Refresh] = new(),
         [RateLimitPolicyNames.CompanyTopUp] = new(),
         [RateLimitPolicyNames.DoctorWithdrawal] = new(),
-        [RateLimitPolicyNames.DoctorInteraction] = new()
+        [RateLimitPolicyNames.DoctorInteraction] = new(),
+        [RateLimitPolicyNames.Envelope] = new()
     };
 
     public RateLimitPolicyOptions GetPolicy(string policyName)
     {
         return Policies.TryGetValue(policyName, out var policy)
             ? policy
-            : new RateLimitPolicyOptions();
+            : throw new InvalidOperationException($"Missing rate limit policy '{policyName}'.");
     }
 }
 
@@ -54,4 +58,18 @@ public sealed class RateLimitPolicyOptions
 
     [Range(0, int.MaxValue)]
     public int QueueLimit { get; set; } = 0;
+}
+
+public sealed class RateLimitingOptionsValidator : IValidateOptions<RateLimitingOptions>
+{
+    public ValidateOptionsResult Validate(string? name, RateLimitingOptions options)
+    {
+        var missingPolicies = RateLimitPolicyNames.All
+            .Where(policyName => options.Policies.ContainsKey(policyName) is false)
+            .ToArray();
+
+        return missingPolicies.Length == 0
+            ? ValidateOptionsResult.Success
+            : ValidateOptionsResult.Fail($"Missing rate limit policy configuration for: {string.Join(", ", missingPolicies)}.");
+    }
 }
