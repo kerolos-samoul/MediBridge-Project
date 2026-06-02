@@ -45,6 +45,36 @@ public sealed class LogoutRevocationTests
         Assert.Equal("Logout", credential.RevocationReason);
     }
 
+    [Fact]
+    public async Task Logout_WithRotatedToken_RevokesRefreshFamily()
+    {
+        await using var factory = new WebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+
+        var (_, originalRefreshToken, accessToken) = await LoginApprovedDoctorAsync(factory, client);
+
+        using var refreshResponse = await client.PostAsJsonAsync("/api/auth/refresh", new { RefreshToken = originalRefreshToken });
+        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
+
+        using var refreshDocument = JsonDocument.Parse(await refreshResponse.Content.ReadAsStringAsync());
+        var replacementRefreshToken = refreshDocument.RootElement.GetProperty("Data").GetProperty("RefreshToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(replacementRefreshToken));
+
+        using var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout")
+        {
+            Content = JsonContent.Create(new { RefreshToken = originalRefreshToken })
+        };
+        logoutRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var logoutResponse = await client.SendAsync(logoutRequest);
+
+        Assert.Equal(HttpStatusCode.OK, logoutResponse.StatusCode);
+
+        using var replacementRefreshResponse = await client.PostAsJsonAsync("/api/auth/refresh", new { RefreshToken = replacementRefreshToken });
+        Assert.Equal(HttpStatusCode.Conflict, replacementRefreshResponse.StatusCode);
+    }
+
     private static async Task<(string Email, string RefreshToken, string AccessToken)> LoginApprovedDoctorAsync(WebAppFactory factory, HttpClient client)
     {
         var email = $"doctor-{Guid.NewGuid():N}@example.com";

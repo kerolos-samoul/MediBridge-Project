@@ -73,6 +73,7 @@ public sealed class AdminAccountService : IAdminAccountService
                 ?? throw new KeyNotFoundException("Target account was not found.");
 
             var now = DateTime.UtcNow;
+            ValidateDecisionTransition(targetUser, request.Decision);
             var resultingStatus = MapDecisionToStatus(request.Decision);
             var decision = new AdminAccountDecision
             {
@@ -182,5 +183,29 @@ public sealed class AdminAccountService : IAdminAccountService
             AdminAccountDecisionType.Reactivate => AccountStatus.Approved,
             _ => throw new ValidationException("Validation failed.")
         };
+    }
+
+    private static void ValidateDecisionTransition(ApplicationUser targetUser, AdminAccountDecisionType decision)
+    {
+        if (targetUser.IsDeleted)
+        {
+            throw new ValidationException("Validation failed.");
+        }
+
+        var isAllowed = (targetUser.AccountStatus, decision) switch
+        {
+            (AccountStatus.Pending, AdminAccountDecisionType.Approve) => true,
+            (AccountStatus.Pending, AdminAccountDecisionType.Reject) => true,
+            (AccountStatus.Approved, AdminAccountDecisionType.Suspend) => true,
+            (AccountStatus.Approved, AdminAccountDecisionType.Inactivate) => true,
+            (AccountStatus.Suspended, AdminAccountDecisionType.Reactivate) => true,
+            (AccountStatus.Inactive, AdminAccountDecisionType.Reactivate) => true,
+            _ => false
+        };
+
+        if (!isAllowed)
+        {
+            throw new ValidationException("Validation failed.");
+        }
     }
 }

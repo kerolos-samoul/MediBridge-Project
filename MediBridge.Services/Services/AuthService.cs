@@ -330,17 +330,16 @@ public sealed class AuthService : IAuthService
 
         var now = DateTime.UtcNow;
         var tokenHash = authTokenService.HashToken(request.RefreshToken.Trim());
-        var credential = await identityUnitOfWork.RefreshCredentials.FindByTokenHashAsync(tokenHash, cancellationToken);
-
-        if (credential is null || credential.UserId != userId || credential.ExpiresAtUtc < now || credential.RevokedAtUtc is not null)
-        {
-            throw new AuthDeniedException("Invalid credentials.");
-        }
 
         await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            credential.RevokedAtUtc = now;
-            credential.RevocationReason = "Logout";
+            var credential = await identityUnitOfWork.RefreshCredentials.FindByTokenHashForUpdateAsync(tokenHash, transactionCancellationToken);
+            if (credential is null || credential.UserId != userId || credential.ExpiresAtUtc < now)
+            {
+                throw new AuthDeniedException("Invalid credentials.");
+            }
+
+            await identityUnitOfWork.RefreshCredentials.RevokeFamilyAsync(credential.FamilyId, "Logout", transactionCancellationToken);
 
             var user = await identityUnitOfWork.Users.FindByIdAsync(userId, transactionCancellationToken);
             await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(

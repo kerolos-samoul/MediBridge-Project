@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MediBridge.Services.Config;
 
 namespace MediBridge.APIs.Config;
 
@@ -16,8 +17,8 @@ public sealed class JwtOptions
     public string SigningKey { get; set; } = string.Empty;
 
     [Range(1, 1440)]
-    public int AccessTokenMinutes { get; set; } = 60;
+    public int AccessTokenMinutes { get; set; } = AuthTokenOptions.DefaultAccessTokenMinutes;
 
     [Range(1, 365)]
-    public int RefreshTokenDays { get; set; } = 7;
+    public int RefreshTokenDays { get; set; } = AuthTokenOptions.DefaultRefreshTokenDays;
 }

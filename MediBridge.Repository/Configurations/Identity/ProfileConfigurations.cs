@@ -11,6 +11,7 @@ public sealed class DoctorProfileConfiguration : IEntityTypeConfiguration<Doctor
     {
         builder.ToTable("DoctorProfiles");
         builder.HasKey(profile => profile.Id);
+        builder.HasQueryFilter(profile => !profile.IsDeleted);
         builder.Ignore(profile => profile.User);
         builder.Property(profile => profile.Specialization).HasMaxLength(160).IsRequired();
         builder.Property(profile => profile.Location).HasMaxLength(200).IsRequired();
@@ -18,6 +19,9 @@ public sealed class DoctorProfileConfiguration : IEntityTypeConfiguration<Doctor
         builder.Property(profile => profile.VerificationOriginalFileName).HasMaxLength(260).IsRequired();
         builder.Property(profile => profile.VerificationContentType).HasMaxLength(120).IsRequired();
         builder.Property(profile => profile.VerificationReference).HasMaxLength(500).IsRequired();
+        builder.Property(profile => profile.ActivityScore).HasPrecision(5, 2);
+        builder.Property(profile => profile.PricePerMessage).HasPrecision(18, 2);
+        builder.Property(profile => profile.Status).HasConversion<int>();
         builder.HasOne<MediBridgeIdentityUser>()
             .WithOne()
             .HasForeignKey<DoctorProfile>(profile => profile.UserId)
@@ -32,6 +36,7 @@ public sealed class CompanyProfileConfiguration : IEntityTypeConfiguration<Compa
     {
         builder.ToTable("CompanyProfiles");
         builder.HasKey(profile => profile.Id);
+        builder.HasQueryFilter(profile => !profile.IsDeleted);
         builder.Ignore(profile => profile.User);
         builder.Property(profile => profile.CompanyName).HasMaxLength(200).IsRequired();
         builder.Property(profile => profile.LicenseNumber).HasMaxLength(120).IsRequired();
@@ -45,6 +50,8 @@ public sealed class CompanyProfileConfiguration : IEntityTypeConfiguration<Compa
             .HasForeignKey<CompanyProfile>(profile => profile.UserId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(profile => profile.UserId).IsUnique();
-        builder.HasIndex(profile => profile.LicenseNumber).IsUnique();
+        builder.HasIndex(profile => profile.LicenseNumber)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
     }
 }

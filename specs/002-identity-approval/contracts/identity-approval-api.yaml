@@ -230,6 +230,13 @@ paths:
   /api/admin/accounts/{id}/decision:
     put:
       summary: Approve, reject, suspend, inactivate, or reactivate an account
+      description: >
+        Admin decisions are constrained by the account lifecycle. Allowed transitions are
+        Pending -> Approved, Pending -> Rejected, Approved -> Suspended,
+        Approved -> Inactive, Suspended -> Approved, and Inactive -> Approved.
+        Invalid transitions such as Rejected -> Approved via Reactivate,
+        Pending -> Suspended, Approved -> Rejected, and any decision against a
+        soft-deleted user return a validation error.
       operationId: decideAccount
       security:
         - bearerAuth: []

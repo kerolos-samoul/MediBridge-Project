@@ -1,8 +1,19 @@
 using MediBridge.Repository.Data;
 using MediBridge.Repository.Data.Identity;
+using MediBridge.Repository.Repositories.Campaigns;
+using MediBridge.Repository.Repositories.Files;
 using MediBridge.Repository.Repositories.Identity;
+using MediBridge.Repository.Repositories.Messaging;
+using MediBridge.Repository.Repositories.Policies;
+using MediBridge.Repository.Repositories.Wallets;
 using MediBridge.Repository.UnitOfWork;
+using MediBridge.Core.Interfaces;
+using MediBridge.Core.Interfaces.Campaigns;
+using MediBridge.Core.Interfaces.Files;
 using MediBridge.Core.Interfaces.Identity;
+using MediBridge.Core.Interfaces.Messaging;
+using MediBridge.Core.Interfaces.Policies;
+using MediBridge.Core.Interfaces.Wallets;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -42,6 +53,16 @@ public static class RepositoryServiceCollectionExtensions
         services.AddScoped<IAccountResubmissionTokenRepository, AccountResubmissionTokenRepository>();
         services.AddScoped<IAuthenticationAuditEventRepository, AuthenticationAuditEventRepository>();
         services.AddScoped<IIdentityUnitOfWork, IdentityUnitOfWork>();
+        services.AddScoped<ICampaignRepository, CampaignRepository>();
+        services.AddScoped<IMessageQueueRepository, MessageQueueRepository>();
+        services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+        services.AddScoped<IWalletRepository, WalletRepository>();
+        services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
+        services.AddScoped<IWalletLedgerEntryRepository, WalletLedgerEntryRepository>();
+        services.AddScoped<IStoredFileRepository, StoredFileRepository>();
+        services.AddScoped<IPolicyHistoryRepository, PolicyHistoryRepository>();
+        services.AddScoped<IAuditEventRepository, AuditEventRepository>();
+        services.AddScoped<IDomainUnitOfWork, DomainUnitOfWork>();
 
         return services;
     }

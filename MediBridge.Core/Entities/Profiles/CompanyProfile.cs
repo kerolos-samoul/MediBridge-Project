@@ -2,7 +2,7 @@ using MediBridge.Core.Entities.Identity;
 
 namespace MediBridge.Core.Entities.Profiles;
 
-public sealed class CompanyProfile
+public sealed class CompanyProfile : ISoftDeleteRecord
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string UserId { get; set; } = string.Empty;
@@ -17,4 +17,6 @@ public sealed class CompanyProfile
     public string VerificationReference { get; set; } = string.Empty;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
 }
