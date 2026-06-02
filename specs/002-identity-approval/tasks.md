@@ -19,6 +19,8 @@
 
 **Purpose**: Prepare package references, test project structure, and configuration surfaces shared by all Phase 2 stories.
 
+**Manual Senior Review 2026-06-02**: Phase 1 setup remains complete. Package references, folder scaffolding, unit test project setup, and solution inclusion are present, and the full Phase 2 validation suite passes.
+
 - [X] T001 Add `Microsoft.AspNetCore.Identity.EntityFrameworkCore` version `8.0.11`, `Microsoft.EntityFrameworkCore.SqlServer` version `8.0.11`, and `Microsoft.EntityFrameworkCore.Design` version `8.0.11` to `MediBridge.Repository/MediBridge.Repository.csproj` if missing; keep `PrivateAssets=all` on the design package.
 - [X] T002 Add `FluentValidation` version `11.10.0` to `MediBridge.Services/MediBridge.Services.csproj` if missing.
 - [X] T003 Add or verify `Microsoft.AspNetCore.Authentication.JwtBearer` version `8.0.11` in `MediBridge.APIs/MediBridge.APIs.csproj`; do not add unrelated authentication providers.
@@ -44,7 +46,7 @@
 
 **Critical**: No user-story implementation should begin until this phase is complete.
 
-**Manual Senior Review 2026-05-31**: Phase 2 foundational checklist is complete and `dotnet build .\MediBridge.slnx` passes. Review warnings/errors remain before Phase 3 should start cleanly: `dotnet test .\MediBridge.slnx --no-build` currently fails because the shared test host does not provide required JWT settings, contract tests can trigger development admin seeding against the local SQL database, and restore/build reports NU1900 when NuGet vulnerability metadata cannot be fetched.
+**Manual Senior Review 2026-06-02**: Phase 2 foundational identity model and infrastructure are complete. Architecture review confirms Core remains EF/HTTP-free, controllers remain HTTP-only, Services own identity decisions, Repository owns EF Core/SQL Server and ASP.NET Identity infrastructure, and async token lifecycle paths use transactional repository boundaries. A logout refresh-family revocation edge case found during review was fixed and covered by regression test `Logout_WithRotatedToken_RevokesRefreshFamily`.
 
 [X] T017 Create `MediBridge.Core/Enums/UserRole.cs` with exact values `Admin`, `Doctor`, and `Company`; include a code comment that `Company` is the internal role code for the constitution term `Pharmaceutical Company`.
 [X] T018 Create `MediBridge.Core/Enums/AccountStatus.cs` with exact values `Pending`, `Approved`, `Rejected`, `Suspended`, and `Inactive`.
@@ -102,6 +104,8 @@
 
 **Independent Test**: Submit Doctor and Company registrations, confirm `{ Code, Message, Data }` responses contain `Pending`, confirm duplicates and missing metadata fail, and confirm no approved account or token is created.
 
+**Manual Senior Review 2026-06-02**: Phase 3 pending registration remains complete. Architecture review confirms controllers delegate only to service interfaces, Services own registration decisions through Core abstractions, Repository owns Identity/EF persistence, pending Doctor/Company profiles persist verification metadata only, duplicate email/phone/license paths stay service-level, and registration does not issue access or refresh tokens.
+
 ### Tests for User Story 1
 
 - [X] T053 [P] [US1] Add contract tests for `POST /api/auth/register-doctor` success, validation failure, duplicate email, and envelope shape in `tests/contract/MediBridge.ContractTests/IdentityRegistrationContractTests.cs`.
@@ -133,6 +137,8 @@
 **Goal**: Approved users can log in, refresh, and log out securely; pending/rejected/suspended/inactive/deleted users cannot receive tokens; refresh tokens rotate and detect reuse.
 
 **Independent Test**: Create users with each account status, attempt login/refresh/logout/reuse flows, and verify token issuance/revocation outcomes.
+
+**Manual Senior Review 2026-06-02**: Phase 4 approved login and token lifecycle is complete. Manual architecture review confirms controllers remain HTTP/envelope-only, Services own login/refresh/logout decisions through Core contracts, Repository owns SQL Server/EF Core token locking and revocation, and Core remains infrastructure-free. Async review confirms token lifecycle mutations run through `IIdentityUnitOfWork.ExecuteInTransactionAsync`; refresh rotation uses row-level update locking, reuse detection revokes active family credentials, and logout now revokes the full refresh family for the authenticated user. Verification passed with `dotnet build .\MediBridge.slnx`, `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "Login|Refresh|Logout"`, related configuration/logging regression tests, and architecture/scope guard tests.
 
 ### Tests for User Story 2
 
@@ -169,6 +175,8 @@
 
 **Independent Test**: Exercise representative secured routes with anonymous, wrong-role, and correct-role principals.
 
+**Manual Senior Review 2026-06-02**: Phase 5 role-aware access control is complete. Manual review confirms JWTs emit the raw `role` claim used by bearer validation, authorization policies map exactly to `Admin`, `Doctor`, and `Company`, Admin account endpoints are protected by the Admin-only policy, Auth endpoint anonymity/JWT requirements match the contract, controllers remain service-interface-only, and async controller paths await service calls without blocking or fire-and-forget work. Verification passed with `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter RoleAuthorization` and `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter LayeringBoundaryTests`.
+
 ### Tests for User Story 3
 
 - [X] T092 [P] [US3] Add integration tests for anonymous access denial on Admin account endpoints in `tests/integration/MediBridge.IntegrationTests/RoleAuthorizationIntegrationTests.cs`.
@@ -191,6 +199,8 @@
 **Goal**: Admin can list pending accounts, approve/reject/suspend/inactivate/reactivate accounts, audit decisions, revoke tokens on suspension, and rejected users can resubmit corrected metadata back to `Pending`.
 
 **Independent Test**: Admin reviews pending accounts, applies each decision type, verifies account status and audit records, verifies rejected resubmission, and verifies login behavior changes accordingly.
+
+**Manual Senior Review 2026-06-02**: Phase 6 admin approval and rejected resubmission are complete. Manual review confirms controllers remain HTTP-only, Services own approval/resubmission business rules, Repository owns EF Core/SQL Server and ASP.NET Identity infrastructure, resubmission tokens are stored hashed and consumed through update-lock transactional reads, suspension/inactivation revokes active refresh credentials, invalid account-status transitions are rejected before decision/audit/token side effects, and async paths are awaited without sync-over-async or fire-and-forget work. Verification passed with `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "Admin|Resubmission"`, `dotnet test .\tests\contract\MediBridge.ContractTests\MediBridge.ContractTests.csproj --filter "Admin|Resubmission"`, and `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "LayeringBoundaryTests|IdentityScopeGuardTests|RoleAuthorization"`.
 
 ### Tests for User Story 4
 
@@ -230,6 +240,8 @@
 **Goal**: Password reset and email/phone verification flows are time-limited, single-use, auditable, provider-stub-ready, and do not block token issuance for `Approved` accounts in Phase 2.
 
 **Independent Test**: Request reset for known/unknown contacts, confirm non-enumerating response, complete reset once, verify refresh revocation, complete contact verification once, and confirm replay fails.
+
+**Manual Senior Review 2026-06-03**: Phase 7 account recovery and contact verification are complete. Manual review confirms `AuthController` stays HTTP-only and delegates to `IAuthService`, `AuthService` owns recovery and verification orchestration through Core unit-of-work abstractions, Repository owns EF Core/SQL Server token-flow persistence, reset and verification token consumption uses transactional update locks with expiry checks, password reset revokes active refresh credentials, contact verification updates only email/phone verification flags, incomplete contact verification does not gate approved login, and async paths are awaited without sync-over-async or fire-and-forget work. Verification passed with `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "Password|Verification|Forgot"`, `dotnet test .\tests\contract\MediBridge.ContractTests\MediBridge.ContractTests.csproj --filter "AccountRecoveryContractTests"`, and `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "LayeringBoundaryTests|IdentityScopeGuardTests"`.
 
 ### Tests for User Story 5
 

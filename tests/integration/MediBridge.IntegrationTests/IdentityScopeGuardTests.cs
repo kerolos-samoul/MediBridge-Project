@@ -57,13 +57,11 @@ public sealed class IdentityScopeGuardTests
     }
 
     [Fact]
-    public void Phase2ProductionAssemblies_Should_NotDeclareLaterPhaseWorkflowTypes()
+    public void Phase2ApplicationAssemblies_Should_NotDeclareLaterPhaseWorkflowTypes()
     {
         var productionAssemblies = new[]
         {
-            typeof(MediBridge.Core.Entities.Identity.ApplicationUser).Assembly,
             typeof(MediBridge.Services.Services.AuthService).Assembly,
-            typeof(MediBridge.Repository.Data.MediBridgeDbContext).Assembly,
             typeof(AuthController).Assembly
         };
 

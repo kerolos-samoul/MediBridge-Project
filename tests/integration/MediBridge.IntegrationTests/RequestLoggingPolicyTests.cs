@@ -32,20 +32,36 @@ public class RequestLoggingPolicyTests
 
         response.EnsureSuccessStatusCode();
 
-        Assert.Contains(provider.Entries, entry =>
+        Assert.True(await WaitForLogEntryAsync(provider, entry =>
             entry.Message.StartsWith("Request received", StringComparison.Ordinal) &&
             entry.Properties.ContainsKey("Method") &&
             entry.Properties.ContainsKey("Path") &&
-            entry.Properties.ContainsKey("CorrelationId"));
-        Assert.Contains(provider.Entries, entry =>
+            entry.Properties.ContainsKey("CorrelationId")));
+        Assert.True(await WaitForLogEntryAsync(provider, entry =>
             entry.Message.StartsWith("Request completed", StringComparison.Ordinal) &&
             entry.Properties.ContainsKey("Method") &&
             entry.Properties.ContainsKey("Path") &&
             entry.Properties.ContainsKey("StatusCode") &&
             entry.Properties.ContainsKey("DurationMs") &&
-            entry.Properties.ContainsKey("CorrelationId"));
+            entry.Properties.ContainsKey("CorrelationId")));
         Assert.DoesNotContain(provider.Entries, entry => entry.Message.Contains("dummy-token", StringComparison.Ordinal));
         Assert.DoesNotContain(provider.Entries, entry => entry.Message.Contains("Authorization", StringComparison.Ordinal));
+    }
+
+    private static async Task<bool> WaitForLogEntryAsync(CapturingLoggerProvider provider, Func<LogEntry, bool> predicate)
+    {
+        var timeoutAt = DateTime.UtcNow.AddSeconds(2);
+        while (DateTime.UtcNow < timeoutAt)
+        {
+            if (provider.Entries.Any(predicate))
+            {
+                return true;
+            }
+
+            await Task.Delay(25);
+        }
+
+        return provider.Entries.Any(predicate);
     }
 
     private sealed class CapturingLoggerProvider : ILoggerProvider

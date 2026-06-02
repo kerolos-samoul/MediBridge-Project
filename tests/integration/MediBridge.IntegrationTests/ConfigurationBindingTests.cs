@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MediBridge.IntegrationTests.TestHost;
+using MediBridge.Core.Interfaces.Identity;
 using Xunit;
 
 namespace MediBridge.IntegrationTests;
@@ -32,12 +33,27 @@ public class ConfigurationBindingTests
 
         using var scope = configuredFactory.Services.CreateScope();
         var jwt = scope.ServiceProvider.GetRequiredService<IOptions<JwtOptions>>().Value;
+        var tokenService = scope.ServiceProvider.GetRequiredService<IAuthTokenService>();
         var db = scope.ServiceProvider.GetRequiredService<IOptions<DatabaseOptions>>().Value;
 
         Assert.Equal("test-issuer", jwt.Issuer);
         Assert.Equal("test-aud", jwt.Audience);
         Assert.Equal("super-secret-key", jwt.SigningKey);
+        Assert.Equal(TimeSpan.FromMinutes(60), tokenService.AccessTokenLifetime);
+        Assert.Equal(TimeSpan.FromDays(7), tokenService.RefreshTokenLifetime);
         Assert.Equal("Server=.;Database=Test;Trusted_Connection=True;", db.DefaultConnection);
+    }
+
+    [Fact]
+    public void IdentityTokenService_UsesDefaultTokenLifetimesWhenConfigurationOmitsLifetimeKeys()
+    {
+        using var factory = new WebAppFactory();
+        using var scope = factory.Services.CreateScope();
+
+        var tokenService = scope.ServiceProvider.GetRequiredService<IAuthTokenService>();
+
+        Assert.Equal(TimeSpan.FromMinutes(60), tokenService.AccessTokenLifetime);
+        Assert.Equal(TimeSpan.FromDays(7), tokenService.RefreshTokenLifetime);
     }
 
     [Fact]

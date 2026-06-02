@@ -125,7 +125,7 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
         var safePageSize = Math.Max(pageSize, 1);
 
         return await context.Users
-            .Where(candidate => candidate.AccountStatus == status)
+            .Where(candidate => !candidate.IsDeleted && candidate.AccountStatus == status)
             .OrderByDescending(candidate => candidate.CreatedAtUtc)
             .Skip((safePageNumber - 1) * safePageSize)
             .Take(safePageSize)
@@ -135,7 +135,7 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
 
     public Task<int> CountByStatusAsync(AccountStatus status, CancellationToken cancellationToken = default)
     {
-        return context.Users.CountAsync(candidate => candidate.AccountStatus == status, cancellationToken);
+        return context.Users.CountAsync(candidate => !candidate.IsDeleted && candidate.AccountStatus == status, cancellationToken);
     }
 
     private static string NormalizeEmail(string email)

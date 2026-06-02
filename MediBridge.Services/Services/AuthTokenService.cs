@@ -15,6 +15,20 @@ public sealed class AuthTokenService : IAuthTokenService
 
     public AuthTokenService(string issuer, string audience, string signingKey, int accessTokenMinutes, int refreshTokenDays)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(issuer);
+        ArgumentException.ThrowIfNullOrWhiteSpace(audience);
+        ArgumentException.ThrowIfNullOrWhiteSpace(signingKey);
+
+        if (accessTokenMinutes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(accessTokenMinutes), "Access token lifetime must be positive.");
+        }
+
+        if (refreshTokenDays <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(refreshTokenDays), "Refresh token lifetime must be positive.");
+        }
+
         this.issuer = issuer;
         this.audience = audience;
         this.signingKey = Encoding.UTF8.GetBytes(signingKey);

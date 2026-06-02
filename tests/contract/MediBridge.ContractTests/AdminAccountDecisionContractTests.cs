@@ -25,7 +25,7 @@ public sealed class AdminAccountDecisionContractTests
     {
         await using var factory = new ContractWebAppFactory();
         await factory.InitializeDatabaseAsync();
-        var (adminId, targetId) = await CreateUsersAsync(factory, decision == "Reactivate" ? AccountStatus.Suspended : AccountStatus.Pending);
+        var (adminId, targetId) = await CreateUsersAsync(factory, InitialStatusForValidDecision(decision));
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ContractJwtFactory.CreateToken(adminId, "Admin"));
 
@@ -83,6 +83,43 @@ public sealed class AdminAccountDecisionContractTests
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         AssertEnvelope(document.RootElement, 400, "Validation failed.");
         Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("Data").ValueKind);
+    }
+
+    [Theory]
+    [InlineData(AccountStatus.Pending, "Suspend")]
+    [InlineData(AccountStatus.Approved, "Reject")]
+    [InlineData(AccountStatus.Rejected, "Reactivate")]
+    [InlineData(AccountStatus.Suspended, "Reject")]
+    [InlineData(AccountStatus.Inactive, "Suspend")]
+    public async Task DecideAccount_WithInvalidStatusTransition_ReturnsValidationEnvelope(AccountStatus currentStatus, string decision)
+    {
+        await using var factory = new ContractWebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        var (adminId, targetId) = await CreateUsersAsync(factory, currentStatus);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ContractJwtFactory.CreateToken(adminId, "Admin"));
+
+        using var response = await client.PutAsJsonAsync($"/api/admin/accounts/{targetId}/decision", new
+        {
+            Decision = decision,
+            Reason = decision is "Reject" or "Suspend" ? "Invalid transition check." : null
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        AssertEnvelope(document.RootElement, 400, "Validation failed.");
+        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("Data").ValueKind);
+    }
+
+    private static AccountStatus InitialStatusForValidDecision(string decision)
+    {
+        return decision switch
+        {
+            "Approve" or "Reject" => AccountStatus.Pending,
+            "Suspend" or "Inactivate" => AccountStatus.Approved,
+            "Reactivate" => AccountStatus.Suspended,
+            _ => throw new ArgumentOutOfRangeException(nameof(decision), decision, "Unexpected decision.")
+        };
     }
 
     private static async Task<(string AdminId, string TargetId)> CreateUsersAsync(ContractWebAppFactory factory, AccountStatus targetStatus)
