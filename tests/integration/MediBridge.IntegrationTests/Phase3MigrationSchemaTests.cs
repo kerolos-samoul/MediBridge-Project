@@ -63,8 +63,27 @@ public sealed class Phase3MigrationSchemaTests
         Assert.Contains(await context.Roles.Select(role => role.Name).ToListAsync(), role => role == nameof(UserRole.Company));
         Assert.True(await context.Users.AnyAsync(user => user.Id == userId && user.AccountStatus == AccountStatus.Approved));
         Assert.True(await context.RefreshCredentials.AnyAsync(credential => credential.UserId == userId && credential.ReplacedByTokenHash != null));
-        Assert.True(context.Model.FindEntityType(typeof(MediBridge.Core.Entities.Campaigns.Campaign)) is not null);
-        Assert.True(context.Model.FindEntityType(typeof(MediBridge.Core.Entities.Wallets.WalletLedgerEntry)) is not null);
-        Assert.True(context.Model.FindEntityType(typeof(MediBridge.Core.Entities.Files.StoredFile)) is not null);
+        await AssertTableExistsAsync(context, "Campaigns");
+        await AssertTableExistsAsync(context, "WalletLedgerEntries");
+        await AssertTableExistsAsync(context, "StoredFiles");
+    }
+
+    private static async Task AssertTableExistsAsync(MediBridgeDbContext context, string tableName)
+    {
+        var connection = context.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await connection.OpenAsync();
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @tableName";
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "@tableName";
+        parameter.Value = tableName;
+        command.Parameters.Add(parameter);
+
+        var result = await command.ExecuteScalarAsync();
+        Assert.Equal(1, Convert.ToInt32(result));
     }
 }

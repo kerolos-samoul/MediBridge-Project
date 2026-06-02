@@ -46,7 +46,7 @@ public sealed class Phase3CoreEntityPersistenceTests
         await unitOfWork.Campaigns.AddCampaignTargetAsync(targetId, campaignId, ids.DoctorProfileId);
         await unitOfWork.Campaigns.AddCampaignReviewHistoryAsync(reviewId, campaignId, ids.AdminUserId, CampaignReviewDecision.Approved);
         await unitOfWork.MessageQueues.AddQueueItemAsync(queueId, ids.DoctorProfileId, campaignId, now);
-        await unitOfWork.Deliveries.AddDeliveryAsync(deliveryId, ids.DoctorProfileId, campaignId, ids.CompanyProfileId, DateOnly.FromDateTime(now));
+        await unitOfWork.Deliveries.AddDeliveryAsync(deliveryId, ids.DoctorProfileId, campaignId, ids.CompanyProfileId, DateOnly.FromDateTime(now), 50m, 10m, 5m, 45m, 50m);
         await unitOfWork.Wallets.AddWalletAsync(companyWalletId, WalletOwnerType.Company, ids.CompanyProfileId, ids.CompanyUserId);
         await unitOfWork.WalletTransactions.AddTransactionAsync(transactionId, companyWalletId, WalletTransactionType.TopUp, $"top-up-{Guid.NewGuid():N}", 100m);
         await unitOfWork.WalletLedgerEntries.AddLedgerEntryAsync(ledgerEntryId, transactionId, companyWalletId, WalletLedgerEntryDirection.Credit, WalletBalanceType.Available, 100m);
@@ -68,6 +68,12 @@ public sealed class Phase3CoreEntityPersistenceTests
         Assert.Contains(reviewId, await unitOfWork.Campaigns.ListCampaignReviewHistoryIdsAsync(campaignId));
         Assert.Contains(queueId, await unitOfWork.MessageQueues.ListActiveQueueItemIdsForDoctorAsync(ids.DoctorProfileId, QueueItemStatus.Queued));
         Assert.Equal(deliveryId, await unitOfWork.Deliveries.FindDeliveryIdAsync(ids.DoctorProfileId, DateOnly.FromDateTime(now), campaignId));
+        var persistedDelivery = await context.DoctorAdDeliveries.SingleAsync(delivery => delivery.Id == deliveryId);
+        Assert.Equal(50m, persistedDelivery.PricePerMessageSnapshot);
+        Assert.Equal(10m, persistedDelivery.PlatformFeePercentSnapshot);
+        Assert.Equal(5m, persistedDelivery.PlatformFeeAmount);
+        Assert.Equal(45m, persistedDelivery.DoctorEarnings);
+        Assert.Equal(50m, persistedDelivery.ReservedAmount);
         Assert.Equal(companyWalletId, await unitOfWork.Wallets.FindActiveWalletIdByOwnerAsync(WalletOwnerType.Company, ids.CompanyProfileId));
         Assert.Equal(transactionId, await unitOfWork.WalletTransactions.FindTransactionIdByIdempotencyAsync(WalletTransactionType.TopUp, await context.WalletTransactions.Where(transaction => transaction.Id == transactionId).Select(transaction => transaction.IdempotencyKey).SingleAsync()));
         Assert.Contains(ledgerEntryId, await unitOfWork.WalletLedgerEntries.ListLedgerEntryIdsByWalletTransactionAsync(transactionId));

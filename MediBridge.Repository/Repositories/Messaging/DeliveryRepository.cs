@@ -15,22 +15,31 @@ public sealed class DeliveryRepository : IDeliveryRepository
         this.context = context;
     }
 
-    public async Task AddDeliveryAsync(string deliveryId, string doctorId, string campaignId, string companyId, DateOnly deliveryDateEgypt, CancellationToken cancellationToken = default)
+    public async Task AddDeliveryAsync(
+        string deliveryId,
+        string doctorId,
+        string campaignId,
+        string companyId,
+        DateOnly deliveryDateEgypt,
+        decimal pricePerMessageSnapshot,
+        decimal platformFeePercentSnapshot,
+        decimal platformFeeAmount,
+        decimal doctorEarnings,
+        decimal reservedAmount,
+        CancellationToken cancellationToken = default)
     {
-        await context.DoctorAdDeliveries.AddAsync(new DoctorAdDelivery
+        var delivery = new DoctorAdDelivery
         {
             Id = deliveryId,
             DoctorId = doctorId,
             CampaignId = campaignId,
             CompanyId = companyId,
             DeliveryDateEgypt = deliveryDateEgypt,
-            PricePerMessageSnapshot = 0m,
-            PlatformFeePercentSnapshot = 0m,
-            PlatformFeeAmount = 0m,
-            DoctorEarnings = 0m,
-            ReservedAmount = 0m,
             Status = DeliveryStatus.Active
-        }, cancellationToken);
+        };
+        delivery.ApplySettlementSnapshot(pricePerMessageSnapshot, platformFeePercentSnapshot, platformFeeAmount, doctorEarnings, reservedAmount);
+
+        await context.DoctorAdDeliveries.AddAsync(delivery, cancellationToken);
     }
 
     public Task<string?> FindDeliveryIdAsync(string doctorId, DateOnly deliveryDateEgypt, string campaignId, CancellationToken cancellationToken = default)

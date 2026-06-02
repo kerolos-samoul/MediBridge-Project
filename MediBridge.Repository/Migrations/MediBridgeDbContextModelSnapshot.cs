@@ -602,7 +602,7 @@ namespace MediBridge.Repository.Migrations
 
                     b.ToTable("DoctorAdDeliveries", null, t =>
                         {
-                            t.HasCheckConstraint("CK_DoctorAdDeliveries_Money_NonNegative", "[PricePerMessageSnapshot] >= 0 AND [PlatformFeeAmount] >= 0 AND [DoctorEarnings] >= 0 AND [ReservedAmount] >= 0");
+                            t.HasCheckConstraint("CK_DoctorAdDeliveries_Money_NonNegative", "[PricePerMessageSnapshot] > 0 AND [PlatformFeePercentSnapshot] > 0 AND [PlatformFeePercentSnapshot] <= 100 AND [PlatformFeeAmount] > 0 AND [DoctorEarnings] > 0 AND [ReservedAmount] > 0 AND [PlatformFeeAmount] + [DoctorEarnings] = [PricePerMessageSnapshot] AND [ReservedAmount] = [PricePerMessageSnapshot]");
                         });
                 });
 

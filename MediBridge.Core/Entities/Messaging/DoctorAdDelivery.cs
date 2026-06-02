@@ -1,4 +1,5 @@
 using MediBridge.Core.Enums;
+using MediBridge.Core.Entities.Wallets;
 
 namespace MediBridge.Core.Entities.Messaging;
 
@@ -25,4 +26,33 @@ public sealed class DoctorAdDelivery : IConcurrencyTrackedRecord
     public byte[] ConcurrencyToken { get; set; } = Array.Empty<byte>();
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
+
+    public void ApplySettlementSnapshot(
+        decimal pricePerMessageSnapshot,
+        decimal platformFeePercentSnapshot,
+        decimal platformFeeAmount,
+        decimal doctorEarnings,
+        decimal reservedAmount)
+    {
+        if (platformFeePercentSnapshot <= 0m || platformFeePercentSnapshot > 100m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(platformFeePercentSnapshot), platformFeePercentSnapshot, "Platform fee percent must be between 0 and 100.");
+        }
+
+        PricePerMessageSnapshot = MoneyRules.EnsurePositive(pricePerMessageSnapshot, nameof(pricePerMessageSnapshot));
+        PlatformFeePercentSnapshot = platformFeePercentSnapshot;
+        PlatformFeeAmount = MoneyRules.EnsurePositive(platformFeeAmount, nameof(platformFeeAmount));
+        DoctorEarnings = MoneyRules.EnsurePositive(doctorEarnings, nameof(doctorEarnings));
+        ReservedAmount = MoneyRules.EnsurePositive(reservedAmount, nameof(reservedAmount));
+
+        if (PlatformFeeAmount + DoctorEarnings != PricePerMessageSnapshot)
+        {
+            throw new ArgumentException("Platform fee amount plus doctor earnings must equal the price per message snapshot.", nameof(doctorEarnings));
+        }
+
+        if (ReservedAmount != PricePerMessageSnapshot)
+        {
+            throw new ArgumentException("Reserved amount must equal the price per message snapshot.", nameof(reservedAmount));
+        }
+    }
 }

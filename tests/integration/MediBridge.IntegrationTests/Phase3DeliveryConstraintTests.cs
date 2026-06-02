@@ -21,10 +21,10 @@ public sealed class Phase3DeliveryConstraintTests
         using var scope = factory.Services.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IDomainUnitOfWork>();
 
-        await unitOfWork.Deliveries.AddDeliveryAsync("delivery-original", ids.DoctorProfileId, campaignId, ids.CompanyProfileId, deliveryDateEgypt);
+        await unitOfWork.Deliveries.AddDeliveryAsync("delivery-original", ids.DoctorProfileId, campaignId, ids.CompanyProfileId, deliveryDateEgypt, 50m, 10m, 5m, 45m, 50m);
         await unitOfWork.SaveChangesAsync();
 
-        await unitOfWork.Deliveries.AddDeliveryAsync("delivery-duplicate", ids.DoctorProfileId, campaignId, ids.CompanyProfileId, deliveryDateEgypt);
+        await unitOfWork.Deliveries.AddDeliveryAsync("delivery-duplicate", ids.DoctorProfileId, campaignId, ids.CompanyProfileId, deliveryDateEgypt, 50m, 10m, 5m, 45m, 50m);
 
         await Assert.ThrowsAsync<DbUpdateException>(() => unitOfWork.SaveChangesAsync());
         Assert.True(await unitOfWork.Deliveries.DeliveryExistsAsync(ids.DoctorProfileId, deliveryDateEgypt, campaignId));

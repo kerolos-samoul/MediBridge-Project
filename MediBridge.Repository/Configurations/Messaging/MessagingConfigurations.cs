@@ -35,7 +35,9 @@ public sealed class DoctorAdDeliveryConfiguration : IEntityTypeConfiguration<Doc
         builder.Property(delivery => delivery.ReservedAmount).HasPrecision(18, 2);
         builder.Property(delivery => delivery.FeedbackText).HasMaxLength(4000);
         builder.Property(delivery => delivery.ConcurrencyToken).IsRowVersion();
-        builder.ToTable(table => table.HasCheckConstraint("CK_DoctorAdDeliveries_Money_NonNegative", "[PricePerMessageSnapshot] >= 0 AND [PlatformFeeAmount] >= 0 AND [DoctorEarnings] >= 0 AND [ReservedAmount] >= 0"));
+        builder.ToTable(table => table.HasCheckConstraint(
+            "CK_DoctorAdDeliveries_Money_NonNegative",
+            "[PricePerMessageSnapshot] > 0 AND [PlatformFeePercentSnapshot] > 0 AND [PlatformFeePercentSnapshot] <= 100 AND [PlatformFeeAmount] > 0 AND [DoctorEarnings] > 0 AND [ReservedAmount] > 0 AND [PlatformFeeAmount] + [DoctorEarnings] = [PricePerMessageSnapshot] AND [ReservedAmount] = [PricePerMessageSnapshot]"));
         builder.HasOne<DoctorProfile>().WithMany().HasForeignKey(delivery => delivery.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Campaign>().WithMany().HasForeignKey(delivery => delivery.CampaignId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<CompanyProfile>().WithMany().HasForeignKey(delivery => delivery.CompanyId).OnDelete(DeleteBehavior.Restrict);

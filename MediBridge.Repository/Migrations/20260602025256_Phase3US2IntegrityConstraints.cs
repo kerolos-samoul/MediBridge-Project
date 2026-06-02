@@ -33,7 +33,7 @@ namespace MediBridge.Repository.Migrations
             migrationBuilder.AddCheckConstraint(
                 name: "CK_DoctorAdDeliveries_Money_NonNegative",
                 table: "DoctorAdDeliveries",
-                sql: "[PricePerMessageSnapshot] >= 0 AND [PlatformFeeAmount] >= 0 AND [DoctorEarnings] >= 0 AND [ReservedAmount] >= 0");
+                sql: "[PricePerMessageSnapshot] > 0 AND [PlatformFeePercentSnapshot] > 0 AND [PlatformFeePercentSnapshot] <= 100 AND [PlatformFeeAmount] > 0 AND [DoctorEarnings] > 0 AND [ReservedAmount] > 0 AND [PlatformFeeAmount] + [DoctorEarnings] = [PricePerMessageSnapshot] AND [ReservedAmount] = [PricePerMessageSnapshot]");
         }
 
         /// <inheritdoc />
