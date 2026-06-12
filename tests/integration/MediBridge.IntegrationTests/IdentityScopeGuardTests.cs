@@ -10,16 +10,16 @@ public sealed class IdentityScopeGuardTests
 {
     private static readonly string[] OutOfScopeRouteMarkers =
     [
-        "campaign",
+        "submission",
         "queue",
         "delivery",
         "wallet",
         "settlement",
         "payout",
-        "upload",
-        "storage",
-        "file",
-        "review",
+        "message",
+        "report",
+        "gallery",
+        "malware",
         "pricing",
         "platform-fee",
         "platformfee"
@@ -27,18 +27,21 @@ public sealed class IdentityScopeGuardTests
 
     private static readonly string[] OutOfScopeImplementationMarkers =
     [
-        "Campaign",
+        "CampaignSubmission",
+        "CampaignQueue",
         "Delivery",
+        "DoctorMessage",
+        "MessageViewing",
+        "ReportingReadModel",
+        "PublicGallery",
+        "MalwareScan",
         "Wallet",
         "Settlement",
         "Payout",
         "Pricing",
         "PlatformFee",
         "Ledger",
-        "Escrow",
-        "FileUpload",
-        "FileStorage",
-        "FileReview"
+        "Escrow"
     ];
 
     [Fact]

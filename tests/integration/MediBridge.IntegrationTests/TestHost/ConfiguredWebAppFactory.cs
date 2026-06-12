@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MediBridge.Repository.Data;
+using MediBridge.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediBridge.IntegrationTests.TestHost;
@@ -23,6 +25,12 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
             ["Jwt__Issuer"] = "MediBridge.IntegrationTests",
             ["Jwt__Audience"] = "MediBridge.IntegrationTests.ApiClients",
             ["Jwt__SigningKey"] = "IntegrationTestSigningKey-ReplaceBeforeProduction-32Chars",
+            ["Email__Smtp__Host"] = "localhost",
+            ["Email__Smtp__Port"] = "2525",
+            ["Email__Smtp__Username"] = "integration-test-smtp-user",
+            ["Email__Smtp__Password"] = "integration-test-smtp-password",
+            ["Email__Smtp__FromEmail"] = "no-reply.integration@example.com",
+            ["FileStorage__UploadsEnabled"] = "false",
             ["Identity__SeedDevelopmentAdmin"] = "false"
         });
     }
@@ -39,14 +47,24 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
                 ["Jwt:Issuer"] = "MediBridge.IntegrationTests",
                 ["Jwt:Audience"] = "MediBridge.IntegrationTests.ApiClients",
                 ["Jwt:SigningKey"] = "IntegrationTestSigningKey-ReplaceBeforeProduction-32Chars",
+                ["Email:Smtp:Host"] = "localhost",
+                ["Email:Smtp:Port"] = "2525",
+                ["Email:Smtp:Username"] = "integration-test-smtp-user",
+                ["Email:Smtp:Password"] = "integration-test-smtp-password",
+                ["Email:Smtp:FromEmail"] = "no-reply.integration@example.com",
+                ["FileStorage:UploadsEnabled"] = "false",
                 ["Identity:SeedDevelopmentAdmin"] = "false"
             });
         });
+        ConfigureAppConfigurationCore(builder);
         builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureServices(services =>
         {
             services.AddSingleton<IStartupFilter, ForceHttpsStartupFilter>();
             services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<TestEmailSink>();
+            services.AddSingleton<IEmailSender, TestEmailSender>();
         });
 
         ConfigureWebHostCore(builder);
@@ -67,6 +85,10 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
     private string ConnectionString => $"Server=(localdb)\\MSSQLLocalDB;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;";
 
     protected virtual void ConfigureWebHostCore(IWebHostBuilder builder)
+    {
+    }
+
+    protected virtual void ConfigureAppConfigurationCore(IWebHostBuilder builder)
     {
     }
 

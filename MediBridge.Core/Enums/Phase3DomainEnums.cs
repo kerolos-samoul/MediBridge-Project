@@ -124,7 +124,56 @@ public enum StoredFileReviewStatus
 {
     Pending = 1,
     Approved = 2,
-    Rejected = 3
+    Rejected = 3,
+    Quarantined = 4,
+    ReplacementRequested = 5
+}
+
+public enum FileReviewDecision
+{
+    Approved = 1,
+    Rejected = 2,
+    Quarantined = 3,
+    ReplacementRequested = 4,
+    Correction = 5
+}
+
+public enum StoredFileUploadStatus
+{
+    PendingUpload = 1,
+    Stored = 2,
+    UploadFailed = 3,
+    Deleted = 4,
+    Replaced = 5
+}
+
+public enum StoredFileSafetyScanStatus
+{
+    NotAvailable = 1,
+    Pending = 2,
+    Passed = 3,
+    Failed = 4,
+    Deferred = 5
+}
+
+public enum StoredFileStorageResourceType
+{
+    Image = 1,
+    Video = 2,
+    Raw = 3
+}
+
+public enum StoredFileStorageDeliveryType
+{
+    Private = 1,
+    Authenticated = 2
+}
+
+public enum FileAccessGrantOutcome
+{
+    Issued = 1,
+    Denied = 2,
+    Expired = 3
 }
 
 public enum AuditOutcome

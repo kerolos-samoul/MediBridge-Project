@@ -52,6 +52,8 @@ public sealed class ContactVerificationFlowConfiguration : IEntityTypeConfigurat
         builder.Property(flow => flow.Channel).HasConversion<string>().HasMaxLength(24).IsRequired();
         builder.Property(flow => flow.DestinationHash).HasMaxLength(256).IsRequired();
         builder.Property(flow => flow.TokenHash).HasMaxLength(256).IsRequired();
+        builder.Property(flow => flow.FailedAttemptCount).HasDefaultValue(0);
+        builder.Property(flow => flow.LastSentAtUtc).HasDefaultValueSql("SYSUTCDATETIME()");
         builder.HasOne<MediBridgeIdentityUser>()
             .WithMany()
             .HasForeignKey(flow => flow.UserId)

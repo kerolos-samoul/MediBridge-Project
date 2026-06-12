@@ -300,9 +300,26 @@ public sealed class ContactVerificationFlowRepository : IContactVerificationFlow
                 FROM [ContactVerificationFlows] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
                 WHERE [TokenHash] = {tokenHash}
                     AND [ConsumedAtUtc] IS NULL
+                    AND [SupersededAtUtc] IS NULL
+                    AND [MaxAttemptsReachedAtUtc] IS NULL
                     AND [ExpiresAtUtc] >= {now}
                 """)
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ContactVerificationFlow>> ListUnconsumedByUserDestinationAsync(
+        string userId,
+        ContactVerificationChannel channel,
+        string destinationHash,
+        CancellationToken cancellationToken = default)
+    {
+        return await context.ContactVerificationFlows
+            .Where(flow => flow.UserId == userId
+                           && flow.Channel == channel
+                           && flow.DestinationHash == destinationHash
+                           && flow.ConsumedAtUtc == null)
+            .OrderByDescending(flow => flow.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
     }
 
     public Task MarkConsumedAsync(ContactVerificationFlow flow, DateTime consumedAtUtc, CancellationToken cancellationToken = default)

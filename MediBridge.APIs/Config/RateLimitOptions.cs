@@ -11,6 +11,7 @@ public static class RateLimitPolicyNames
     public const string CompanyTopUp = "company-top-up";
     public const string DoctorWithdrawal = "doctor-withdrawal";
     public const string DoctorInteraction = "doctor-interaction";
+    public const string FileUpload = "file-upload";
     public const string Envelope = "rate-limit-envelope";
 
     public static readonly string[] All =
@@ -21,6 +22,7 @@ public static class RateLimitPolicyNames
         CompanyTopUp,
         DoctorWithdrawal,
         DoctorInteraction,
+        FileUpload,
         Envelope
     ];
 }
@@ -37,6 +39,12 @@ public sealed class RateLimitingOptions
         [RateLimitPolicyNames.CompanyTopUp] = new(),
         [RateLimitPolicyNames.DoctorWithdrawal] = new(),
         [RateLimitPolicyNames.DoctorInteraction] = new(),
+        [RateLimitPolicyNames.FileUpload] = new()
+        {
+            PermitLimit = 20,
+            WindowSeconds = 3600,
+            QueueLimit = 0
+        },
         [RateLimitPolicyNames.Envelope] = new()
     };
 

@@ -1,0 +1,485 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 4 File Storage API
+  version: 0.1.0
+  description: API contract for private file upload, review, and time-limited access grants.
+paths:
+  /api/files/verification-documents:
+    post:
+      summary: Upload a doctor or company verification document
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: File metadata created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileEnvelope"
+        "400":
+          description: Empty, oversize, unsupported, or unsafe file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Role or ownership denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "429":
+          description: Upload rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+  /api/campaigns/{campaignId}/files:
+    post:
+      summary: Upload campaign media, voice note, or clinical research attachment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [purpose, file]
+              properties:
+                purpose:
+                  type: string
+                  enum: [CampaignMedia, VoiceNote, ClinicalResearchAttachment]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Campaign file metadata created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileEnvelope"
+        "400":
+          description: Invalid purpose, empty file, oversize file, unsupported type, or unsafe name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Company does not own the campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "404":
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "429":
+          description: Upload rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+  /api/files/{fileId}/access:
+    post:
+      summary: Create a 10-minute private file access grant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Time-limited access grant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessGrantEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "404":
+          description: File not found or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+  /api/files/{fileId}/replacement:
+    post:
+      summary: Replace a rejected or outdated private file while preserving original history
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Replacement file metadata created and linked to original
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileEnvelope"
+        "400":
+          description: Original file cannot be replaced, or replacement upload is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Access denied, owner inactive, or role not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "404":
+          description: Original file not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "429":
+          description: Upload rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+  /api/files/{fileId}:
+    delete:
+      summary: Delete a file metadata record and provider asset when allowed
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File deleted or made unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Access denied, owner inactive, or role not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+  /api/admin/files/pending:
+    get:
+      summary: List files pending admin review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Pending file page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FilePageEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Admin role required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+  /api/admin/files/{fileId}/review:
+    put:
+      summary: Record an append-only admin file review decision
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileReviewRequest"
+      responses:
+        "200":
+          description: Review decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileReviewEnvelope"
+        "400":
+          description: Invalid decision or missing required reason
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Admin role required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    EmptyEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    FileEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          $ref: "#/components/schemas/FileDto"
+    FilePageEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          type: object
+          required: [Items, PageNumber, PageSize, TotalCount]
+          properties:
+            Items:
+              type: array
+              items:
+                $ref: "#/components/schemas/FileDto"
+            PageNumber:
+              type: integer
+            PageSize:
+              type: integer
+            TotalCount:
+              type: integer
+    AccessGrantEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          type: object
+          required: [Url, ExpiresAtUtc]
+          properties:
+            Url:
+              type: string
+              format: uri
+            ExpiresAtUtc:
+              type: string
+              format: date-time
+    FileReviewEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          $ref: "#/components/schemas/FileReviewDto"
+    FileDto:
+      type: object
+      required:
+        - Id
+        - Purpose
+        - OwnerType
+        - OriginalFileName
+        - ContentType
+        - SizeBytes
+        - ReviewStatus
+        - UploadStatus
+        - SafetyScanStatus
+        - CreatedAtUtc
+      properties:
+        Id:
+          type: string
+        Purpose:
+          type: string
+        OwnerType:
+          type: string
+        RelatedCampaignId:
+          type: string
+          nullable: true
+        ReplacedFileId:
+          type: string
+          nullable: true
+        OriginalFileName:
+          type: string
+        ContentType:
+          type: string
+        SizeBytes:
+          type: integer
+          format: int64
+        ReviewStatus:
+          type: string
+        UploadStatus:
+          type: string
+        SafetyScanStatus:
+          type: string
+        CreatedAtUtc:
+          type: string
+          format: date-time
+    FileReviewRequest:
+      type: object
+      required: [Decision]
+      properties:
+        Decision:
+          type: string
+          enum: [Approved, Rejected, Quarantined, ReplacementRequested, Correction]
+        Reason:
+          type: string
+          maxLength: 1000
+        CorrectsReviewId:
+          type: string
+          nullable: true
+    FileReviewDto:
+      type: object
+      required: [Id, StoredFileId, Decision, ReviewedByAdminId, CreatedAtUtc]
+      properties:
+        Id:
+          type: string
+        StoredFileId:
+          type: string
+        Decision:
+          type: string
+        Reason:
+          type: string
+          nullable: true
+        ReviewedByAdminId:
+          type: string
+        CreatedAtUtc:
+          type: string
+          format: date-time
+        CorrectsReviewId:
+          type: string
+          nullable: true

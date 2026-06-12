@@ -88,7 +88,7 @@ work, JWT security, standard API envelope, and global exception handling).
 - Add a malware/virus scanning placeholder before a file can become approved or visible.
 - Add rate limiting for login, registration, refresh, top-up, withdrawal, and interaction endpoints.
 - Add refresh-token reuse detection; if a revoked refresh token is reused, revoke the user's active refresh-token family.
-- Add password reset and email/phone verification support as security infrastructure, even if delivery providers are stubbed in MVP.
+- Add password reset and email/phone verification support as security infrastructure. Email verification uses a six-digit, hashed, 10-minute OTP for Doctor and Company registration; development/testing delivery is redirected to `medibridge7@gmail.com` while the email body identifies the originally registered address.
 - Admin actions, authentication-sensitive events, financial events, and document review actions must be audit logged.
 
 ## Architecture (Backend)
@@ -350,7 +350,8 @@ This job runs daily to automatically compute and persist the Doctor Activity Sco
 - POST `/api/auth/logout`
 - POST `/api/auth/forgot-password`
 - POST `/api/auth/reset-password`
-- POST `/api/auth/verify-email` or `/api/auth/verify-phone` (provider stub acceptable in MVP)
+- POST `/api/auth/verify-contact` (legacy one-time token or Email OTP with original registered email)
+- POST `/api/auth/request-contact-verification` (resend Email OTP with cooldown and old OTP supersession)
 
 ### Doctor
 

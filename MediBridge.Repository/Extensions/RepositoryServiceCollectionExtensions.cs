@@ -60,6 +60,8 @@ public static class RepositoryServiceCollectionExtensions
         services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
         services.AddScoped<IWalletLedgerEntryRepository, WalletLedgerEntryRepository>();
         services.AddScoped<IStoredFileRepository, StoredFileRepository>();
+        services.AddScoped<IFileReviewRepository, FileReviewRepository>();
+        services.AddScoped<IFileAccessGrantAuditRepository, FileAccessGrantAuditRepository>();
         services.AddScoped<IPolicyHistoryRepository, PolicyHistoryRepository>();
         services.AddScoped<IAuditEventRepository, AuditEventRepository>();
         services.AddScoped<IDomainUnitOfWork, DomainUnitOfWork>();
