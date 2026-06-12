@@ -55,9 +55,13 @@ Expected result:
 2. Confirm both initiation responses use the same accepted envelope shape.
 3. Complete reset for the known account with a valid reset token.
 4. Confirm existing refresh credentials for that user are revoked.
-5. Start email or phone verification for a registered account.
-6. Complete verification once and confirm replay is rejected.
-7. Confirm an `Approved` account can still receive tokens before contact verification is complete in Phase 2.
+5. Register a Doctor or Company and confirm an Email OTP is generated immediately.
+6. In Development/testing, confirm the OTP email is delivered to `medibridge7@gmail.com` and the message body includes `Registered email: <original-email>`.
+7. Complete `POST /api/auth/verify-contact` with `{ "Channel": "Email", "Email": "<original-email>", "Otp": "<six-digit-code>" }`.
+8. Confirm `EmailVerified = true`, the OTP flow is consumed, and `AccountStatus` remains independent of email verification.
+9. Confirm OTP replay, expired OTP, max-attempt-locked OTP, and superseded OTP all return the validation envelope.
+10. Call `POST /api/auth/request-contact-verification` after cooldown to resend an OTP and confirm immediate resend is blocked with `429`.
+11. Confirm an `Approved` account can still receive tokens before contact verification is complete in Phase 2.
 
 ## Out of Scope Guard
 

@@ -159,6 +159,26 @@ public sealed class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("request-contact-verification")]
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicyNames.Login)]
+    public async Task<ActionResult<ApiEnvelope<object?>>> RequestContactVerification([FromBody] RequestContactVerificationDto request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await authService.RequestContactVerificationAsync(request, cancellationToken);
+            return StatusCode(StatusCodes.Status202Accepted, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status202Accepted, "Accepted", null));
+        }
+        catch (ValidationException)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+        catch (ContactVerificationRateLimitedException)
+        {
+            return StatusCode(StatusCodes.Status429TooManyRequests, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status429TooManyRequests, "Email verification resend is temporarily rate limited.", null));
+        }
+    }
+
     [HttpPost("resubmit-registration")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicyNames.Registration)]

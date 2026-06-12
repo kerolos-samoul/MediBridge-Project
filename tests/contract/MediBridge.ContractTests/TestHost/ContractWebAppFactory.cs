@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MediBridge.Repository.Data;
+using MediBridge.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediBridge.ContractTests.TestHost;
 
-public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
+public class ContractWebAppFactory : WebApplicationFactory<Program>
 {
     private readonly string databaseName = $"MediBridge.ContractTests_{Guid.NewGuid():N}";
     private readonly TestEnvironmentScope environmentScope;
@@ -22,6 +24,12 @@ public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
             ["Jwt__Issuer"] = "MediBridge.ContractTests",
             ["Jwt__Audience"] = "MediBridge.ContractTests.ApiClients",
             ["Jwt__SigningKey"] = "ContractTestSigningKey-ReplaceBeforeProduction-32Chars",
+            ["Email__Smtp__Host"] = "localhost",
+            ["Email__Smtp__Port"] = "2525",
+            ["Email__Smtp__Username"] = "contract-test-smtp-user",
+            ["Email__Smtp__Password"] = "contract-test-smtp-password",
+            ["Email__Smtp__FromEmail"] = "no-reply.contract@example.com",
+            ["FileStorage__UploadsEnabled"] = "false",
             ["Identity__SeedDevelopmentAdmin"] = "false"
         });
     }
@@ -38,6 +46,12 @@ public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
                 ["Jwt:Issuer"] = "MediBridge.ContractTests",
                 ["Jwt:Audience"] = "MediBridge.ContractTests.ApiClients",
                 ["Jwt:SigningKey"] = "ContractTestSigningKey-ReplaceBeforeProduction-32Chars",
+                ["Email:Smtp:Host"] = "localhost",
+                ["Email:Smtp:Port"] = "2525",
+                ["Email:Smtp:Username"] = "contract-test-smtp-user",
+                ["Email:Smtp:Password"] = "contract-test-smtp-password",
+                ["Email:Smtp:FromEmail"] = "no-reply.contract@example.com",
+                ["FileStorage:UploadsEnabled"] = "false",
                 ["Identity:SeedDevelopmentAdmin"] = "false"
             });
         });
@@ -45,8 +59,11 @@ public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
         {
             services.AddSingleton<IStartupFilter, ForceHttpsStartupFilter>();
             services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender, TestEmailSender>();
         });
 
+        ConfigureWebHostCore(builder);
     }
 
     public async Task InitializeDatabaseAsync()
@@ -72,6 +89,10 @@ public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
     }
 
     private string ConnectionString => $"Server=(localdb)\\MSSQLLocalDB;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;";
+
+    protected virtual void ConfigureWebHostCore(IWebHostBuilder builder)
+    {
+    }
 
     private sealed class TestEnvironmentScope : IDisposable
     {

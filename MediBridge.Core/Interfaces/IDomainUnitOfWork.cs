@@ -15,6 +15,8 @@ public interface IDomainUnitOfWork
     IWalletTransactionRepository WalletTransactions { get; }
     IWalletLedgerEntryRepository WalletLedgerEntries { get; }
     IStoredFileRepository StoredFiles { get; }
+    IFileReviewRepository FileReviews { get; }
+    IFileAccessGrantAuditRepository FileAccessGrantAudits { get; }
     IPolicyHistoryRepository PolicyHistory { get; }
     IAuditEventRepository AuditEvents { get; }
 

@@ -170,6 +170,10 @@ paths:
   /api/auth/verify-contact:
     post:
       summary: Complete email or phone verification
+      description: >
+        Accepts either the existing legacy `verificationToken` value or an Email OTP
+        payload containing `email` and `otp`. Email OTP verification sets
+        `EmailVerified = true` only and does not approve the account.
       operationId: verifyContact
       requestBody:
         required: true
@@ -186,6 +190,27 @@ paths:
                 $ref: '#/components/schemas/EnvelopeEmpty'
         '400':
           $ref: '#/components/responses/ValidationError'
+  /api/auth/request-contact-verification:
+    post:
+      summary: Request or resend an Email OTP
+      operationId: requestContactVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestContactVerification'
+      responses:
+        '202':
+          description: Contact verification request accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
   /api/auth/resubmit-registration:
     post:
       summary: Resubmit corrected metadata for a rejected Doctor or Company account
@@ -504,13 +529,32 @@ components:
           minLength: 8
     VerifyContactRequest:
       type: object
-      required: [channel, verificationToken]
+      required: [channel]
       properties:
         channel:
           type: string
           enum: [Email, Phone]
         verificationToken:
           type: string
+          description: Legacy one-time contact verification token.
+        email:
+          type: string
+          format: email
+          description: Original registered email for Email OTP verification.
+        otp:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Six-digit Email OTP.
+    RequestContactVerification:
+      type: object
+      required: [email, channel]
+      properties:
+        email:
+          type: string
+          format: email
+        channel:
+          type: string
+          enum: [Email]
     ResubmissionRequest:
       type: object
       required: [resubmissionToken, verificationMetadata]

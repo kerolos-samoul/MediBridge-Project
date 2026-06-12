@@ -19,7 +19,7 @@
 
 **Purpose**: Prepare package references, test project structure, and configuration surfaces shared by all Phase 2 stories.
 
-**Manual Senior Review 2026-06-02**: Phase 1 setup remains complete. Package references, folder scaffolding, unit test project setup, and solution inclusion are present, and the full Phase 2 validation suite passes.
+**Manual Senior Review 2026-06-08**: Phase 1 setup remains complete. Package references, folder scaffolding, unit test project setup, and solution inclusion are present. Manual architecture review confirms Identity/Approval controllers depend only on service interfaces, Core has no EF Core/ASP.NET Identity/HTTP references, Repository owns EF Core and ASP.NET Identity infrastructure, Services own identity decisions, and production async paths avoid sync-over-async/fire-and-forget work. Focused validation passed for unit, contract, build, and Identity/Approval integration suites; the legacy Phase 2 scope guard is now tripped only by separate Phase 4 placeholder files in the current worktree.
 
 - [X] T001 Add `Microsoft.AspNetCore.Identity.EntityFrameworkCore` version `8.0.11`, `Microsoft.EntityFrameworkCore.SqlServer` version `8.0.11`, and `Microsoft.EntityFrameworkCore.Design` version `8.0.11` to `MediBridge.Repository/MediBridge.Repository.csproj` if missing; keep `PrivateAssets=all` on the design package.
 - [X] T002 Add `FluentValidation` version `11.10.0` to `MediBridge.Services/MediBridge.Services.csproj` if missing.
@@ -47,6 +47,8 @@
 **Critical**: No user-story implementation should begin until this phase is complete.
 
 **Manual Senior Review 2026-06-02**: Phase 2 foundational identity model and infrastructure are complete. Architecture review confirms Core remains EF/HTTP-free, controllers remain HTTP-only, Services own identity decisions, Repository owns EF Core/SQL Server and ASP.NET Identity infrastructure, and async token lifecycle paths use transactional repository boundaries. A logout refresh-family revocation edge case found during review was fixed and covered by regression test `Logout_WithRotatedToken_RevokesRefreshFamily`.
+
+**Manual Senior Review 2026-06-08**: Phase 2 Identity and Approval remains complete after a fresh manual senior review. `AuthController` and `AdminAccountsController` stay HTTP-only and depend on service interfaces; `AuthService` and `AdminAccountService` own registration, approval, refresh rotation, reuse detection, logout revocation, reset, verification, and resubmission decisions; Core identity types remain free of EF Core, ASP.NET Identity, and HTTP dependencies; Repository owns EF Core SQL Server mappings, Identity stores, update-lock token reads, and unit-of-work transaction boundaries. Focused Phase 2 validation passed with a process-only dummy `CLOUDINARY_URL`: unit validation/refresh tests 8/8, contract Identity/Admin/Recovery/Resubmission tests 38/38, and integration Identity/Admin/AuthAudit/Role/Layering tests 48/48. Current full Phase 2 scope-guard execution is affected only by separate Phase 4 file workflow changes in the working tree, not by Phase 2 Identity and Approval code.
 
 [X] T017 Create `MediBridge.Core/Enums/UserRole.cs` with exact values `Admin`, `Doctor`, and `Company`; include a code comment that `Company` is the internal role code for the constitution term `Pharmaceutical Company`.
 [X] T018 Create `MediBridge.Core/Enums/AccountStatus.cs` with exact values `Pending`, `Approved`, `Rejected`, `Suspended`, and `Inactive`.
@@ -282,6 +284,19 @@
 - [X] T150 Run `dotnet format .\MediBridge.slnx --verify-no-changes`; fix formatting issues if the command reports any.
 - [X] T151 Run `dotnet test .\MediBridge.slnx`; all contract, integration, and unit tests must pass before implementation is considered complete.
 - [X] T152 Run a final constitution review against `.specify/memory/constitution.md` and document any deviations in `specs/002-identity-approval/plan.md`; expected result is no deviations.
+
+---
+
+## 2026-06-09 Email OTP Contact Verification Addendum
+
+- [X] T164 Add automatic Email OTP creation for successful Doctor and Company registration.
+- [X] T165 Store only hashed OTP values in `ContactVerificationFlow`; never persist plaintext OTP.
+- [X] T166 Add OTP lifecycle columns for failed attempt count, max-attempt lock, supersession timestamp, and last sent timestamp.
+- [X] T167 Add SMTP email sender abstraction and Gmail SMTP configuration for graduation/testing.
+- [X] T168 Redirect Development/testing email delivery to `medibridge7@gmail.com` while including the originally registered email in the message body.
+- [X] T169 Extend `POST /api/auth/verify-contact` to accept Email OTP payloads while preserving legacy one-time token verification.
+- [X] T170 Add `POST /api/auth/request-contact-verification` for resend, cooldown enforcement, and old OTP supersession.
+- [X] T171 Add integration coverage for registration OTP generation, hashed storage, email override, valid/replayed/expired/invalid/max-attempt OTP verification, resend invalidation, and cooldown.
 
 ---
 

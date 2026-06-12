@@ -22,6 +22,8 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         IWalletTransactionRepository walletTransactions,
         IWalletLedgerEntryRepository walletLedgerEntries,
         IStoredFileRepository storedFiles,
+        IFileReviewRepository fileReviews,
+        IFileAccessGrantAuditRepository fileAccessGrantAudits,
         IPolicyHistoryRepository policyHistory,
         IAuditEventRepository auditEvents)
     {
@@ -33,6 +35,8 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         WalletTransactions = walletTransactions;
         WalletLedgerEntries = walletLedgerEntries;
         StoredFiles = storedFiles;
+        FileReviews = fileReviews;
+        FileAccessGrantAudits = fileAccessGrantAudits;
         PolicyHistory = policyHistory;
         AuditEvents = auditEvents;
     }
@@ -44,6 +48,8 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     public IWalletTransactionRepository WalletTransactions { get; }
     public IWalletLedgerEntryRepository WalletLedgerEntries { get; }
     public IStoredFileRepository StoredFiles { get; }
+    public IFileReviewRepository FileReviews { get; }
+    public IFileAccessGrantAuditRepository FileAccessGrantAudits { get; }
     public IPolicyHistoryRepository PolicyHistory { get; }
     public IAuditEventRepository AuditEvents { get; }
 

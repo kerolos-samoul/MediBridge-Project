@@ -11,6 +11,10 @@ public sealed class ContactVerificationFlow
     public string DestinationHash { get; set; } = string.Empty;
     public string TokenHash { get; set; } = string.Empty;
     public DateTime ExpiresAtUtc { get; set; }
+    public int FailedAttemptCount { get; set; }
+    public DateTime? MaxAttemptsReachedAtUtc { get; set; }
+    public DateTime? SupersededAtUtc { get; set; }
+    public DateTime LastSentAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? ConsumedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }

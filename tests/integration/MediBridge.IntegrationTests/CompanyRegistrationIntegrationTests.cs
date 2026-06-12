@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
+using MediBridge.Core.Interfaces.Identity;
 using MediBridge.IntegrationTests.TestHost;
 using MediBridge.Repository.Data;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +47,23 @@ public sealed class CompanyRegistrationIntegrationTests
         Assert.Equal("application/pdf", profile.VerificationContentType);
         Assert.Equal(2048, profile.VerificationSizeBytes);
         Assert.StartsWith("ref-", profile.VerificationReference, StringComparison.Ordinal);
+
+        var flow = await db.ContactVerificationFlows.SingleAsync(candidate => candidate.UserId == user.Id);
+        Assert.Equal("Email", flow.Channel.ToString());
+        Assert.False(string.IsNullOrWhiteSpace(flow.TokenHash));
+        Assert.False(flow.TokenHash.All(char.IsDigit));
+        Assert.InRange(flow.ExpiresAtUtc - flow.CreatedAtUtc, TimeSpan.FromMinutes(9), TimeSpan.FromMinutes(11));
+        Assert.Null(flow.ConsumedAtUtc);
+
+        var tokenService = scope.ServiceProvider.GetRequiredService<IAuthTokenService>();
+        var emailSink = factory.Services.GetRequiredService<TestEmailSink>();
+        var message = Assert.Single(emailSink.Messages);
+        var otp = Regex.Match(message.Body, "\\b\\d{6}\\b").Value;
+        Assert.False(string.IsNullOrWhiteSpace(otp));
+        Assert.Equal("medibridge7@gmail.com", message.RecipientEmail);
+        Assert.Contains(email, message.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(flow.TokenHash, tokenService.HashToken(otp));
+        Assert.NotEqual(otp, flow.TokenHash);
     }
 
     [Fact]

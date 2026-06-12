@@ -35,6 +35,16 @@ public sealed class CampaignRepository : ICampaignRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<bool> IsActiveDraftCampaignOwnedByCompanyAsync(string campaignId, string companyId, CancellationToken cancellationToken = default)
+    {
+        return context.Campaigns.AnyAsync(
+            campaign => campaign.Id == campaignId &&
+                        campaign.CompanyId == companyId &&
+                        campaign.Status == CampaignStatus.Draft &&
+                        !campaign.IsDeleted,
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> ListActiveCampaignIdsByCompanyAsync(string companyId, CancellationToken cancellationToken = default)
     {
         return await context.Campaigns
