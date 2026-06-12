@@ -38,13 +38,14 @@ public sealed class MediBridgeIdentityUser : IdentityUser
     public static MediBridgeIdentityUser FromDomain(ApplicationUser user)
     {
         var normalizedEmail = user.Email.Trim().ToUpperInvariant();
+        var normalizedUserName = user.Id.Trim().ToUpperInvariant();
 
         return new MediBridgeIdentityUser
         {
             Id = user.Id,
-            UserName = user.Email,
+            UserName = user.Id,
             Email = user.Email,
-            NormalizedUserName = normalizedEmail,
+            NormalizedUserName = normalizedUserName,
             NormalizedEmail = normalizedEmail,
             PhoneNumber = user.PhoneNumber,
             Role = user.Role,

@@ -93,9 +93,9 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
         }
 
         existingUser.Email = user.Email;
-        existingUser.UserName = user.Email;
+        existingUser.UserName = user.Id;
         existingUser.NormalizedEmail = NormalizeEmail(user.Email);
-        existingUser.NormalizedUserName = NormalizeEmail(user.Email);
+        existingUser.NormalizedUserName = NormalizeEmail(user.Id);
         existingUser.PhoneNumber = user.PhoneNumber;
         existingUser.Role = user.Role;
         existingUser.AccountStatus = user.AccountStatus;
