@@ -59,6 +59,9 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<CloudinaryFileStorageProvider>();
         services.AddScoped<DisabledFileStorageProvider>();
         services.AddScoped<IFileWorkflowService, FileWorkflowService>();
+        services.AddScoped<ICompanyDoctorSearchService, CompanyDoctorSearchService>();
+        services.AddScoped<ICampaignWorkflowService, CampaignWorkflowService>();
+        services.AddScoped<ICompanyWalletService, CompanyWalletService>();
 
         RegisterValidators(services, typeof(IdentityServiceCollectionExtensions).Assembly);
 

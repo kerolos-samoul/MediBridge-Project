@@ -26,6 +26,12 @@ public enum CampaignReviewDecision
     ChangesRequested = 3
 }
 
+public enum CampaignSubmissionRequestStatus
+{
+    Succeeded = 1,
+    FailedValidation = 2
+}
+
 public enum QueueItemStatus
 {
     Queued = 1,

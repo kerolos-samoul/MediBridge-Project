@@ -177,6 +177,95 @@ public sealed class ProfileRepository : IProfileRepository
     {
         return context.CompanyProfiles.AnyAsync(profile => profile.LicenseNumber == licenseNumber, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<DoctorProfile>> SearchEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, int skip, int take, CancellationToken cancellationToken = default)
+    {
+        return await ApplyEligibleDoctorFilters(criteria)
+            .OrderByDescending(profile => profile.ActivityScore)
+            .ThenBy(profile => profile.PricePerMessage)
+            .ThenBy(profile => profile.Id)
+            .Skip(Math.Max(skip, 0))
+            .Take(Math.Max(take, 1))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DoctorProfile>> ListEligibleDoctorsByIdsAsync(IReadOnlyCollection<string> doctorIds, CancellationToken cancellationToken = default)
+    {
+        var distinctIds = doctorIds
+            .Where(id => string.IsNullOrWhiteSpace(id) is false)
+            .Select(id => id.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (distinctIds.Length == 0)
+        {
+            return Array.Empty<DoctorProfile>();
+        }
+
+        return await ApplyEligibleDoctorFilters(new EligibleDoctorSearchCriteria(null, null, null, null, null, null, null))
+            .Where(profile => distinctIds.Contains(profile.Id))
+            .OrderByDescending(profile => profile.ActivityScore)
+            .ThenBy(profile => profile.PricePerMessage)
+            .ThenBy(profile => profile.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, CancellationToken cancellationToken = default)
+    {
+        return ApplyEligibleDoctorFilters(criteria).CountAsync(cancellationToken);
+    }
+
+    private IQueryable<DoctorProfile> ApplyEligibleDoctorFilters(EligibleDoctorSearchCriteria criteria)
+    {
+        var query =
+            from profile in context.DoctorProfiles
+            join user in context.Users on profile.UserId equals user.Id
+            where !profile.IsDeleted
+                  && profile.Status == DoctorMarketplaceStatus.Active
+                  && profile.PricePerMessage > 0
+                  && !user.IsDeleted
+                  && user.Role == UserRole.Doctor
+                  && user.AccountStatus == AccountStatus.Approved
+            select profile;
+
+        if (string.IsNullOrWhiteSpace(criteria.Specialization) is false)
+        {
+            var specialization = criteria.Specialization.Trim();
+            query = query.Where(profile => profile.Specialization == specialization);
+        }
+
+        if (criteria.MinExperienceYears.HasValue)
+        {
+            query = query.Where(profile => profile.ExperienceYears >= criteria.MinExperienceYears.Value);
+        }
+
+        if (criteria.MaxExperienceYears.HasValue)
+        {
+            query = query.Where(profile => profile.ExperienceYears <= criteria.MaxExperienceYears.Value);
+        }
+
+        if (string.IsNullOrWhiteSpace(criteria.Location) is false)
+        {
+            var location = criteria.Location.Trim();
+            query = query.Where(profile => profile.Location == location);
+        }
+
+        if (criteria.MinActivityScore.HasValue)
+        {
+            query = query.Where(profile => profile.ActivityScore >= criteria.MinActivityScore.Value);
+        }
+
+        if (criteria.MinPrice.HasValue)
+        {
+            query = query.Where(profile => profile.PricePerMessage >= criteria.MinPrice.Value);
+        }
+
+        if (criteria.MaxPrice.HasValue)
+        {
+            query = query.Where(profile => profile.PricePerMessage <= criteria.MaxPrice.Value);
+        }
+
+        return query;
+    }
 }
 
 public sealed class RefreshCredentialRepository : IRefreshCredentialRepository

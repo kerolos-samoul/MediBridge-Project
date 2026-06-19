@@ -4,6 +4,10 @@
 @AdminToken = replace-with-admin-jwt
 @FileId = replace-with-file-id
 @CampaignId = replace-with-campaign-id
+@AssetId = replace-with-approved-campaign-asset-id
+@DoctorId = replace-with-eligible-doctor-id
+@CampaignIdempotencyKey = campaign-idem-001
+@WalletTopUpIdempotencyKey = wallet-topup-idem-001
 @RegisteredEmail = doctor@example.com
 @EmailOtp = replace-with-six-digit-otp
 
@@ -125,3 +129,69 @@ Authorization: Bearer {{AdminToken}}
 Accept: application/json
 
 ###
+
+### Search eligible company campaign doctors
+GET {{MediBridge.APIs_HostAddress}}/api/company/doctors?PageNumber=1&PageSize=20&specialization=Cardiology&minExperienceYears=3&maxExperienceYears=20&location=Cairo&minActivityScore=70&minPrice=10&maxPrice=100
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Expected envelope shape
+# {
+#   "Code": 200,
+#   "Message": "Success",
+#   "Data": {
+#     "Page": { "PageNumber": 1, "PageSize": 20, "TotalCount": 1 },
+#     "Items": [
+#       {
+#         "DoctorId": "doctor-id",
+#         "Specialization": "Cardiology",
+#         "ExperienceYears": 7,
+#         "Location": "Cairo",
+#         "ActivityScore": 95,
+#         "PricePerMessage": 50
+#       }
+#     ]
+#   }
+# }
+
+### Submit a company campaign for review
+POST {{MediBridge.APIs_HostAddress}}/api/company/campaigns
+Authorization: Bearer {{CompanyToken}}
+Idempotency-Key: {{CampaignIdempotencyKey}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Title": "Cardiology awareness campaign",
+  "Description": "Evidence-backed product information for selected cardiologists.",
+  "ClinicalResearchInfo": "Summarized approved clinical research reference for review.",
+  "AssetIds": ["{{AssetId}}"],
+  "TargetDoctorIds": ["{{DoctorId}}"]
+}
+
+### List company-owned campaigns
+GET {{MediBridge.APIs_HostAddress}}/api/company/campaigns?PageNumber=1&PageSize=20&status=PendingReview
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Get company-owned campaign detail
+GET {{MediBridge.APIs_HostAddress}}/api/company/campaigns/{{CampaignId}}
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Query company wallet
+GET {{MediBridge.APIs_HostAddress}}/api/company/wallet?PageNumber=1&PageSize=20
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Top up company wallet through MVP gateway stub
+POST {{MediBridge.APIs_HostAddress}}/api/company/wallet/topup
+Authorization: Bearer {{CompanyToken}}
+Idempotency-Key: {{WalletTopUpIdempotencyKey}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Amount": 150.00,
+  "Description": "Manual Phase 5 wallet top-up smoke check"
+}

@@ -32,6 +32,17 @@ public sealed class WalletTransactionRepository : IWalletTransactionRepository
         }, cancellationToken);
     }
 
+    public async Task AddTransactionAsync(WalletTransaction transaction, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(transaction.IdempotencyKey))
+        {
+            throw new ArgumentException("Idempotency key is required.", nameof(transaction));
+        }
+
+        transaction.Amount = MoneyRules.EnsurePositive(transaction.Amount, nameof(transaction.Amount));
+        await context.WalletTransactions.AddAsync(transaction, cancellationToken);
+    }
+
     public Task<string?> FindTransactionIdByIdempotencyAsync(WalletTransactionType operationType, string idempotencyKey, CancellationToken cancellationToken = default)
     {
         // Idempotency is scoped by operation type so different financial operations can reuse external keys safely.
@@ -39,6 +50,18 @@ public sealed class WalletTransactionRepository : IWalletTransactionRepository
             .Where(transaction => transaction.OperationType == operationType && transaction.IdempotencyKey == idempotencyKey)
             .Select(transaction => transaction.Id)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<WalletTransaction?> FindTransactionByIdempotencyAsync(WalletTransactionType operationType, string idempotencyKey, CancellationToken cancellationToken = default)
+    {
+        return context.WalletTransactions.FirstOrDefaultAsync(
+            transaction => transaction.OperationType == operationType && transaction.IdempotencyKey == idempotencyKey,
+            cancellationToken);
+    }
+
+    public Task<WalletTransaction?> FindTransactionByIdAsync(string transactionId, CancellationToken cancellationToken = default)
+    {
+        return context.WalletTransactions.FirstOrDefaultAsync(transaction => transaction.Id == transactionId, cancellationToken);
     }
 
     public Task<bool> IdempotencyKeyExistsAsync(WalletTransactionType operationType, string idempotencyKey, CancellationToken cancellationToken = default)
@@ -64,5 +87,21 @@ public sealed class WalletTransactionRepository : IWalletTransactionRepository
             .OrderBy(transaction => transaction.CreatedAtUtc)
             .Select(transaction => transaction.Id)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<WalletTransaction>> ListWalletTransactionsAsync(string walletId, int skip, int take, CancellationToken cancellationToken = default)
+    {
+        return await context.WalletTransactions
+            .Where(transaction => transaction.WalletId == walletId)
+            .OrderByDescending(transaction => transaction.CreatedAtUtc)
+            .ThenByDescending(transaction => transaction.Id)
+            .Skip(Math.Max(skip, 0))
+            .Take(Math.Max(take, 1))
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountWalletTransactionsAsync(string walletId, CancellationToken cancellationToken = default)
+    {
+        return context.WalletTransactions.CountAsync(transaction => transaction.WalletId == walletId, cancellationToken);
     }
 }

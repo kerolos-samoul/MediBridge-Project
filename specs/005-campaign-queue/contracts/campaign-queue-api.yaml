@@ -1,0 +1,370 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Campaign & Queue API
+  version: 0.1.0
+  description: Phase 5 company doctor search, campaign submission, approved-campaign queue creation, and company wallet workflows.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+paths:
+  /company/doctors:
+    get:
+      summary: Search eligible doctors for campaign targeting
+      tags: [Company Doctors]
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: specialization
+          in: query
+          schema: { type: string }
+        - name: minExperienceYears
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: maxExperienceYears
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: location
+          in: query
+          schema: { type: string }
+        - name: minActivityScore
+          in: query
+          schema: { type: number, format: decimal, minimum: 0, maximum: 100 }
+        - name: minPrice
+          in: query
+          schema: { type: number, format: decimal, minimum: 0 }
+        - name: maxPrice
+          in: query
+          schema: { type: number, format: decimal, minimum: 0 }
+      responses:
+        '200':
+          description: Eligible doctors ordered by activity score descending, price ascending, stable identifier ascending.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorSearchEnvelope'
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimitEnvelope' }
+  /company/campaigns:
+    post:
+      summary: Submit a campaign for admin review
+      tags: [Company Campaigns]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignRequest'
+      responses:
+        '201':
+          description: Campaign submitted in PendingReview with target snapshots and no queue rows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDetailEnvelope'
+        '200':
+          description: Idempotent retry returned the existing campaign submission result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDetailEnvelope'
+        '400': { $ref: '#/components/responses/ValidationEnvelope' }
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '409': { $ref: '#/components/responses/ConflictEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimitEnvelope' }
+    get:
+      summary: List campaigns owned by the authenticated company
+      tags: [Company Campaigns]
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CampaignStatus'
+      responses:
+        '200':
+          description: Company-owned campaign page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignListEnvelope'
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+  /company/campaigns/{campaignId}:
+    get:
+      summary: Get a company-owned campaign detail
+      tags: [Company Campaigns]
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Company-owned campaign detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignDetailEnvelope'
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '404': { $ref: '#/components/responses/NotFoundEnvelope' }
+  /company/wallet:
+    get:
+      summary: Get company wallet balance and transaction page
+      tags: [Company Wallet]
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Company wallet balance and transactions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyWalletEnvelope'
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+  /company/wallet/topup:
+    post:
+      summary: Top up company wallet through MVP gateway stub
+      tags: [Company Wallet]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopUpCompanyWalletRequest'
+      responses:
+        '200':
+          description: Top-up applied or idempotent retry returned existing result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopUpCompanyWalletEnvelope'
+        '400': { $ref: '#/components/responses/ValidationEnvelope' }
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '409': { $ref: '#/components/responses/ConflictEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimitEnvelope' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PageNumber:
+      name: PageNumber
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: PageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+  responses:
+    ValidationEnvelope:
+      description: Validation failure response envelope.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    UnauthorizedEnvelope:
+      description: Missing or invalid authentication.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    ForbiddenEnvelope:
+      description: Authenticated user is not allowed to access the resource.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    NotFoundEnvelope:
+      description: Resource not found or not visible to the actor.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    ConflictEnvelope:
+      description: Idempotency or state conflict.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    RateLimitEnvelope:
+      description: Too many requests.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+  schemas:
+    ApiEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code: { type: integer }
+        Message: { type: string }
+        Data: {}
+    ErrorEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              nullable: true
+    PageMetadata:
+      type: object
+      required: [PageNumber, PageSize, TotalCount]
+      properties:
+        PageNumber: { type: integer }
+        PageSize: { type: integer }
+        TotalCount: { type: integer }
+    DoctorSearchEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [Page, Items]
+              properties:
+                Page: { $ref: '#/components/schemas/PageMetadata' }
+                Items:
+                  type: array
+                  items: { $ref: '#/components/schemas/EligibleDoctor' }
+    EligibleDoctor:
+      type: object
+      required: [DoctorId, Specialization, ExperienceYears, Location, ActivityScore, PricePerMessage]
+      properties:
+        DoctorId: { type: string }
+        Specialization: { type: string }
+        ExperienceYears: { type: integer }
+        Location: { type: string }
+        ActivityScore: { type: number, format: decimal }
+        PricePerMessage: { type: number, format: decimal }
+    CreateCampaignRequest:
+      type: object
+      required: [Title, Description, ClinicalResearchInfo, AssetIds, TargetDoctorIds]
+      properties:
+        Title: { type: string, minLength: 1, maxLength: 200 }
+        Description: { type: string, minLength: 1, maxLength: 4000 }
+        ClinicalResearchInfo: { type: string, minLength: 1, maxLength: 4000 }
+        AssetIds:
+          type: array
+          minItems: 1
+          items: { type: string }
+        TargetDoctorIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: { type: string }
+    CampaignStatus:
+      type: string
+      enum: [Draft, PendingReview, Approved, Rejected, Active, Paused, Completed, Cancelled]
+    CampaignListEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [Page, Items]
+              properties:
+                Page: { $ref: '#/components/schemas/PageMetadata' }
+                Items:
+                  type: array
+                  items: { $ref: '#/components/schemas/CampaignSummary' }
+    CampaignSummary:
+      type: object
+      required: [CampaignId, Title, Status, TargetCount, SubmittedAtUtc]
+      properties:
+        CampaignId: { type: string }
+        Title: { type: string }
+        Status: { $ref: '#/components/schemas/CampaignStatus' }
+        TargetCount: { type: integer }
+        SubmittedAtUtc: { type: string, format: date-time }
+    CampaignDetailEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data: { $ref: '#/components/schemas/CampaignDetail' }
+    CampaignDetail:
+      allOf:
+        - $ref: '#/components/schemas/CampaignSummary'
+        - type: object
+          required: [Description, ClinicalResearchInfo, Assets]
+          properties:
+            Description: { type: string }
+            ClinicalResearchInfo: { type: string }
+            Assets:
+              type: array
+              items:
+                type: object
+                required: [FileId, Purpose, ReviewStatus]
+                properties:
+                  FileId: { type: string }
+                  Purpose: { type: string }
+                  ReviewStatus: { type: string }
+    CompanyWalletEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [WalletId, AvailableBalance, ReservedBalance, Currency, Transactions]
+              properties:
+                WalletId: { type: string }
+                AvailableBalance: { type: number, format: decimal }
+                ReservedBalance: { type: number, format: decimal }
+                Currency: { type: string, enum: [EGP] }
+                Transactions:
+                  type: object
+                  required: [Page, Items]
+                  properties:
+                    Page: { $ref: '#/components/schemas/PageMetadata' }
+                    Items:
+                      type: array
+                      items: { $ref: '#/components/schemas/WalletTransaction' }
+    WalletTransaction:
+      type: object
+      required: [TransactionId, OperationType, Amount, Currency, CreatedAtUtc]
+      properties:
+        TransactionId: { type: string }
+        OperationType: { type: string, enum: [TopUp] }
+        Amount: { type: number, format: decimal }
+        Currency: { type: string, enum: [EGP] }
+        CreatedAtUtc: { type: string, format: date-time }
+        Description: { type: string, nullable: true }
+    TopUpCompanyWalletRequest:
+      type: object
+      required: [Amount]
+      properties:
+        Amount: { type: number, format: decimal, minimum: 100 }
+        Description: { type: string, maxLength: 500 }
+    TopUpCompanyWalletEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [WalletId, TransactionId, AvailableBalance, ReservedBalance, Currency, IdempotencyStatus]
+              properties:
+                WalletId: { type: string }
+                TransactionId: { type: string }
+                AvailableBalance: { type: number, format: decimal }
+                ReservedBalance: { type: number, format: decimal }
+                Currency: { type: string, enum: [EGP] }
+                IdempotencyStatus: { type: string, enum: [Created, Replayed] }

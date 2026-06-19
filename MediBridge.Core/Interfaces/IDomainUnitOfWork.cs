@@ -1,5 +1,6 @@
 using MediBridge.Core.Interfaces.Campaigns;
 using MediBridge.Core.Interfaces.Files;
+using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Core.Interfaces.Policies;
 using MediBridge.Core.Interfaces.Wallets;
@@ -9,6 +10,7 @@ namespace MediBridge.Core.Interfaces;
 public interface IDomainUnitOfWork
 {
     ICampaignRepository Campaigns { get; }
+    IProfileRepository Profiles { get; }
     IMessageQueueRepository MessageQueues { get; }
     IDeliveryRepository Deliveries { get; }
     IWalletRepository Wallets { get; }

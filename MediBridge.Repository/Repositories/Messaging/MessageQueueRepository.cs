@@ -27,6 +27,44 @@ public sealed class MessageQueueRepository : IMessageQueueRepository
         }, cancellationToken);
     }
 
+    public async Task AddQueueItemsAsync(IEnumerable<DoctorMessageQueue> queueItems, CancellationToken cancellationToken = default)
+    {
+        await context.DoctorMessageQueues.AddRangeAsync(queueItems, cancellationToken);
+    }
+
+    public async Task<bool> TryAddQueueItemAsync(DoctorMessageQueue queueItem, CancellationToken cancellationToken = default)
+    {
+        var status = (int)queueItem.Status;
+        var rowsAffected = await context.Database.ExecuteSqlInterpolatedAsync($"""
+            IF NOT EXISTS (
+                SELECT 1
+                FROM [DoctorMessageQueues] WITH (UPDLOCK, HOLDLOCK)
+                WHERE [CampaignId] = {queueItem.CampaignId}
+                    AND [DoctorId] = {queueItem.DoctorId}
+            )
+            BEGIN
+                INSERT INTO [DoctorMessageQueues]
+                    ([Id], [DoctorId], [CampaignId], [QueuedAtUtc], [CampaignSubmittedAtUtc], [Status], [CreatedAtUtc], [UpdatedAtUtc])
+                VALUES
+                    ({queueItem.Id}, {queueItem.DoctorId}, {queueItem.CampaignId}, {queueItem.QueuedAtUtc}, {queueItem.CampaignSubmittedAtUtc}, {status}, {queueItem.CreatedAtUtc}, {queueItem.UpdatedAtUtc})
+            END
+            """, cancellationToken);
+
+        return rowsAffected > 0;
+    }
+
+    public Task<bool> QueueItemExistsAsync(string campaignId, string doctorId, CancellationToken cancellationToken = default)
+    {
+        return context.DoctorMessageQueues.AnyAsync(queue => queue.CampaignId == campaignId && queue.DoctorId == doctorId, cancellationToken);
+    }
+
+    public Task<DoctorMessageQueue?> FindQueueItemAsync(string campaignId, string doctorId, CancellationToken cancellationToken = default)
+    {
+        return context.DoctorMessageQueues.FirstOrDefaultAsync(
+            queue => queue.CampaignId == campaignId && queue.DoctorId == doctorId,
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> ListActiveQueueItemIdsForDoctorAsync(string doctorId, QueueItemStatus status, CancellationToken cancellationToken = default)
     {
         return await context.DoctorMessageQueues
@@ -34,6 +72,17 @@ public sealed class MessageQueueRepository : IMessageQueueRepository
             .OrderBy(queue => queue.QueuedAtUtc)
             .ThenBy(queue => queue.Id)
             .Select(queue => queue.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DoctorMessageQueue>> ListQueueItemsForDoctorAsync(string doctorId, QueueItemStatus status, int skip, int take, CancellationToken cancellationToken = default)
+    {
+        return await context.DoctorMessageQueues
+            .Where(queue => queue.DoctorId == doctorId && queue.Status == status)
+            .OrderBy(queue => queue.QueuedAtUtc)
+            .ThenBy(queue => queue.Id)
+            .Skip(Math.Max(skip, 0))
+            .Take(Math.Max(take, 1))
             .ToListAsync(cancellationToken);
     }
 
