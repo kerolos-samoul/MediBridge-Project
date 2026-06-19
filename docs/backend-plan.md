@@ -533,16 +533,27 @@ Exit criteria (Definition of Done):
 Objective: Enable companies to target doctors and create campaigns that enqueue doctor-specific
 messages for the next daily injection.
 
-Detailed tasks:
+Implemented Phase 5 slice:
 
-- Implement doctor filtering (specialization, experience, location, activity, price) with
-  pagination.
-- Implement campaign creation with target doctor selection.
-- Persist `CampaignTarget` rows for selected doctors and targeting snapshots.
-- Put newly submitted campaigns into `PendingReview` rather than immediately activating them.
-- On admin approval, create `DoctorMessageQueue` rows per targeted doctor with FIFO ordering.
-- Implement company wallet top-up (gateway stub acceptable in v1).
-- Add company wallet querying (balance + transactions).
+- Company doctor search is available at `GET /api/company/doctors` with specialization,
+  experience, location, activity score, price filters, standard pagination, and deterministic
+  ordering by activity score descending, price ascending, then stable identifier ascending.
+- Campaign submission is available at `POST /api/company/campaigns` for approved company
+  users, requires an `Idempotency-Key`, required content, at least one approved campaign
+  asset, and 1-100 unique eligible target doctors.
+- Accepted campaign submissions are saved as `PendingReview`, persist immutable
+  `CampaignTarget` snapshots, and create no queue rows before approval.
+- Campaign list/detail are available at `GET /api/company/campaigns` and
+  `GET /api/company/campaigns/{id}` for the owning company only.
+- Approved-campaign queue creation exists as trusted service behavior and creates
+  retry-safe `DoctorMessageQueue` rows per still-eligible target with FIFO ordering keys.
+- Company wallet query and MVP stub top-up are available at `GET /api/company/wallet` and
+  `POST /api/company/wallet/topup`; top-up credits available balance only, creates an
+  append-only `TopUp` transaction plus available-balance ledger entry, and uses idempotency
+  to prevent duplicate financial effects.
+- Phase 5 scope excludes daily injector jobs, expiry jobs, doctor inbox/read/interact,
+  settlement, reporting analytics, withdrawals, weekly enforcement, activity score jobs,
+  and production payment gateway integration.
 
 Related components:
 

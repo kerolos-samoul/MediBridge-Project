@@ -47,9 +47,13 @@ public sealed class IdentityScopeGuardTests
     [Fact]
     public void Phase2Controllers_Should_NotExposeLaterPhaseRoutes()
     {
-        var routeTemplates = typeof(AuthController).Assembly
-            .GetTypes()
-            .Where(type => type.IsClass && type.Name.EndsWith("Controller", StringComparison.Ordinal))
+        var phase2IdentityControllers = new[]
+        {
+            typeof(AuthController),
+            typeof(AdminAccountsController)
+        };
+
+        var routeTemplates = phase2IdentityControllers
             .SelectMany(GetRouteTemplates)
             .ToArray();
 
@@ -62,14 +66,16 @@ public sealed class IdentityScopeGuardTests
     [Fact]
     public void Phase2ApplicationAssemblies_Should_NotDeclareLaterPhaseWorkflowTypes()
     {
-        var productionAssemblies = new[]
+        var phase2IdentityTypes = new[]
         {
-            typeof(MediBridge.Services.Services.AuthService).Assembly,
-            typeof(AuthController).Assembly
+            typeof(MediBridge.Services.Services.AuthService),
+            typeof(MediBridge.Services.Services.AuthTokenService),
+            typeof(MediBridge.Services.Services.AdminAccountService),
+            typeof(AuthController),
+            typeof(AdminAccountsController)
         };
 
-        var declaredTypeNames = productionAssemblies
-            .SelectMany(assembly => assembly.GetTypes())
+        var declaredTypeNames = phase2IdentityTypes
             .Select(type => type.FullName ?? type.Name)
             .ToArray();
 

@@ -1,6 +1,7 @@
 using MediBridge.Core.Interfaces;
 using MediBridge.Core.Interfaces.Campaigns;
 using MediBridge.Core.Interfaces.Files;
+using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Core.Interfaces.Policies;
 using MediBridge.Core.Interfaces.Wallets;
@@ -16,6 +17,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     public DomainUnitOfWork(
         MediBridgeDbContext context,
         ICampaignRepository campaigns,
+        IProfileRepository profiles,
         IMessageQueueRepository messageQueues,
         IDeliveryRepository deliveries,
         IWalletRepository wallets,
@@ -29,6 +31,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     {
         this.context = context;
         Campaigns = campaigns;
+        Profiles = profiles;
         MessageQueues = messageQueues;
         Deliveries = deliveries;
         Wallets = wallets;
@@ -42,6 +45,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     }
 
     public ICampaignRepository Campaigns { get; }
+    public IProfileRepository Profiles { get; }
     public IMessageQueueRepository MessageQueues { get; }
     public IDeliveryRepository Deliveries { get; }
     public IWalletRepository Wallets { get; }

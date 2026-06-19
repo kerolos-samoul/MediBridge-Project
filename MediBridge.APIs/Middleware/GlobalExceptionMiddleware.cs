@@ -1,4 +1,5 @@
 using MediBridge.APIs.Contracts;
+using MediBridge.Services.Interfaces;
 using System.Text.Json;
 
 namespace MediBridge.APIs.Middleware;
@@ -31,11 +32,20 @@ public sealed class GlobalExceptionMiddleware
             }
 
             context.Response.Clear();
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            var (statusCode, message) = ex switch
+            {
+                Phase5ValidationException => (StatusCodes.Status400BadRequest, "Validation failed."),
+                Phase5ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden."),
+                Phase5NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
+                Phase5ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
+                _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
+            };
+
+            context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
 
             await context.Response.WriteAsJsonAsync(
-                ApiEnvelopeFactory.Create(500, "An unexpected error occurred.", data: (object?)null),
+                ApiEnvelopeFactory.Create(statusCode, message, data: (object?)null),
                 new JsonSerializerOptions { PropertyNamingPolicy = null },
                 context.RequestAborted);
         }

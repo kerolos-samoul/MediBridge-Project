@@ -15,4 +15,7 @@ public static class AuthorizationPolicies
     public const string CompanyCampaignFileUpload = "CompanyCampaignFileUpload";
     public const string DoctorVerificationUpload = "DoctorVerificationUpload";
     public const string AuthenticatedFileAccess = "AuthenticatedFileAccess";
+    public const string Phase5CompanyDoctorSearch = "Phase5CompanyDoctorSearch";
+    public const string Phase5CompanyCampaignAccess = "Phase5CompanyCampaignAccess";
+    public const string Phase5CompanyWalletAccess = "Phase5CompanyWalletAccess";
 }
