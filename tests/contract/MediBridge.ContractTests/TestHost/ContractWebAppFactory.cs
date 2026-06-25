@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc.Testing;
 using MediBridge.Core.Interfaces.Files;
+using MediBridge.Core.Interfaces.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -25,7 +26,10 @@ public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
             ["Jwt__Audience"] = "MediBridge.ContractTests.ApiClients",
             ["Jwt__SigningKey"] = "ContractTestSigningKey-ReplaceBeforeProduction-32Chars",
             ["Identity__SeedDevelopmentAdmin"] = "false",
-            ["FileStorage__UploadsEnabled"] = "false"
+            ["FileStorage__UploadsEnabled"] = "false",
+            ["ContactVerification__OneTimeSecretHashingKey"] = "contract-test-contact-verification-hashing-key",
+            ["ContactVerification__AllowOverrideRecipientEmail"] = "false",
+            ["PasswordReset__ResetLinkBaseUri"] = "https://localhost/reset-password"
         });
     }
 
@@ -42,13 +46,19 @@ public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
                 ["Jwt:Audience"] = "MediBridge.ContractTests.ApiClients",
                 ["Jwt:SigningKey"] = "ContractTestSigningKey-ReplaceBeforeProduction-32Chars",
                 ["Identity:SeedDevelopmentAdmin"] = "false",
-                ["FileStorage:UploadsEnabled"] = "false"
+                ["FileStorage:UploadsEnabled"] = "false",
+                ["ContactVerification:OneTimeSecretHashingKey"] = "contract-test-contact-verification-hashing-key",
+                ["ContactVerification:AllowOverrideRecipientEmail"] = "false",
+                ["PasswordReset:ResetLinkBaseUri"] = "https://localhost/reset-password"
             });
         });
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IFileStorageProvider>();
             services.AddSingleton<IFileStorageProvider, ContractFileStorageProvider>();
+            services.RemoveAll<IEmailDelivery>();
+            services.AddSingleton<InMemoryEmailDelivery>();
+            services.AddSingleton<IEmailDelivery>(provider => provider.GetRequiredService<InMemoryEmailDelivery>());
             services.AddSingleton<IStartupFilter, ForceHttpsStartupFilter>();
             services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
         });
@@ -106,6 +116,35 @@ public sealed class ContractWebAppFactory : WebApplicationFactory<Program>
             CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }
+
+    private sealed class InMemoryEmailDelivery : IEmailDelivery
+    {
+        private readonly List<DeliveredMessage> messages = new();
+
+        public IReadOnlyList<DeliveredMessage> Messages => messages;
+
+        public Task SendContactVerificationAsync(
+            string destination,
+            string oneTimeCode,
+            DateTime expiresAtUtc,
+            CancellationToken cancellationToken = default)
+        {
+            messages.Add(new DeliveredMessage(destination, "ContactVerification", oneTimeCode, expiresAtUtc));
+            return Task.CompletedTask;
+        }
+
+        public Task SendPasswordResetAsync(
+            string destination,
+            string resetToken,
+            DateTime expiresAtUtc,
+            CancellationToken cancellationToken = default)
+        {
+            messages.Add(new DeliveredMessage(destination, "PasswordReset", resetToken, expiresAtUtc));
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed record DeliveredMessage(string Destination, string Kind, string Secret, DateTime ExpiresAtUtc);
 
     private sealed class TestEnvironmentScope : IDisposable
     {

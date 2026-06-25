@@ -6,6 +6,7 @@ using MediBridge.Services.Interfaces;
 using MediBridge.Services.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace MediBridge.Services.Extensions;
 
@@ -17,12 +18,22 @@ public static class IdentityServiceCollectionExtensions
         configuration.GetSection(AuthTokenOptions.SectionName).Bind(tokenOptions);
         tokenOptions.Validate();
 
+        var contactVerificationOptions = new ContactVerificationOptions();
+        configuration.GetSection(ContactVerificationOptions.SectionName).Bind(contactVerificationOptions);
+        contactVerificationOptions.Validate(tokenOptions.SigningKey);
+
+        var passwordResetOptions = new PasswordResetOptions();
+        configuration.GetSection(PasswordResetOptions.SectionName).Bind(passwordResetOptions);
+        passwordResetOptions.Validate();
+
         services.AddSingleton<IAuthTokenService>(_ => new AuthTokenService(
             tokenOptions.Issuer,
             tokenOptions.Audience,
             tokenOptions.SigningKey,
             tokenOptions.AccessTokenMinutes,
             tokenOptions.RefreshTokenDays));
+        services.AddSingleton(Options.Create(contactVerificationOptions));
+        services.AddSingleton(Options.Create(passwordResetOptions));
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAdminAccountService, AdminAccountService>();

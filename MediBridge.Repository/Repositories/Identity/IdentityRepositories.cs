@@ -26,6 +26,18 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
         return user?.ToDomain();
     }
 
+    public async Task<ApplicationUser?> FindByIdForUpdateAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var user = await context.Users
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [Users] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [Id] = {userId}
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+        return user?.ToDomain();
+    }
+
     public async Task<ApplicationUser?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = NormalizeEmail(email);
@@ -78,6 +90,11 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
 
         if (result.Succeeded is false)
         {
+            if (result.Errors.Any(IsDuplicateIdentityError))
+            {
+                throw new IdentityRecordConflictException("Duplicate email, phone, or license.");
+            }
+
             throw new InvalidOperationException(string.Join(", ", result.Errors.Select(error => error.Description)));
         }
 
@@ -142,6 +159,12 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
     {
         return email.Trim().ToUpperInvariant();
     }
+
+    private static bool IsDuplicateIdentityError(IdentityError error)
+    {
+        return error.Code.StartsWith("Duplicate", StringComparison.OrdinalIgnoreCase)
+            || error.Description.Contains("already", StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 public sealed class ProfileRepository : IProfileRepository
@@ -163,9 +186,22 @@ public sealed class ProfileRepository : IProfileRepository
         await context.CompanyProfiles.AddAsync(profile, cancellationToken);
     }
 
+    public Task<DoctorProfile?> FindDoctorProfileByIdAsync(string doctorId, CancellationToken cancellationToken = default)
+    {
+        return context.DoctorProfiles.FirstOrDefaultAsync(profile => profile.Id == doctorId, cancellationToken);
+    }
+
     public Task<DoctorProfile?> FindDoctorProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         return context.DoctorProfiles.FirstOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DoctorProfile>> ListDoctorProfilesAsync(CancellationToken cancellationToken = default)
+    {
+        return await context.DoctorProfiles
+            .OrderBy(profile => profile.CreatedAtUtc)
+            .ThenBy(profile => profile.Id)
+            .ToListAsync(cancellationToken);
     }
 
     public Task<CompanyProfile?> FindCompanyProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default)
@@ -303,6 +339,65 @@ public sealed class ContactVerificationFlowRepository : IContactVerificationFlow
                     AND [ExpiresAtUtc] >= {now}
                 """)
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<ContactVerificationFlow?> FindLatestActiveForUpdateAsync(
+        string userId,
+        ContactVerificationChannel channel,
+        DateTime nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var channelValue = channel.ToString();
+        return context.ContactVerificationFlows
+            .FromSqlInterpolated($"""
+                SELECT TOP(1) *
+                FROM [ContactVerificationFlows] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [UserId] = {userId}
+                    AND [Channel] = {channelValue}
+                    AND [ConsumedAtUtc] IS NULL
+                    AND [SupersededAtUtc] IS NULL
+                    AND [MaxAttemptsReachedAtUtc] IS NULL
+                    AND [ExpiresAtUtc] > {nowUtc}
+                ORDER BY [CreatedAtUtc] DESC
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task SupersedeActiveAsync(
+        string userId,
+        ContactVerificationChannel channel,
+        DateTime supersededAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var flows = await context.ContactVerificationFlows
+            .Where(flow => flow.UserId == userId
+                && flow.Channel == channel
+                && flow.ConsumedAtUtc == null
+                && flow.SupersededAtUtc == null)
+            .ToListAsync(cancellationToken);
+        foreach (var flow in flows)
+        {
+            flow.SupersededAtUtc = supersededAtUtc;
+        }
+    }
+
+    public Task RecordFailedAttemptAsync(ContactVerificationFlow flow, DateTime attemptedAtUtc, CancellationToken cancellationToken = default)
+    {
+        flow.FailedAttemptCount++;
+        if (flow.FailedAttemptCount >= flow.MaxAttemptCount)
+        {
+            flow.MaxAttemptsReachedAtUtc = attemptedAtUtc;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task MarkSentAsync(ContactVerificationFlow flow, DateTime sentAtUtc, CancellationToken cancellationToken = default)
+    {
+        flow.LastSentAtUtc = sentAtUtc;
+        flow.ResendCount++;
+        flow.ResendWindowStartedAtUtc ??= sentAtUtc;
+        return Task.CompletedTask;
     }
 
     public Task MarkConsumedAsync(ContactVerificationFlow flow, DateTime consumedAtUtc, CancellationToken cancellationToken = default)

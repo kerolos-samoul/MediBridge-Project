@@ -13,4 +13,12 @@ public sealed class ContactVerificationFlow
     public DateTime ExpiresAtUtc { get; set; }
     public DateTime? ConsumedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public int FailedAttemptCount { get; set; }
+    public string HashVersion { get; set; } = "hmac-sha256-v1";
+    public DateTime? LastSentAtUtc { get; set; }
+    public int MaxAttemptCount { get; set; } = 5;
+    public int ResendCount { get; set; }
+    public DateTime? ResendWindowStartedAtUtc { get; set; }
+    public DateTime? SupersededAtUtc { get; set; }
+    public DateTime? MaxAttemptsReachedAtUtc { get; set; }
 }

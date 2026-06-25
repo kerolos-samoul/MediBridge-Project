@@ -52,11 +52,17 @@ public sealed class ContactVerificationFlowConfiguration : IEntityTypeConfigurat
         builder.Property(flow => flow.Channel).HasConversion<string>().HasMaxLength(24).IsRequired();
         builder.Property(flow => flow.DestinationHash).HasMaxLength(256).IsRequired();
         builder.Property(flow => flow.TokenHash).HasMaxLength(256).IsRequired();
+        builder.Property(flow => flow.HashVersion).HasMaxLength(40).HasDefaultValue("hmac-sha256-v1").IsRequired();
+        builder.Property(flow => flow.FailedAttemptCount).HasDefaultValue(0);
+        builder.Property(flow => flow.MaxAttemptCount).HasDefaultValue(5);
+        builder.Property(flow => flow.ResendCount).HasDefaultValue(0);
         builder.HasOne<MediBridgeIdentityUser>()
             .WithMany()
             .HasForeignKey(flow => flow.UserId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(flow => flow.TokenHash).IsUnique();
+        builder.HasIndex(flow => new { flow.UserId, flow.Channel, flow.CreatedAtUtc });
+        builder.HasIndex(flow => new { flow.UserId, flow.Channel, flow.ConsumedAtUtc, flow.SupersededAtUtc, flow.ExpiresAtUtc });
     }
 }
 
