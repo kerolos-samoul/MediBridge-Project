@@ -145,6 +145,149 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
         }
     }
 
+    public async Task<CampaignAssetDto> ReplaceAssetAsync(
+        string companyUserId,
+        string campaignId,
+        string assetId,
+        CampaignAssetUploadRequestDto request,
+        Stream content,
+        CancellationToken cancellationToken = default)
+    {
+        var validation = await assetValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+        {
+            throw new WorkflowValidationException("Validation failed.");
+        }
+
+        var company = await GetApprovedCompanyAsync(companyUserId, cancellationToken);
+        var campaign = await GetOwnedCampaignAsync(company.Id, campaignId, cancellationToken);
+        if (campaign.Status != CampaignStatus.Draft)
+        {
+            throw new WorkflowConflictException("Campaign assets can only be replaced while the campaign is a draft.");
+        }
+
+        var existingAsset = await domainUnitOfWork.StoredFiles.FindStoredFileAsync(assetId, cancellationToken)
+            ?? throw new WorkflowNotFoundException("Not found.");
+        EnsureReplaceableAsset(existingAsset, campaign.Id);
+
+        var upload = await fileStorageProvider.UploadAsync(
+            new FileStorageUpload(
+                $"campaigns/{campaignId}",
+                request.OriginalFileName,
+                request.ContentType,
+                request.SizeBytes),
+            content,
+            cancellationToken);
+
+        try
+        {
+            return await domainUnitOfWork.ExecuteInTransactionAsync<CampaignAssetDto>(async transactionCancellationToken =>
+            {
+                var lockedCompany = await GetApprovedCompanyForUpdateAsync(companyUserId, transactionCancellationToken);
+                var lockedCampaign = await GetOwnedCampaignForUpdateAsync(lockedCompany.Id, campaignId, transactionCancellationToken);
+                if (lockedCampaign.Status != CampaignStatus.Draft)
+                {
+                    throw new WorkflowConflictException("Campaign assets can only be replaced while the campaign is a draft.");
+                }
+
+                var lockedAsset = await domainUnitOfWork.StoredFiles.FindStoredFileForUpdateAsync(assetId, transactionCancellationToken)
+                    ?? throw new WorkflowNotFoundException("Not found.");
+                EnsureReplaceableAsset(lockedAsset, lockedCampaign.Id);
+
+                var replacement = new StoredFile
+                {
+                    OwnerType = StoredFileOwnerType.Campaign,
+                    OwnerId = lockedCampaign.Id,
+                    Purpose = StoredFilePurpose.CampaignMedia,
+                    OriginalFileName = request.OriginalFileName.Trim(),
+                    ContentType = request.ContentType.Trim(),
+                    SizeBytes = request.SizeBytes,
+                    StorageKey = upload.StorageKey,
+                    StorageResourceType = upload.ResourceType,
+                    Visibility = StoredFileVisibility.Private,
+                    ReviewStatus = StoredFileReviewStatus.Pending,
+                    StorageState = StorageObjectState.Active,
+                    CreatedAtUtc = DateTime.UtcNow
+                };
+
+                lockedAsset.SupersededByFileId = replacement.Id;
+                await domainUnitOfWork.StoredFiles.AddStoredFileAsync(replacement, transactionCancellationToken);
+                return ToCampaignAssetDto(replacement);
+            }, cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                await fileStorageProvider.DeleteAsync(upload.StorageKey, upload.ResourceType, CancellationToken.None);
+            }
+            catch (Exception cleanupException)
+            {
+                await RecordStorageCleanupFailureAsync(upload.StorageKey, cleanupException, CancellationToken.None);
+            }
+
+            throw;
+        }
+    }
+
+    public async Task DeleteAssetAsync(
+        string companyUserId,
+        string campaignId,
+        string assetId,
+        CancellationToken cancellationToken = default)
+    {
+        var deletion = await domainUnitOfWork.ExecuteInTransactionAsync<AssetDeletionRequest?>(async transactionCancellationToken =>
+        {
+            var company = await GetApprovedCompanyForUpdateAsync(companyUserId, transactionCancellationToken);
+            var campaign = await GetOwnedCampaignForUpdateAsync(company.Id, campaignId, transactionCancellationToken);
+            if (campaign.Status != CampaignStatus.Draft)
+            {
+                throw new WorkflowConflictException("Campaign assets can only be deleted while the campaign is a draft.");
+            }
+
+            var asset = await domainUnitOfWork.StoredFiles.FindStoredFileForUpdateAsync(assetId, transactionCancellationToken)
+                ?? throw new WorkflowNotFoundException("Not found.");
+
+            if (asset.StorageState == StorageObjectState.Deleted)
+            {
+                return null;
+            }
+
+            EnsureDeletableAsset(asset, campaign.Id);
+            asset.StorageState = StorageObjectState.DeletionPending;
+            return new AssetDeletionRequest(asset.Id, asset.StorageKey, asset.StorageResourceType);
+        }, cancellationToken);
+
+        if (deletion is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await fileStorageProvider.DeleteAsync(deletion.StorageKey, deletion.ResourceType, cancellationToken);
+        }
+        catch (FileStorageUnavailableException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new FileStorageUnavailableException("File storage provider is unavailable.", exception);
+        }
+
+        await domainUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+        {
+            var asset = await domainUnitOfWork.StoredFiles.FindStoredFileForUpdateAsync(deletion.AssetId, transactionCancellationToken)
+                ?? throw new WorkflowNotFoundException("Not found.");
+            if (asset.StorageState != StorageObjectState.Deleted)
+            {
+                asset.StorageState = StorageObjectState.Deleted;
+                asset.DeletedAtUtc = DateTime.UtcNow;
+            }
+        }, cancellationToken);
+    }
+
     public async Task<TargetPreviewDto> PreviewTargetsAsync(string companyUserId, string campaignId, CancellationToken cancellationToken = default)
     {
         var company = await GetApprovedCompanyAsync(companyUserId, cancellationToken);
@@ -410,6 +553,53 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
         return MoneyRules.EnsureValid(total, nameof(total));
     }
 
+    private static void EnsureReplaceableAsset(StoredFile asset, string campaignId)
+    {
+        EnsureCampaignAsset(asset, campaignId);
+        if (asset.StorageState != StorageObjectState.Active
+            || asset.DeletedAtUtc is not null
+            || !string.IsNullOrWhiteSpace(asset.SupersededByFileId))
+        {
+            throw new WorkflowConflictException("Campaign asset is not replaceable.");
+        }
+
+        if (asset.ReviewStatus is not (StoredFileReviewStatus.Pending or StoredFileReviewStatus.Rejected))
+        {
+            throw new WorkflowConflictException("Approved campaign assets are immutable.");
+        }
+    }
+
+    private static void EnsureDeletableAsset(StoredFile asset, string campaignId)
+    {
+        EnsureCampaignAsset(asset, campaignId);
+        if (asset.StorageState == StorageObjectState.DeletionPending)
+        {
+            return;
+        }
+
+        if (asset.StorageState != StorageObjectState.Active
+            || asset.DeletedAtUtc is not null
+            || !string.IsNullOrWhiteSpace(asset.SupersededByFileId))
+        {
+            throw new WorkflowConflictException("Campaign asset is not deletable.");
+        }
+
+        if (asset.ReviewStatus is not (StoredFileReviewStatus.Pending or StoredFileReviewStatus.Rejected))
+        {
+            throw new WorkflowConflictException("Approved campaign assets are immutable.");
+        }
+    }
+
+    private static void EnsureCampaignAsset(StoredFile asset, string campaignId)
+    {
+        if (asset.OwnerType != StoredFileOwnerType.Campaign
+            || asset.Purpose != StoredFilePurpose.CampaignMedia
+            || !string.Equals(asset.OwnerId, campaignId, StringComparison.Ordinal))
+        {
+            throw new WorkflowNotFoundException("Not found.");
+        }
+    }
+
     private static string ValidateIdempotencyKey(string idempotencyKey)
     {
         var safeKey = idempotencyKey?.Trim();
@@ -450,4 +640,6 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
 
     private static string? NormalizeOptionalText(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed record AssetDeletionRequest(string AssetId, string StorageKey, string ResourceType);
 }

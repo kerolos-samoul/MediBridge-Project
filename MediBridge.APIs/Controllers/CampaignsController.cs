@@ -157,6 +157,86 @@ public sealed class CampaignsController : ControllerBase
     }
 
     /// <summary>
+    /// Replace a pending or rejected campaign media asset for an owned draft campaign.
+    /// </summary>
+    [HttpPost("{campaignId}/assets/{assetId}/replacement")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiEnvelope<CampaignAssetDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ApiEnvelope<CampaignAssetDto>>> ReplaceAsset(
+        string campaignId,
+        string assetId,
+        IFormFile? file,
+        CancellationToken cancellationToken)
+    {
+        var companyUserId = GetUserId();
+        if (string.IsNullOrWhiteSpace(companyUserId))
+        {
+            return Unauthorized(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status401Unauthorized, "Authentication denied.", null));
+        }
+
+        if (file is null || file.Length <= 0 || string.IsNullOrWhiteSpace(file.FileName) || string.IsNullOrWhiteSpace(file.ContentType))
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+
+        var request = new CampaignAssetUploadRequestDto(
+            Path.GetFileName(file.FileName),
+            file.ContentType,
+            file.Length);
+
+        try
+        {
+            await using var content = file.OpenReadStream();
+            var asset = await campaignWorkflowService.ReplaceAssetAsync(companyUserId, campaignId, assetId, request, content, cancellationToken);
+            return StatusCode(
+                StatusCodes.Status201Created,
+                ApiEnvelopeFactory.Create(StatusCodes.Status201Created, "Created", asset));
+        }
+        catch (Exception exception) when (IsWorkflowException(exception))
+        {
+            return WorkflowActionResultMapper.ToActionResult(exception);
+        }
+    }
+
+    /// <summary>
+    /// Delete a pending or rejected campaign media asset for an owned draft campaign.
+    /// </summary>
+    [HttpDelete("{campaignId}/assets/{assetId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> DeleteAsset(
+        string campaignId,
+        string assetId,
+        CancellationToken cancellationToken)
+    {
+        var companyUserId = GetUserId();
+        if (string.IsNullOrWhiteSpace(companyUserId))
+        {
+            return Unauthorized(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status401Unauthorized, "Authentication denied.", null));
+        }
+
+        try
+        {
+            await campaignWorkflowService.DeleteAssetAsync(companyUserId, campaignId, assetId, cancellationToken);
+            return NoContent();
+        }
+        catch (Exception exception) when (IsWorkflowException(exception))
+        {
+            return WorkflowActionResultMapper.ToActionResult(exception);
+        }
+    }
+
+    /// <summary>
     /// Submit campaign for admin review and reserve company funds.
     /// </summary>
     [HttpPost("{campaignId}/submit")]

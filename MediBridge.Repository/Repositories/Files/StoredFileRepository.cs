@@ -56,7 +56,9 @@ public sealed class StoredFileRepository : IStoredFileRepository
     public Task<string?> FindActiveStoredFileIdAsync(string storedFileId, CancellationToken cancellationToken = default)
     {
         return context.StoredFiles
-            .Where(file => file.Id == storedFileId)
+            .Where(file => file.Id == storedFileId
+                && file.StorageState == StorageObjectState.Active
+                && file.DeletedAtUtc == null)
             .Select(file => file.Id)
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -90,7 +92,9 @@ public sealed class StoredFileRepository : IStoredFileRepository
             file => file.OwnerType == ownerType
                 && file.OwnerId == ownerId
                 && file.Purpose == purpose
-                && file.ReviewStatus == reviewStatus,
+                && file.ReviewStatus == reviewStatus
+                && file.StorageState == StorageObjectState.Active
+                && file.DeletedAtUtc == null,
             cancellationToken);
     }
 }
