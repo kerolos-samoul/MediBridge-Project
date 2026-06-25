@@ -12,6 +12,10 @@ public sealed class StoredFile
     public string ContentType { get; set; } = string.Empty;
     public long SizeBytes { get; set; }
     public string StorageKey { get; set; } = string.Empty;
+    public string StorageResourceType { get; set; } = "raw";
+    public StorageObjectState StorageState { get; set; } = StorageObjectState.Active;
+    public string? SupersededByFileId { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
     public StoredFileVisibility Visibility { get; set; } = StoredFileVisibility.Private;
     public StoredFileReviewStatus ReviewStatus { get; set; } = StoredFileReviewStatus.Pending;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
