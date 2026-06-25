@@ -1,5 +1,6 @@
 using MediBridge.Repository.Data;
 using MediBridge.Repository.Data.Identity;
+using MediBridge.Repository.Auditing;
 using MediBridge.Repository.Repositories.Campaigns;
 using MediBridge.Repository.Repositories.Files;
 using MediBridge.Repository.Repositories.Identity;
@@ -84,6 +85,7 @@ public static class RepositoryServiceCollectionExtensions
             return new Cloudinary(options.CloudinaryUrl);
         });
         services.AddScoped<IFileStorageProvider, CloudinaryFileStorageProvider>();
+        services.AddScoped<IAuditLogger, DatabaseAuditLogger>();
         services.AddScoped<IPolicyHistoryRepository, PolicyHistoryRepository>();
         services.AddScoped<IAuditEventRepository, AuditEventRepository>();
         services.AddScoped<IDomainUnitOfWork, DomainUnitOfWork>();

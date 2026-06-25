@@ -32,6 +32,27 @@ public sealed class StoredFileRepository : IStoredFileRepository
         }, cancellationToken);
     }
 
+    public async Task AddStoredFileAsync(StoredFile storedFile, CancellationToken cancellationToken = default)
+    {
+        await context.StoredFiles.AddAsync(storedFile, cancellationToken);
+    }
+
+    public Task<StoredFile?> FindStoredFileAsync(string storedFileId, CancellationToken cancellationToken = default)
+    {
+        return context.StoredFiles.FirstOrDefaultAsync(file => file.Id == storedFileId, cancellationToken);
+    }
+
+    public Task<StoredFile?> FindStoredFileForUpdateAsync(string storedFileId, CancellationToken cancellationToken = default)
+    {
+        return context.StoredFiles
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [StoredFiles] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [Id] = {storedFileId}
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public Task<string?> FindActiveStoredFileIdAsync(string storedFileId, CancellationToken cancellationToken = default)
     {
         return context.StoredFiles
@@ -56,5 +77,20 @@ public sealed class StoredFileRepository : IStoredFileRepository
             .OrderBy(file => file.CreatedAtUtc)
             .Select(file => file.Id)
             .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> HasStoredFileAsync(
+        StoredFileOwnerType ownerType,
+        string ownerId,
+        StoredFilePurpose purpose,
+        StoredFileReviewStatus reviewStatus,
+        CancellationToken cancellationToken = default)
+    {
+        return context.StoredFiles.AnyAsync(
+            file => file.OwnerType == ownerType
+                && file.OwnerId == ownerId
+                && file.Purpose == purpose
+                && file.ReviewStatus == reviewStatus,
+            cancellationToken);
     }
 }

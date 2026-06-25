@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc.Testing;
+using MediBridge.Core.Interfaces.Files;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using MediBridge.Repository.Data;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +25,8 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
             ["Jwt__Issuer"] = "MediBridge.IntegrationTests",
             ["Jwt__Audience"] = "MediBridge.IntegrationTests.ApiClients",
             ["Jwt__SigningKey"] = "IntegrationTestSigningKey-ReplaceBeforeProduction-32Chars",
-            ["Identity__SeedDevelopmentAdmin"] = "false"
+            ["Identity__SeedDevelopmentAdmin"] = "false",
+            ["FileStorage__UploadsEnabled"] = "false"
         });
     }
 
@@ -39,12 +42,15 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
                 ["Jwt:Issuer"] = "MediBridge.IntegrationTests",
                 ["Jwt:Audience"] = "MediBridge.IntegrationTests.ApiClients",
                 ["Jwt:SigningKey"] = "IntegrationTestSigningKey-ReplaceBeforeProduction-32Chars",
-                ["Identity:SeedDevelopmentAdmin"] = "false"
+                ["Identity:SeedDevelopmentAdmin"] = "false",
+                ["FileStorage:UploadsEnabled"] = "false"
             });
         });
         builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<IFileStorageProvider>();
+            services.AddSingleton<IFileStorageProvider, IntegrationFileStorageProvider>();
             services.AddSingleton<IStartupFilter, ForceHttpsStartupFilter>();
             services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
         });
@@ -65,6 +71,34 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
     }
 
     private string ConnectionString => $"Server=(localdb)\\MSSQLLocalDB;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;";
+
+    private sealed class IntegrationFileStorageProvider : IFileStorageProvider
+    {
+        public Task<FileStorageUploadResult> UploadAsync(
+            FileStorageUpload request,
+            Stream content,
+            CancellationToken cancellationToken = default)
+        {
+            var storageKey = $"integration/{Guid.NewGuid():N}/{Path.GetFileName(request.OriginalFileName)}";
+            return Task.FromResult(new FileStorageUploadResult(storageKey, "raw"));
+        }
+
+        public Task<SignedFileUrl> CreateSignedReadUrlAsync(
+            string storageKey,
+            string resourceType,
+            TimeSpan lifetime,
+            CancellationToken cancellationToken = default)
+        {
+            var url = new Uri($"https://files.test/{Uri.EscapeDataString(storageKey)}");
+            return Task.FromResult(new SignedFileUrl(url, DateTime.UtcNow.Add(lifetime)));
+        }
+
+        public Task DeleteAsync(
+            string storageKey,
+            string resourceType,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
 
     protected virtual void ConfigureWebHostCore(IWebHostBuilder builder)
     {

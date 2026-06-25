@@ -131,7 +131,8 @@ public enum AuditOutcome
 {
     Success = 1,
     Denied = 2,
-    Info = 3
+    Info = 3,
+    Failed = 4
 }
 
 public enum AuditTargetType
