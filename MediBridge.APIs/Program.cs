@@ -12,6 +12,15 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The default Windows EventLog provider can throw when the process identity
+// cannot write to the .NET Runtime event source. Keep deterministic providers
+// that work for interactive development, services, containers, and tests.
+builder.Logging.ClearProviders();
+builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.AddEventSourceLogger();
+
 builder.Services
     .AddControllers()
     .ConfigureApiBehaviorOptions(options =>
@@ -32,6 +41,13 @@ if (builder.Environment.IsDevelopment())
 }
 
 builder.Services.AddFoundationServices(builder.Configuration);
+var uploadsEnabled = builder.Configuration.GetValue("FileStorage:UploadsEnabled", true);
+var cloudinaryConfigured = !string.IsNullOrWhiteSpace(builder.Configuration["CloudinaryStorage:CloudinaryUrl"]);
+if (uploadsEnabled && !cloudinaryConfigured)
+{
+    throw new InvalidOperationException("Cloudinary storage configuration is required when uploads are enabled.");
+}
+
 builder.Services.AddMediBridgeRepository(builder.Configuration);
 builder.Services.AddMediBridgeIdentityServices(builder.Configuration);
 builder.Services.AddScoped<IWeatherForecastQueryService, WeatherForecastQueryService>();
