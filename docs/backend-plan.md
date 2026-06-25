@@ -345,12 +345,13 @@ This job runs daily to automatically compute and persist the Doctor Activity Sco
 
 - POST `/api/auth/register-doctor` (multipart; doc upload metadata)
 - POST `/api/auth/register-company`
-- POST `/api/auth/login` (denies JWT if `IsApproved=false`)
+- POST `/api/auth/login` (denies Doctor/Company JWT if approval or email verification is incomplete)
 - POST `/api/auth/refresh`
 - POST `/api/auth/logout`
 - POST `/api/auth/forgot-password`
 - POST `/api/auth/reset-password`
-- POST `/api/auth/verify-email` or `/api/auth/verify-phone` (provider stub acceptable in MVP)
+- POST `/api/auth/verify-contact` (email verification OTP)
+- POST `/api/auth/resend-contact-verification` (non-enumerating email OTP resend)
 
 ### Doctor
 
@@ -365,7 +366,10 @@ This job runs daily to automatically compute and persist the Doctor Activity Sco
 ### Company
 
 - GET `/api/company/doctors` (filters incl. specialization/experience/location/activity/price)
-- POST `/api/company/campaigns` (create + target list)
+- POST `/api/company/campaigns` (create draft)
+- POST `/api/company/campaigns/{campaignId}/assets` (upload campaign media through backend storage)
+- POST `/api/company/campaigns/{campaignId}/assets/{assetId}/replacement` (replace only Pending/Rejected draft assets)
+- DELETE `/api/company/campaigns/{campaignId}/assets/{assetId}` (delete only Pending/Rejected draft assets; approved assets retained)
 - GET `/api/company/campaigns`
 - GET `/api/company/campaigns/{id}`
 - GET `/api/company/campaigns/{id}/deliveries`
@@ -388,8 +392,8 @@ This job runs daily to automatically compute and persist the Doctor Activity Sco
 
 ### Files
 
-- POST `/api/files` (authorized upload; purpose-specific validation)
-- GET `/api/files/{id}` (authorized retrieval or signed URL handoff)
+- POST `/api/files` (authorized upload for non-campaign purposes; purpose-specific validation)
+- GET `/api/files/{fileId}` (authorized signed URL handoff returning `{ FileId, Url, ExpiresAtUtc }`)
 - PUT `/api/admin/files/{id}/review` (verification/document/media review decision)
 
 ## Implementation Milestones (Execution Order)

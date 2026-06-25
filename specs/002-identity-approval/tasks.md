@@ -237,11 +237,11 @@
 
 ## Phase 7: User Story 5 - Account Recovery and Contact Verification Readiness (Priority: P3)
 
-**Goal**: Password reset and email/phone verification flows are time-limited, single-use, auditable, provider-stub-ready, and do not block token issuance for `Approved` accounts in Phase 2.
+**Goal**: Password reset and email verification flows are time-limited, single-use, auditable, provider-ready, and gate Doctor/Company approval and token issuance.
 
 **Independent Test**: Request reset for known/unknown contacts, confirm non-enumerating response, complete reset once, verify refresh revocation, complete contact verification once, and confirm replay fails.
 
-**Manual Senior Review 2026-06-03**: Phase 7 account recovery and contact verification are complete. Manual review confirms `AuthController` stays HTTP-only and delegates to `IAuthService`, `AuthService` owns recovery and verification orchestration through Core unit-of-work abstractions, Repository owns EF Core/SQL Server token-flow persistence, reset and verification token consumption uses transactional update locks with expiry checks, password reset revokes active refresh credentials, contact verification updates only email/phone verification flags, incomplete contact verification does not gate approved login, and async paths are awaited without sync-over-async or fire-and-forget work. Verification passed with `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "Password|Verification|Forgot"`, `dotnet test .\tests\contract\MediBridge.ContractTests\MediBridge.ContractTests.csproj --filter "AccountRecoveryContractTests"`, and `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "LayeringBoundaryTests|IdentityScopeGuardTests"`.
+**Manual Senior Review 2026-06-03; superseded by production verification gate 2026-06-23**: Phase 7 account recovery and contact verification remain the foundation, but Doctor/Company approval and token issuance now require completed email verification. Manual review must confirm `AuthController` stays HTTP-only and delegates to `IAuthService`, `AuthService` owns recovery and verification orchestration through Core unit-of-work abstractions, Repository owns EF Core/SQL Server token-flow persistence, reset and verification token consumption uses transactional update locks with expiry checks, password reset revokes active refresh credentials, contact verification updates only email verification flags, incomplete email verification blocks approved Doctor/Company login and Admin approval, and async paths are awaited without sync-over-async or fire-and-forget work.
 
 ### Tests for User Story 5
 
@@ -250,7 +250,7 @@
 - [X] T128 [P] [US5] Add integration tests proving valid password reset consumes the flow and revokes active refresh credentials in `tests/integration/MediBridge.IntegrationTests/PasswordResetIntegrationTests.cs`.
 - [X] T129 [P] [US5] Add integration tests proving reset token replay and expired reset tokens are rejected in `tests/integration/MediBridge.IntegrationTests/PasswordResetReplayTests.cs`.
 - [X] T130 [P] [US5] Add integration tests proving contact verification consumes once, sets `EmailVerified` or `PhoneVerified`, and rejects replay in `tests/integration/MediBridge.IntegrationTests/ContactVerificationIntegrationTests.cs`.
-- [X] T131 [P] [US5] Add integration tests proving incomplete contact verification does not block login for `Approved` accounts in `tests/integration/MediBridge.IntegrationTests/ContactVerificationTokenGateTests.cs`.
+- [ ] T131 [P] [US5] Update integration tests to prove incomplete email verification blocks login for `Approved` Doctor/Company accounts in `tests/integration/MediBridge.IntegrationTests/ContactVerificationTokenGateTests.cs`.
 
 ### Implementation for User Story 5
 
@@ -265,7 +265,7 @@
 - [X] T140 [US5] Implement `VerifyContactAsync` in `MediBridge.Services/Services/AuthService.cs` to consume valid verification flows once, set `EmailVerified` or `PhoneVerified`, and audit completion.
 - [X] T141 [US5] Add `POST /api/auth/forgot-password`, `POST /api/auth/reset-password`, and `POST /api/auth/verify-contact` actions to `MediBridge.APIs/Controllers/AuthController.cs`.
 - [X] T142 [US5] Apply Phase 1 rate-limit policies to forgot-password, reset-password, and verify-contact actions in `MediBridge.APIs/Controllers/AuthController.cs`.
-- [X] T143 [US5] Ensure no login code checks `EmailVerified` or `PhoneVerified` as a Phase 2 token gate; only `AccountStatus.Approved` and not-deleted state gate token issuance.
+- [ ] T143 [US5] Ensure login and refresh code checks `EmailVerified` as a Doctor/Company token gate in addition to `AccountStatus.Approved` and not-deleted state; seeded Admin remains verified.
 - [X] T144 [US5] Run `dotnet test .\tests\integration\MediBridge.IntegrationTests\MediBridge.IntegrationTests.csproj --filter "Password|Verification|Forgot"` and confirm recovery/verification tests pass.
 
 ---

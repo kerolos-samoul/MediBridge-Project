@@ -56,7 +56,7 @@ paths:
           $ref: '#/components/responses/RateLimitError'
   /api/auth/login:
     post:
-      summary: Issue tokens only for Approved accounts
+      summary: Issue tokens only for approved and verified accounts
       operationId: login
       requestBody:
         required: true
@@ -66,7 +66,7 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Login succeeded for Approved account.
+          description: Login succeeded for an approved, verified Doctor/Company account or seeded verified Admin account.
           content:
             application/json:
               schema:
@@ -169,7 +169,7 @@ paths:
           $ref: '#/components/responses/AuthDenied'
   /api/auth/verify-contact:
     post:
-      summary: Complete email or phone verification
+      summary: Complete email verification
       operationId: verifyContact
       requestBody:
         required: true
@@ -186,6 +186,34 @@ paths:
                 $ref: '#/components/schemas/EnvelopeEmpty'
         '400':
           $ref: '#/components/responses/ValidationError'
+  /api/auth/resend-contact-verification:
+    post:
+      summary: Resend an email contact-verification OTP without account enumeration
+      operationId: resendContactVerification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contact, channel]
+              properties:
+                contact:
+                  type: string
+                channel:
+                  type: string
+                  enum: [Email]
+      responses:
+        '202':
+          description: Accepted without account enumeration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
   /api/auth/resubmit-registration:
     post:
       summary: Resubmit corrected metadata for a rejected Doctor or Company account
@@ -267,6 +295,12 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: Approval rejected because Doctor or Company email verification is required before approval, or another lifecycle conflict occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeEmpty'
 components:
   securitySchemes:
     bearerAuth:
@@ -452,7 +486,7 @@ components:
           $ref: '#/components/schemas/VerificationMetadata'
     RegistrationResult:
       type: object
-      required: [userId, role, accountStatus]
+      required: [userId, role, accountStatus, VerificationRequired, VerificationChannel, MaskedVerificationDestination, VerificationExpiresAtUtc, VerificationDeliveryStatus]
       properties:
         userId:
           type: string
@@ -460,6 +494,19 @@ components:
           $ref: '#/components/schemas/Role'
         accountStatus:
           $ref: '#/components/schemas/AccountStatus'
+        VerificationRequired:
+          type: boolean
+        VerificationChannel:
+          type: string
+          enum: [Email]
+        MaskedVerificationDestination:
+          type: string
+        VerificationExpiresAtUtc:
+          type: string
+          format: date-time
+        VerificationDeliveryStatus:
+          type: string
+          enum: [Sent, Failed, Skipped]
     LoginRequest:
       type: object
       required: [username, password]
@@ -504,13 +551,16 @@ components:
           minLength: 8
     VerifyContactRequest:
       type: object
-      required: [channel, verificationToken]
+      required: [contact, channel, verificationToken]
       properties:
+        contact:
+          type: string
         channel:
           type: string
-          enum: [Email, Phone]
+          enum: [Email]
         verificationToken:
           type: string
+          pattern: '^[0-9]{6}$'
     ResubmissionRequest:
       type: object
       required: [resubmissionToken, verificationMetadata]
