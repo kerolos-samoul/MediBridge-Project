@@ -30,6 +30,7 @@ public static class IdentityServiceCollectionExtensions
             tokenOptions.Issuer,
             tokenOptions.Audience,
             tokenOptions.SigningKey,
+            contactVerificationOptions.OneTimeSecretHashingKey,
             tokenOptions.AccessTokenMinutes,
             tokenOptions.RefreshTokenDays));
         services.AddSingleton(Options.Create(contactVerificationOptions));

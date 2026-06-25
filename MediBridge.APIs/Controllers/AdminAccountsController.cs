@@ -63,6 +63,10 @@ public sealed class AdminAccountsController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status403Forbidden, "Forbidden.", null));
         }
+        catch (WorkflowConflictException)
+        {
+            return Conflict(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status409Conflict, "Conflict.", null));
+        }
         catch (KeyNotFoundException)
         {
             return NotFound(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status404NotFound, "Not found.", null));

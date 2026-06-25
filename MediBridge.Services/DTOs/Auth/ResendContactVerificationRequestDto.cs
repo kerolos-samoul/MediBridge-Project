@@ -2,9 +2,8 @@ using MediBridge.Core.Enums;
 
 namespace MediBridge.Services.DTOs.Auth;
 
-public sealed class VerifyContactRequestDto
+public sealed class ResendContactVerificationRequestDto
 {
     public string Contact { get; set; } = string.Empty;
     public ContactVerificationChannel Channel { get; set; }
-    public string VerificationToken { get; set; } = string.Empty;
 }

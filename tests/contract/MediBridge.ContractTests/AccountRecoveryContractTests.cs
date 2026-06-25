@@ -65,10 +65,10 @@ public sealed class AccountRecoveryContractTests
     {
         await using var factory = new ContractWebAppFactory();
         await factory.InitializeDatabaseAsync();
-        var token = await CreateContactVerificationFlowAsync(factory, ContactVerificationChannel.Email);
+        var (email, token) = await CreateContactVerificationFlowAsync(factory, ContactVerificationChannel.Email);
         using var client = factory.CreateClient();
 
-        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Channel = "Email", VerificationToken = token });
+        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Contact = email, Channel = "Email", VerificationToken = token });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -83,7 +83,7 @@ public sealed class AccountRecoveryContractTests
         await factory.InitializeDatabaseAsync();
         using var client = factory.CreateClient();
 
-        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Channel = "Email", VerificationToken = "" });
+        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Contact = "doctor@example.com", Channel = "Email", VerificationToken = "" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -113,27 +113,28 @@ public sealed class AccountRecoveryContractTests
         return plaintext;
     }
 
-    private static async Task<string> CreateContactVerificationFlowAsync(ContractWebAppFactory factory, ContactVerificationChannel channel)
+    private static async Task<(string Email, string Token)> CreateContactVerificationFlowAsync(ContractWebAppFactory factory, ContactVerificationChannel channel)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
         var tokenService = scope.ServiceProvider.GetRequiredService<IAuthTokenService>();
         var user = CreateUser();
-        var (plaintext, hash) = tokenService.CreateOneTimeToken();
+        var normalizedDestination = user.Email!.Trim().ToUpperInvariant();
+        var plaintext = tokenService.CreateNumericCode(6);
 
         db.Users.Add(user);
         db.ContactVerificationFlows.Add(new ContactVerificationFlow
         {
             UserId = user.Id,
             Channel = channel,
-            DestinationHash = tokenService.HashToken(user.Email!),
-            TokenHash = hash,
+            DestinationHash = tokenService.HashToken(normalizedDestination),
+            TokenHash = tokenService.HashOneTimeSecret(normalizedDestination, plaintext),
             ExpiresAtUtc = DateTime.UtcNow.AddHours(1),
             CreatedAtUtc = DateTime.UtcNow
         });
 
         await db.SaveChangesAsync();
-        return plaintext;
+        return (user.Email!, plaintext);
     }
 
     private static MediBridgeIdentityUser CreateUser()

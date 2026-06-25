@@ -11,5 +11,8 @@ public enum AuthAuditEventType
     ContactVerificationCompleted = 7,
     RefreshReuseDetected = 8,
     AdminDecision = 9,
-    AccountResubmission = 10
+    AccountResubmission = 10,
+    ContactVerificationIssued = 11,
+    ContactVerificationDeliveryFailed = 12,
+    ContactVerificationDenied = 13
 }

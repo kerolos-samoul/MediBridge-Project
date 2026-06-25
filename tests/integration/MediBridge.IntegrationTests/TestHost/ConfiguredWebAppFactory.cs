@@ -75,6 +75,15 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
         await context.Database.MigrateAsync();
     }
 
+    public string GetLatestContactVerificationCode(string destination)
+    {
+        return Services.GetRequiredService<InMemoryEmailDelivery>()
+            .GetLatestSecret(destination, "ContactVerification")
+            ?? throw new InvalidOperationException("No contact verification message was delivered.");
+    }
+
+    public int DeliveredEmailCount => Services.GetRequiredService<InMemoryEmailDelivery>().Count;
+
     protected override void ConfigureClient(HttpClient client)
     {
         client.BaseAddress = new Uri("https://localhost");
@@ -113,8 +122,31 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
     private sealed class InMemoryEmailDelivery : IEmailDelivery
     {
         private readonly List<DeliveredMessage> messages = new();
+        private readonly object gate = new();
 
-        public IReadOnlyList<DeliveredMessage> Messages => messages;
+        public int Count
+        {
+            get
+            {
+                lock (gate)
+                {
+                    return messages.Count;
+                }
+            }
+        }
+
+        public string? GetLatestSecret(string destination, string kind)
+        {
+            lock (gate)
+            {
+                return messages
+                    .Where(message => string.Equals(message.Destination, destination, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(message.Kind, kind, StringComparison.Ordinal))
+                    .OrderBy(message => message.ExpiresAtUtc)
+                    .LastOrDefault()
+                    ?.Secret;
+            }
+        }
 
         public Task SendContactVerificationAsync(
             string destination,
@@ -122,7 +154,11 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
             DateTime expiresAtUtc,
             CancellationToken cancellationToken = default)
         {
-            messages.Add(new DeliveredMessage(destination, "ContactVerification", oneTimeCode, expiresAtUtc));
+            lock (gate)
+            {
+                messages.Add(new DeliveredMessage(destination, "ContactVerification", oneTimeCode, expiresAtUtc));
+            }
+
             return Task.CompletedTask;
         }
 
@@ -132,7 +168,11 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
             DateTime expiresAtUtc,
             CancellationToken cancellationToken = default)
         {
-            messages.Add(new DeliveredMessage(destination, "PasswordReset", resetToken, expiresAtUtc));
+            lock (gate)
+            {
+                messages.Add(new DeliveredMessage(destination, "PasswordReset", resetToken, expiresAtUtc));
+            }
+
             return Task.CompletedTask;
         }
     }

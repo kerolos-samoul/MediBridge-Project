@@ -155,6 +155,7 @@ public sealed class AdminAccountDecisionContractTests
             NormalizedUserName = email.ToUpperInvariant(),
             Role = role,
             AccountStatus = status,
+            EmailVerified = true,
             CreatedAtUtc = now,
             ApprovedAtUtc = status == AccountStatus.Approved ? now : null,
             LastStatusChangedAtUtc = now

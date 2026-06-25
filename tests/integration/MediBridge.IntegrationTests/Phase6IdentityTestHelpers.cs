@@ -91,7 +91,7 @@ internal static class Phase6IdentityTestHelpers
         return await db.Users.SingleAsync(candidate => candidate.Email == email);
     }
 
-    public static async Task SetStatusAsync(IServiceProvider services, string email, AccountStatus status)
+    public static async Task SetStatusAsync(IServiceProvider services, string email, AccountStatus status, bool markEmailVerified = true)
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
@@ -100,6 +100,11 @@ internal static class Phase6IdentityTestHelpers
         user.AccountStatus = status;
         user.ApprovedAtUtc = status == AccountStatus.Approved ? now : null;
         user.LastStatusChangedAtUtc = now;
+        if (status == AccountStatus.Approved && markEmailVerified)
+        {
+            user.EmailVerified = true;
+        }
+
         await db.SaveChangesAsync();
     }
 

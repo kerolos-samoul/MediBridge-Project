@@ -76,7 +76,154 @@ public sealed class AdminDecisionTransitionIntegrationTests
         Assert.Empty(await db.AuthenticationAuditEvents.Where(candidate => candidate.TargetUserId == target.Id).ToListAsync());
     }
 
-    private static async Task<MediBridgeIdentityUser> CreateTargetAsync(IServiceProvider services, AccountStatus status, bool isDeleted = false)
+    [Fact]
+    public async Task DecisionAgainstAdminTarget_ReturnsValidationAndDoesNotPersistSideEffects()
+    {
+        await using var factory = new WebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+
+        var admin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
+        var targetAdmin = await CreateTargetAsync(factory.Services, AccountStatus.Approved, role: UserRole.Admin);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Admin", admin.Id));
+
+        using var response = await client.PutAsJsonAsync($"/api/admin/accounts/{targetAdmin.Id}/decision", new
+        {
+            Decision = "Suspend",
+            Reason = "Admin target guard."
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var persistedTarget = await db.Users.SingleAsync(candidate => candidate.Id == targetAdmin.Id);
+
+        Assert.Equal(AccountStatus.Approved, persistedTarget.AccountStatus);
+        Assert.Equal(UserRole.Admin, persistedTarget.Role);
+        Assert.Empty(await db.AdminAccountDecisions.Where(candidate => candidate.TargetUserId == targetAdmin.Id).ToListAsync());
+        Assert.Empty(await db.AuthenticationAuditEvents.Where(candidate => candidate.TargetUserId == targetAdmin.Id).ToListAsync());
+        Assert.Empty(await db.RefreshCredentials.Where(candidate => candidate.UserId == targetAdmin.Id && candidate.RevokedAtUtc != null).ToListAsync());
+    }
+
+    [Fact]
+    public async Task ApprovingPendingCompany_CreatesExactlyOneActiveWallet()
+    {
+        await using var factory = new WebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+
+        var admin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
+        var companyUser = await CreateTargetAsync(factory.Services, AccountStatus.Pending, role: UserRole.Company, emailVerified: true);
+        string companyProfileId;
+        using (var setupScope = factory.Services.CreateScope())
+        {
+            var setupDb = setupScope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+            var profile = new MediBridge.Core.Entities.Profiles.CompanyProfile
+            {
+                UserId = companyUser.Id,
+                CompanyName = "Approval Wallet Pharma",
+                LicenseNumber = $"approval-wallet-{Guid.NewGuid():N}",
+                ContactName = "Approval Contact",
+                VerificationDocumentType = "License",
+                VerificationOriginalFileName = "approval-license.pdf",
+                VerificationContentType = "application/pdf",
+                VerificationSizeBytes = 1024,
+                VerificationReference = $"approval/{Guid.NewGuid():N}"
+            };
+            setupDb.CompanyProfiles.Add(profile);
+            await setupDb.SaveChangesAsync();
+            companyProfileId = profile.Id;
+        }
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Admin", admin.Id));
+
+        using var response = await client.PutAsJsonAsync($"/api/admin/accounts/{companyUser.Id}/decision", new
+        {
+            Decision = "Approve"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var wallets = await db.Wallets
+            .AsNoTracking()
+            .Where(wallet => wallet.OwnerType == WalletOwnerType.Company && wallet.OwnerId == companyProfileId && !wallet.IsDeleted)
+            .ToListAsync();
+        var wallet = Assert.Single(wallets);
+        Assert.Equal(companyUser.Id, wallet.OwnerUserId);
+        Assert.Equal(0m, wallet.AvailableBalance);
+        Assert.Equal(0m, wallet.ReservedBalance);
+    }
+
+    [Fact]
+    public async Task ConcurrentCompanyApprovals_PersistOneTransitionAuditAndWallet()
+    {
+        await using var factory = new WebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var firstClient = factory.CreateClient();
+        using var secondClient = factory.CreateClient();
+
+        var admin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
+        var companyUser = await CreateTargetAsync(factory.Services, AccountStatus.Pending, role: UserRole.Company, emailVerified: true);
+        string companyProfileId;
+        using (var setupScope = factory.Services.CreateScope())
+        {
+            var setupDb = setupScope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+            var profile = new MediBridge.Core.Entities.Profiles.CompanyProfile
+            {
+                UserId = companyUser.Id,
+                CompanyName = "Concurrent Approval Pharma",
+                LicenseNumber = $"concurrent-approval-{Guid.NewGuid():N}",
+                ContactName = "Approval Contact",
+                VerificationDocumentType = "License",
+                VerificationOriginalFileName = "approval-license.pdf",
+                VerificationContentType = "application/pdf",
+                VerificationSizeBytes = 1024,
+                VerificationReference = $"approval/{Guid.NewGuid():N}"
+            };
+            setupDb.CompanyProfiles.Add(profile);
+            await setupDb.SaveChangesAsync();
+            companyProfileId = profile.Id;
+        }
+
+        var token = TestJwtFactory.CreateToken("Admin", admin.Id);
+        firstClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        secondClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var responses = await Task.WhenAll(
+            firstClient.PutAsJsonAsync($"/api/admin/accounts/{companyUser.Id}/decision", new { Decision = "Approve" }),
+            secondClient.PutAsJsonAsync($"/api/admin/accounts/{companyUser.Id}/decision", new { Decision = "Approve" }));
+
+        try
+        {
+            Assert.Equal(
+                new[] { HttpStatusCode.OK, HttpStatusCode.BadRequest }.OrderBy(status => status),
+                responses.Select(response => response.StatusCode).OrderBy(status => status));
+
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+            Assert.Equal(AccountStatus.Approved, (await db.Users.SingleAsync(user => user.Id == companyUser.Id)).AccountStatus);
+            Assert.Equal(1, await db.AdminAccountDecisions.CountAsync(decision => decision.TargetUserId == companyUser.Id));
+            Assert.Equal(1, await db.AuthenticationAuditEvents.CountAsync(audit => audit.TargetUserId == companyUser.Id));
+            Assert.Equal(1, await db.Wallets.CountAsync(wallet => wallet.OwnerType == WalletOwnerType.Company && wallet.OwnerId == companyProfileId));
+        }
+        finally
+        {
+            foreach (var response in responses)
+            {
+                response.Dispose();
+            }
+        }
+    }
+
+    private static async Task<MediBridgeIdentityUser> CreateTargetAsync(
+        IServiceProvider services,
+        AccountStatus status,
+        bool isDeleted = false,
+        UserRole role = UserRole.Doctor,
+        bool emailVerified = false)
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
@@ -88,8 +235,9 @@ public sealed class AdminDecisionTransitionIntegrationTests
             UserName = email,
             NormalizedEmail = email.ToUpperInvariant(),
             NormalizedUserName = email.ToUpperInvariant(),
-            Role = UserRole.Doctor,
+            Role = role,
             AccountStatus = status,
+            EmailVerified = emailVerified || status == AccountStatus.Approved,
             CreatedAtUtc = now,
             ApprovedAtUtc = status == AccountStatus.Approved ? now : null,
             LastStatusChangedAtUtc = now,

@@ -10,14 +10,22 @@ public sealed class AuthTokenService : IAuthTokenService
     private readonly string issuer;
     private readonly string audience;
     private readonly byte[] signingKey;
+    private readonly byte[] oneTimeSecretHashingKey;
     private readonly int accessTokenMinutes;
     private readonly int refreshTokenDays;
 
-    public AuthTokenService(string issuer, string audience, string signingKey, int accessTokenMinutes, int refreshTokenDays)
+    public AuthTokenService(
+        string issuer,
+        string audience,
+        string signingKey,
+        string oneTimeSecretHashingKey,
+        int accessTokenMinutes,
+        int refreshTokenDays)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(issuer);
         ArgumentException.ThrowIfNullOrWhiteSpace(audience);
         ArgumentException.ThrowIfNullOrWhiteSpace(signingKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(oneTimeSecretHashingKey);
 
         if (accessTokenMinutes <= 0)
         {
@@ -32,6 +40,7 @@ public sealed class AuthTokenService : IAuthTokenService
         this.issuer = issuer;
         this.audience = audience;
         this.signingKey = Encoding.UTF8.GetBytes(signingKey);
+        this.oneTimeSecretHashingKey = Encoding.UTF8.GetBytes(oneTimeSecretHashingKey);
         this.accessTokenMinutes = accessTokenMinutes;
         this.refreshTokenDays = refreshTokenDays;
     }
@@ -75,6 +84,56 @@ public sealed class AuthTokenService : IAuthTokenService
         return Base64UrlEncode(SHA256.HashData(Encoding.UTF8.GetBytes(plaintextToken)));
     }
 
+    public string CreateNumericCode(int length)
+    {
+        if (length <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length), "Code length must be positive.");
+        }
+
+        var builder = new StringBuilder(length);
+        for (var index = 0; index < length; index++)
+        {
+            builder.Append(RandomNumberGenerator.GetInt32(0, 10));
+        }
+
+        return builder.ToString();
+    }
+
+    public string HashOneTimeSecret(string normalizedDestination, string plaintextSecret)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(normalizedDestination);
+        ArgumentException.ThrowIfNullOrWhiteSpace(plaintextSecret);
+
+        using var hmac = new HMACSHA256(oneTimeSecretHashingKey);
+        var payload = Encoding.UTF8.GetBytes($"{normalizedDestination}\u001F{plaintextSecret}");
+        return Base64UrlEncode(hmac.ComputeHash(payload));
+    }
+
+    public bool VerifyOneTimeSecret(string normalizedDestination, string plaintextSecret, string expectedHash)
+    {
+        if (string.IsNullOrWhiteSpace(normalizedDestination)
+            || string.IsNullOrWhiteSpace(plaintextSecret)
+            || string.IsNullOrWhiteSpace(expectedHash))
+        {
+            return false;
+        }
+
+        byte[] expectedBytes;
+        try
+        {
+            expectedBytes = Base64UrlDecode(expectedHash);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+
+        var actualBytes = Base64UrlDecode(HashOneTimeSecret(normalizedDestination, plaintextSecret));
+        return expectedBytes.Length == actualBytes.Length
+            && CryptographicOperations.FixedTimeEquals(actualBytes, expectedBytes);
+    }
+
     private (string PlaintextToken, string TokenHash) CreateRandomTokenPair()
     {
         var plaintextToken = Base64UrlEncode(RandomNumberGenerator.GetBytes(64));
@@ -109,5 +168,15 @@ public sealed class AuthTokenService : IAuthTokenService
             .TrimEnd('=')
             .Replace('+', '-')
             .Replace('/', '_');
+    }
+
+    private static byte[] Base64UrlDecode(string value)
+    {
+        var base64 = value
+            .Replace('-', '+')
+            .Replace('_', '/');
+
+        base64 = base64.PadRight(base64.Length + ((4 - base64.Length % 4) % 4), '=');
+        return Convert.FromBase64String(base64);
     }
 }

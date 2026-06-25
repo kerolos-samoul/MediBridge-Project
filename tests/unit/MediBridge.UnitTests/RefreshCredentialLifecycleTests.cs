@@ -59,6 +59,7 @@ public sealed class RefreshCredentialLifecycleTests
             "MediBridge.UnitTests",
             "MediBridge.UnitTests.ApiClients",
             "UnitTestSigningKey-ReplaceBeforeProduction-32Chars",
+            "UnitTestContactVerificationHashingKey-ReplaceBeforeProduction",
             accessTokenMinutes: 15,
             refreshTokenDays: 7);
     }

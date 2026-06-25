@@ -21,10 +21,10 @@ public sealed class ContactVerificationIntegrationTests
         using var client = factory.CreateClient();
 
         var email = await Phase6IdentityTestHelpers.RegisterDoctorAsync(client);
-        var token = await CreateVerificationFlowAsync(factory, email, ContactVerificationChannel.Email, DateTime.UtcNow.AddHours(1));
+        var token = factory.GetLatestContactVerificationCode(email);
 
-        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Channel = "Email", VerificationToken = token });
-        using var replayResponse = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Channel = "Email", VerificationToken = token });
+        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Contact = email, Channel = "Email", VerificationToken = token });
+        using var replayResponse = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Contact = email, Channel = "Email", VerificationToken = token });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, replayResponse.StatusCode);
@@ -40,24 +40,18 @@ public sealed class ContactVerificationIntegrationTests
     }
 
     [Fact]
-    public async Task VerifyContact_WithPhoneChannelSetsPhoneVerified()
+    public async Task VerifyContact_WithPhoneChannelReturnsValidationEnvelope()
     {
         await using var factory = new WebAppFactory();
         await factory.InitializeDatabaseAsync();
         using var client = factory.CreateClient();
 
         var email = await Phase6IdentityTestHelpers.RegisterDoctorAsync(client);
-        var token = await CreateVerificationFlowAsync(factory, email, ContactVerificationChannel.Phone, DateTime.UtcNow.AddHours(1));
+        var token = factory.GetLatestContactVerificationCode(email);
 
-        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Channel = "Phone", VerificationToken = token });
+        using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new { Contact = email, Channel = "Phone", VerificationToken = token });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
-        var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
-
-        Assert.True(user.PhoneVerified);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -68,7 +62,7 @@ public sealed class ContactVerificationIntegrationTests
         using var client = factory.CreateClient();
 
         var email = await Phase6IdentityTestHelpers.RegisterDoctorAsync(client);
-        var token = await CreateVerificationFlowAsync(factory, email, ContactVerificationChannel.Email, DateTime.UtcNow.AddHours(1));
+        var token = factory.GetLatestContactVerificationCode(email);
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var tasks = Enumerable.Range(0, 6)
             .Select(async _ =>
@@ -76,6 +70,7 @@ public sealed class ContactVerificationIntegrationTests
                 await ready.Task;
                 using var response = await client.PostAsJsonAsync("/api/auth/verify-contact", new
                 {
+                    Contact = email,
                     Channel = "Email",
                     VerificationToken = token
                 });
@@ -101,14 +96,15 @@ public sealed class ContactVerificationIntegrationTests
         var tokenService = scope.ServiceProvider.GetRequiredService<IAuthTokenService>();
         var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
         var destination = channel == ContactVerificationChannel.Email ? user.Email! : user.PhoneNumber!;
-        var (plaintext, hash) = tokenService.CreateOneTimeToken();
+        var normalizedDestination = destination.Trim().ToUpperInvariant();
+        var plaintext = tokenService.CreateNumericCode(6);
 
         db.ContactVerificationFlows.Add(new ContactVerificationFlow
         {
             UserId = user.Id,
             Channel = channel,
-            DestinationHash = tokenService.HashToken(destination),
-            TokenHash = hash,
+            DestinationHash = tokenService.HashToken(normalizedDestination),
+            TokenHash = tokenService.HashOneTimeSecret(normalizedDestination, plaintext),
             ExpiresAtUtc = expiresAtUtc,
             CreatedAtUtc = DateTime.UtcNow
         });
