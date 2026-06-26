@@ -99,10 +99,6 @@ namespace MediBridge.Repository.Migrations
                     b.Property<int>("Decision")
                         .HasColumnType("int");
 
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
@@ -119,11 +115,49 @@ namespace MediBridge.Repository.Migrations
 
                     b.HasIndex("CampaignId", "CreatedAtUtc");
 
-                    b.HasIndex("CampaignId", "IdempotencyKey")
-                        .IsUnique()
-                        .HasFilter("[IdempotencyKey] IS NOT NULL");
-
                     b.ToTable("CampaignReviewHistories", (string)null);
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignSubmissionRequest", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CampaignId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CompanyId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("RequestHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId");
+
+                    b.HasIndex("CompanyId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("CampaignSubmissionRequests", (string)null);
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignTarget", b =>
@@ -173,10 +207,97 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("CampaignTargets", (string)null);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Files.FileAccessGrantAudit", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RequesterRole")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("StoredFileId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedByUserId", "CreatedAtUtc");
+
+                    b.HasIndex("StoredFileId", "CreatedAtUtc");
+
+                    b.ToTable("FileAccessGrantAudits", (string)null);
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Files.FileReview", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AdminUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CorrectsReviewId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Decision")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("StoredFileId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminUserId");
+
+                    b.HasIndex("CorrectsReviewId");
+
+                    b.HasIndex("StoredFileId", "CreatedAtUtc");
+
+                    b.ToTable("FileReviews", (string)null);
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Files.StoredFile", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("ContentType")
                         .IsRequired()
@@ -204,6 +325,14 @@ namespace MediBridge.Repository.Migrations
                     b.Property<int>("Purpose")
                         .HasColumnType("int");
 
+                    b.Property<string>("RelatedCampaignId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ReplacedByFileId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("ReviewReason")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -217,40 +346,52 @@ namespace MediBridge.Repository.Migrations
                     b.Property<string>("ReviewedByAdminId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("SafetyScanCheckedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SafetyScanStatus")
+                        .HasColumnType("int");
+
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("StorageDeliveryType")
+                        .HasColumnType("int");
 
                     b.Property<string>("StorageKey")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("StorageResourceType")
+                    b.Property<string>("StorageProvider")
                         .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
-                    b.Property<int>("StorageState")
+                    b.Property<int>("StorageResourceType")
                         .HasColumnType("int");
 
-                    b.Property<string>("SupersededByFileId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UploadStatus")
+                        .HasColumnType("int");
 
                     b.Property<int>("Visibility")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ReplacedByFileId");
+
                     b.HasIndex("ReviewedByAdminId");
 
-                    b.HasIndex("SupersededByFileId");
+                    b.HasIndex("RelatedCampaignId", "Purpose");
 
                     b.HasIndex("ReviewStatus", "CreatedAtUtc");
 
+                    b.HasIndex("UploadStatus", "CreatedAtUtc");
+
                     b.HasIndex("OwnerType", "OwnerId", "Purpose");
 
-                    b.HasIndex("OwnerType", "OwnerId", "Purpose", "StorageState");
+                    b.HasIndex("OwnerType", "OwnerId", "Purpose", "CreatedAtUtc");
 
                     b.ToTable("StoredFiles", (string)null);
                 });
@@ -444,30 +585,12 @@ namespace MediBridge.Repository.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
-                    b.Property<string>("HashVersion")
-                        .IsRequired()
+                    b.Property<DateTime>("LastSentAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasDefaultValue("hmac-sha256-v1");
-
-                    b.Property<DateTime?>("LastSentAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MaxAttemptCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(5);
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<DateTime?>("MaxAttemptsReachedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ResendCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateTime?>("ResendWindowStartedAtUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("SupersededAtUtc")
@@ -487,9 +610,7 @@ namespace MediBridge.Repository.Migrations
                     b.HasIndex("TokenHash")
                         .IsUnique();
 
-                    b.HasIndex("UserId", "Channel", "CreatedAtUtc");
-
-                    b.HasIndex("UserId", "Channel", "ConsumedAtUtc", "SupersededAtUtc", "ExpiresAtUtc");
+                    b.HasIndex("UserId");
 
                     b.ToTable("ContactVerificationFlows", (string)null);
                 });
@@ -700,93 +821,11 @@ namespace MediBridge.Repository.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CampaignId", "DoctorId")
-                        .IsUnique()
-                        .HasFilter("[Status] IN (1, 2)");
+                        .IsUnique();
 
                     b.HasIndex("DoctorId", "Status", "QueuedAtUtc", "Id");
 
                     b.ToTable("DoctorMessageQueues", (string)null);
-                });
-
-            modelBuilder.Entity("MediBridge.Core.Entities.Payments.MockPaymentTransaction", b =>
-                {
-                    b.Property<string>("PaymentId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("AuditEventId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("CompanyId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<string>("IdempotencyKey")
-                        .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TransactionReference")
-                        .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)");
-
-                    b.Property<decimal>("WalletBalanceAfter")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("WalletBalanceBefore")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("WalletId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("WalletTransactionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("PaymentId");
-
-                    b.HasIndex("AuditEventId");
-
-                    b.HasIndex("TransactionReference")
-                        .IsUnique();
-
-                    b.HasIndex("WalletId");
-
-                    b.HasIndex("WalletTransactionId");
-
-                    b.HasIndex("CompanyId", "CreatedAtUtc");
-
-                    b.HasIndex("CompanyId", "IdempotencyKey")
-                        .IsUnique();
-
-                    b.ToTable("MockPaymentTransactions", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_MockPaymentTransactions_Amount_Positive", "[Amount] > 0");
-
-                            t.HasCheckConstraint("CK_MockPaymentTransactions_Balances_NonNegative", "[WalletBalanceBefore] >= 0 AND [WalletBalanceAfter] >= 0");
-
-                            t.HasCheckConstraint("CK_MockPaymentTransactions_Currency_EGP", "[Currency] = 'EGP'");
-
-                            t.HasCheckConstraint("CK_MockPaymentTransactions_Status_Succeeded", "[Status] = 1");
-                        });
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Policies.ActivityScoreHistory", b =>
@@ -1633,6 +1672,20 @@ namespace MediBridge.Repository.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignSubmissionRequest", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Campaigns.Campaign", null)
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MediBridge.Core.Entities.Profiles.CompanyProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignTarget", b =>
                 {
                     b.HasOne("MediBridge.Core.Entities.Campaigns.Campaign", null)
@@ -1648,8 +1701,48 @@ namespace MediBridge.Repository.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Files.FileAccessGrantAudit", b =>
+                {
+                    b.HasOne("MediBridge.Repository.Data.Identity.MediBridgeIdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("StoredFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Files.FileReview", b =>
+                {
+                    b.HasOne("MediBridge.Repository.Data.Identity.MediBridgeIdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("AdminUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Files.FileReview", null)
+                        .WithMany()
+                        .HasForeignKey("CorrectsReviewId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MediBridge.Core.Entities.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("StoredFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Files.StoredFile", b =>
                 {
+                    b.HasOne("MediBridge.Core.Entities.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacedByFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MediBridge.Repository.Data.Identity.MediBridgeIdentityUser", null)
                         .WithMany()
                         .HasForeignKey("ReviewedByAdminId")
@@ -1766,32 +1859,6 @@ namespace MediBridge.Repository.Migrations
                     b.HasOne("MediBridge.Core.Entities.Profiles.DoctorProfile", null)
                         .WithMany()
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("MediBridge.Core.Entities.Payments.MockPaymentTransaction", b =>
-                {
-                    b.HasOne("MediBridge.Core.Entities.Policies.AuditEvent", null)
-                        .WithMany()
-                        .HasForeignKey("AuditEventId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("MediBridge.Core.Entities.Profiles.CompanyProfile", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MediBridge.Core.Entities.Wallets.Wallet", null)
-                        .WithMany()
-                        .HasForeignKey("WalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MediBridge.Core.Entities.Wallets.WalletTransaction", null)
-                        .WithMany()
-                        .HasForeignKey("WalletTransactionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

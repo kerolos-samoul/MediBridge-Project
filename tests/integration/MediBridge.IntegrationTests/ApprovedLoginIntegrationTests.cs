@@ -108,7 +108,6 @@ public sealed class ApprovedLoginIntegrationTests
         user.AccountStatus = Core.Enums.AccountStatus.Approved;
         user.ApprovedAtUtc = now;
         user.LastStatusChangedAtUtc = now;
-        user.EmailVerified = true;
 
         await db.SaveChangesAsync();
     }

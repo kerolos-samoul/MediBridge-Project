@@ -28,6 +28,12 @@ public sealed class WalletLedgerEntryRepository : IWalletLedgerEntryRepository
         }, cancellationToken);
     }
 
+    public async Task AddLedgerEntryAsync(WalletLedgerEntry entry, CancellationToken cancellationToken = default)
+    {
+        entry.Amount = MoneyRules.EnsurePositive(entry.Amount, nameof(entry.Amount));
+        await context.WalletLedgerEntries.AddAsync(entry, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> ListLedgerEntryIdsByWalletAsync(string walletId, DateTime? createdFromUtc = null, DateTime? createdToUtc = null, CancellationToken cancellationToken = default)
     {
         var query = context.WalletLedgerEntries.Where(entry => entry.WalletId == walletId);
@@ -53,6 +59,15 @@ public sealed class WalletLedgerEntryRepository : IWalletLedgerEntryRepository
             .Where(entry => entry.WalletTransactionId == walletTransactionId)
             .OrderBy(entry => entry.CreatedAtUtc)
             .Select(entry => entry.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<WalletLedgerEntry>> ListLedgerEntriesByWalletTransactionAsync(string walletTransactionId, CancellationToken cancellationToken = default)
+    {
+        return await context.WalletLedgerEntries
+            .Where(entry => entry.WalletTransactionId == walletTransactionId)
+            .OrderBy(entry => entry.CreatedAtUtc)
+            .ThenBy(entry => entry.Id)
             .ToListAsync(cancellationToken);
     }
 

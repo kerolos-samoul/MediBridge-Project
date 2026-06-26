@@ -29,6 +29,7 @@ public sealed class MediBridgeDbContext : IdentityDbContext<MediBridgeIdentityUs
     public DbSet<AuthenticationAuditEvent> AuthenticationAuditEvents => Set<AuthenticationAuditEvent>();
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<CampaignTarget> CampaignTargets => Set<CampaignTarget>();
+    public DbSet<CampaignSubmissionRequest> CampaignSubmissionRequests => Set<CampaignSubmissionRequest>();
     public DbSet<CampaignReviewHistory> CampaignReviewHistories => Set<CampaignReviewHistory>();
     public DbSet<DoctorMessageQueue> DoctorMessageQueues => Set<DoctorMessageQueue>();
     public DbSet<DoctorAdDelivery> DoctorAdDeliveries => Set<DoctorAdDelivery>();
@@ -37,6 +38,8 @@ public sealed class MediBridgeDbContext : IdentityDbContext<MediBridgeIdentityUs
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
     public DbSet<WithdrawalRequest> WithdrawalRequests => Set<WithdrawalRequest>();
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
+    public DbSet<FileReview> FileReviews => Set<FileReview>();
+    public DbSet<FileAccessGrantAudit> FileAccessGrantAudits => Set<FileAccessGrantAudit>();
     public DbSet<DoctorPriceHistory> DoctorPriceHistories => Set<DoctorPriceHistory>();
     public DbSet<PlatformFeePolicyHistory> PlatformFeePolicyHistories => Set<PlatformFeePolicyHistory>();
     public DbSet<ActivityScoreHistory> ActivityScoreHistories => Set<ActivityScoreHistory>();

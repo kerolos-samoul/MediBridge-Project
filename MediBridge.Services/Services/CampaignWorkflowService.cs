@@ -1,13 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using FluentValidation;
 using MediBridge.Core.Entities.Campaigns;
 using MediBridge.Core.Entities.Files;
-using MediBridge.Core.Entities.Profiles;
-using MediBridge.Core.Entities.Wallets;
+using MediBridge.Core.Entities.Messaging;
 using MediBridge.Core.Enums;
 using MediBridge.Core.Interfaces;
-using MediBridge.Core.Interfaces.Files;
 using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Services.DTOs.Campaigns;
 using MediBridge.Services.Interfaces;
@@ -16,630 +15,450 @@ namespace MediBridge.Services.Services;
 
 public sealed class CampaignWorkflowService : ICampaignWorkflowService
 {
-    private const decimal DefaultPlatformFeePercent = 20m;
-    // QueueItemStatus intentionally has no Expired state; delivered-message expiry belongs to another workflow.
-    private const int ExpiredQueueCount = 0;
-    private readonly IIdentityUnitOfWork identityUnitOfWork;
+    private static readonly JsonSerializerOptions HashJsonOptions = new() { PropertyNamingPolicy = null };
     private readonly IDomainUnitOfWork domainUnitOfWork;
-    private readonly IValidator<CreateCampaignDraftRequestDto> draftValidator;
-    private readonly IValidator<CampaignAssetUploadRequestDto> assetValidator;
-    private readonly IFileStorageProvider fileStorageProvider;
-    private readonly IAuditLogger auditLogger;
-    private readonly ICurrentUserContext currentUserContext;
+    private readonly IIdentityUnitOfWork identityUnitOfWork;
+    private readonly IValidator<CreateCampaignRequestDto> createCampaignValidator;
 
     public CampaignWorkflowService(
-        IIdentityUnitOfWork identityUnitOfWork,
         IDomainUnitOfWork domainUnitOfWork,
-        IValidator<CreateCampaignDraftRequestDto> draftValidator,
-        IValidator<CampaignAssetUploadRequestDto> assetValidator,
-        IFileStorageProvider fileStorageProvider,
-        IAuditLogger auditLogger,
-        ICurrentUserContext currentUserContext)
+        IIdentityUnitOfWork identityUnitOfWork,
+        IValidator<CreateCampaignRequestDto> createCampaignValidator)
     {
-        this.identityUnitOfWork = identityUnitOfWork;
         this.domainUnitOfWork = domainUnitOfWork;
-        this.draftValidator = draftValidator;
-        this.assetValidator = assetValidator;
-        this.fileStorageProvider = fileStorageProvider;
-        this.auditLogger = auditLogger;
-        this.currentUserContext = currentUserContext;
+        this.identityUnitOfWork = identityUnitOfWork;
+        this.createCampaignValidator = createCampaignValidator;
     }
 
-    public async Task<CampaignDto> CreateDraftAsync(string companyUserId, CreateCampaignDraftRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<CampaignSubmissionResultDto> SubmitCampaignAsync(string actorUserId, string? idempotencyKey, CreateCampaignRequestDto request, CancellationToken cancellationToken = default)
     {
-        var validation = await draftValidator.ValidateAsync(request, cancellationToken);
-        if (!validation.IsValid)
+        if (request is null)
         {
-            throw new WorkflowValidationException("Validation failed.");
+            throw new Phase5ValidationException("Validation failed.", ["Campaign request body is required."]);
         }
 
-        return await domainUnitOfWork.ExecuteInTransactionAsync<CampaignDto>(async transactionCancellationToken =>
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
         {
-            var company = await GetApprovedCompanyForUpdateAsync(companyUserId, transactionCancellationToken);
-            var campaign = new Campaign
-            {
-                CompanyId = company.Id,
-                Title = request.Title.Trim(),
-                Description = request.Description.Trim(),
-                ClinicalResearchInfo = NormalizeOptionalText(request.ClinicalResearchInfo),
-                Status = CampaignStatus.Draft,
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            await domainUnitOfWork.Campaigns.AddCampaignAsync(campaign, transactionCancellationToken);
-            return ToCampaignDto(campaign);
-        }, cancellationToken);
-    }
-
-    public async Task<CampaignAssetDto> UploadAssetAsync(
-        string companyUserId,
-        string campaignId,
-        CampaignAssetUploadRequestDto request,
-        Stream content,
-        CancellationToken cancellationToken = default)
-    {
-        var validation = await assetValidator.ValidateAsync(request, cancellationToken);
-        if (!validation.IsValid)
-        {
-            throw new WorkflowValidationException("Validation failed.");
+            throw new Phase5ValidationException("Validation failed.", ["Idempotency-Key is required."]);
         }
 
-        var company = await GetApprovedCompanyAsync(companyUserId, cancellationToken);
-        var campaign = await GetOwnedCampaignAsync(company.Id, campaignId, cancellationToken);
-        if (campaign.Status != CampaignStatus.Draft)
+        var normalizedIdempotencyKey = idempotencyKey.Trim();
+        if (normalizedIdempotencyKey.Length is < 8 or > 128)
         {
-            throw new WorkflowConflictException("Campaign assets can only be uploaded while the campaign is a draft.");
+            throw new Phase5ValidationException("Validation failed.", ["Idempotency-Key length must be between 8 and 128 characters."]);
         }
 
-        var upload = await fileStorageProvider.UploadAsync(
-            new FileStorageUpload(
-                $"campaigns/{campaignId}",
-                request.OriginalFileName,
-                request.ContentType,
-                request.SizeBytes),
-            content,
+        var company = await ResolveApprovedCompanyActorAsync(actorUserId, cancellationToken);
+        var requestHash = CreateRequestHash(request);
+        var processingResult = await domainUnitOfWork.ExecuteInTransactionAsync(
+            transactionCancellationToken => ProcessSubmissionUnderIdempotencyLockAsync(
+                actorUserId,
+                company,
+                normalizedIdempotencyKey,
+                request,
+                requestHash,
+                transactionCancellationToken),
             cancellationToken);
 
-        try
+        if (processingResult.Exception is not null)
         {
-            return await domainUnitOfWork.ExecuteInTransactionAsync<CampaignAssetDto>(async transactionCancellationToken =>
-            {
-                var lockedCompany = await GetApprovedCompanyForUpdateAsync(companyUserId, transactionCancellationToken);
-                var lockedCampaign = await GetOwnedCampaignForUpdateAsync(lockedCompany.Id, campaignId, transactionCancellationToken);
-                if (lockedCampaign.Status != CampaignStatus.Draft)
-                {
-                    throw new WorkflowConflictException("Campaign assets can only be uploaded while the campaign is a draft.");
-                }
-
-                var asset = new StoredFile
-                {
-                    OwnerType = StoredFileOwnerType.Campaign,
-                    OwnerId = lockedCampaign.Id,
-                    Purpose = StoredFilePurpose.CampaignMedia,
-                    OriginalFileName = request.OriginalFileName.Trim(),
-                    ContentType = request.ContentType.Trim(),
-                    SizeBytes = request.SizeBytes,
-                    StorageKey = upload.StorageKey,
-                    StorageResourceType = upload.ResourceType,
-                    Visibility = StoredFileVisibility.Private,
-                    ReviewStatus = StoredFileReviewStatus.Pending,
-                    CreatedAtUtc = DateTime.UtcNow
-                };
-
-                await domainUnitOfWork.StoredFiles.AddStoredFileAsync(asset, transactionCancellationToken);
-                return ToCampaignAssetDto(asset);
-            }, cancellationToken);
+            throw processingResult.Exception;
         }
-        catch
-        {
-            try
-            {
-                await fileStorageProvider.DeleteAsync(upload.StorageKey, upload.ResourceType, CancellationToken.None);
-            }
-            catch (Exception cleanupException)
-            {
-                await RecordStorageCleanupFailureAsync(upload.StorageKey, cleanupException, CancellationToken.None);
-            }
 
-            throw;
-        }
+        return processingResult.Result ?? throw new InvalidOperationException("Campaign submission processing did not produce a result.");
     }
 
-    public async Task<CampaignAssetDto> ReplaceAssetAsync(
-        string companyUserId,
-        string campaignId,
-        string assetId,
-        CampaignAssetUploadRequestDto request,
-        Stream content,
-        CancellationToken cancellationToken = default)
+    private async Task<SubmissionProcessingResult> ProcessSubmissionUnderIdempotencyLockAsync(
+        string actorUserId,
+        CompanyActor company,
+        string idempotencyKey,
+        CreateCampaignRequestDto request,
+        string requestHash,
+        CancellationToken cancellationToken)
     {
-        var validation = await assetValidator.ValidateAsync(request, cancellationToken);
-        if (!validation.IsValid)
+        var existingSubmission = await domainUnitOfWork.Campaigns.FindSubmissionRequestForUpdateAsync(company.CompanyId, idempotencyKey, cancellationToken);
+        if (existingSubmission is not null)
         {
-            throw new WorkflowValidationException("Validation failed.");
+            if (!string.Equals(existingSubmission.RequestHash, requestHash, StringComparison.Ordinal))
+            {
+                await AddAuditAsync("Phase5CampaignSubmissionIdempotencyConflict", actorUserId, company.ActorRole, AuditTargetType.Company, company.CompanyId, AuditOutcome.Denied, "Campaign submission idempotency conflict.", new { company.CompanyId }, cancellationToken);
+                return SubmissionProcessingResult.Failure(new Phase5ConflictException("Campaign submission conflicts with a previous request."));
+            }
+
+            if (existingSubmission.CampaignId is null)
+            {
+                return SubmissionProcessingResult.Failure(new Phase5ConflictException("Campaign submission is not replayable."));
+            }
+
+            var replayedCampaign = await LoadCompanyCampaignDetailAsync(company.CompanyId, existingSubmission.CampaignId, cancellationToken);
+            await AddAuditAsync("Phase5CampaignSubmissionIdempotentReplay", actorUserId, company.ActorRole, AuditTargetType.Campaign, existingSubmission.CampaignId, AuditOutcome.Info, "Campaign submission replayed.", new { existingSubmission.CampaignId }, cancellationToken);
+            return SubmissionProcessingResult.Success(new CampaignSubmissionResultDto { Campaign = replayedCampaign, IsIdempotentReplay = true });
         }
 
-        var company = await GetApprovedCompanyAsync(companyUserId, cancellationToken);
-        var campaign = await GetOwnedCampaignAsync(company.Id, campaignId, cancellationToken);
-        if (campaign.Status != CampaignStatus.Draft)
+        IReadOnlyList<StoredFile> assets;
+        IReadOnlyList<CampaignTargetSnapshotDto> targets;
+        try
         {
-            throw new WorkflowConflictException("Campaign assets can only be replaced while the campaign is a draft.");
+            await ValidateCreateCampaignRequestAsync(actorUserId, company, request, cancellationToken);
+            assets = await ValidateAssetsAsync(actorUserId, company, request.AssetIds, cancellationToken);
+            targets = await ValidateTargetsAsync(actorUserId, company, request.TargetDoctorIds, cancellationToken);
+            await ValidateWalletSufficiencyAsync(actorUserId, company, targets, cancellationToken);
+        }
+        catch (Phase5WorkflowException ex)
+        {
+            return SubmissionProcessingResult.Failure(ex);
         }
 
-        var existingAsset = await domainUnitOfWork.StoredFiles.FindStoredFileAsync(assetId, cancellationToken)
-            ?? throw new WorkflowNotFoundException("Not found.");
-        EnsureReplaceableAsset(existingAsset, campaign.Id);
+        var campaignId = Guid.NewGuid().ToString("N");
+        var now = DateTime.UtcNow;
+        var campaign = new Campaign
+        {
+            Id = campaignId,
+            CompanyId = company.CompanyId,
+            Title = NormalizeRequiredText(request.Title),
+            Description = NormalizeRequiredText(request.Description),
+            ClinicalResearchInfo = NormalizeRequiredText(request.ClinicalResearchInfo),
+            MediaFileId = assets.FirstOrDefault(asset => asset.Purpose == StoredFilePurpose.CampaignMedia)?.Id,
+            VoiceNoteFileId = assets.FirstOrDefault(asset => asset.Purpose == StoredFilePurpose.VoiceNote)?.Id,
+            Status = CampaignStatus.PendingReview,
+            CreatedAtUtc = now
+        };
+        var targetEntities = targets.Select(target => new CampaignTarget
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            CampaignId = campaignId,
+            DoctorId = target.DoctorId,
+            SpecializationSnapshot = target.Specialization,
+            ExperienceYearsSnapshot = target.ExperienceYears,
+            LocationSnapshot = target.Location,
+            ActivityScoreSnapshot = target.ActivityScore,
+            PricePerMessageSnapshot = target.PricePerMessage,
+            CreatedAtUtc = now
+        }).ToArray();
+        var submission = new CampaignSubmissionRequest
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            CompanyId = company.CompanyId,
+            IdempotencyKey = idempotencyKey,
+            CampaignId = campaignId,
+            RequestHash = requestHash,
+            Status = CampaignSubmissionRequestStatus.Succeeded,
+            CreatedAtUtc = now,
+            CompletedAtUtc = now
+        };
 
-        var upload = await fileStorageProvider.UploadAsync(
-            new FileStorageUpload(
-                $"campaigns/{campaignId}",
-                request.OriginalFileName,
-                request.ContentType,
-                request.SizeBytes),
-            content,
+        foreach (var asset in assets)
+        {
+            asset.RelatedCampaignId = campaignId;
+        }
+
+        await domainUnitOfWork.Campaigns.AddCampaignAsync(campaign, cancellationToken);
+        await domainUnitOfWork.Campaigns.AddCampaignTargetsAsync(targetEntities, cancellationToken);
+        await domainUnitOfWork.Campaigns.AddSubmissionRequestAsync(submission, cancellationToken);
+        await AddAuditAsync("Phase5CampaignSubmissionSucceeded", actorUserId, company.ActorRole, AuditTargetType.Campaign, campaignId, AuditOutcome.Success, "Campaign submitted for review.", new { CampaignId = campaignId, TargetCount = targetEntities.Length, AssetCount = assets.Count }, cancellationToken);
+
+        var detail = CampaignDtoMapper.ToDetail(campaign, assets, targetEntities);
+        return SubmissionProcessingResult.Success(new CampaignSubmissionResultDto { Campaign = detail, IsIdempotentReplay = false });
+    }
+
+    public async Task<CampaignPageDto> GetCompanyCampaignsAsync(string actorUserId, CampaignStatus? status, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        ValidatePagination(pageNumber, pageSize);
+        var company = await ResolveApprovedCompanyActorAsync(actorUserId, cancellationToken);
+        var skip = (pageNumber - 1) * pageSize;
+        var totalCount = await domainUnitOfWork.Campaigns.CountCompanyCampaignsAsync(company.CompanyId, status, cancellationToken);
+        var campaigns = await domainUnitOfWork.Campaigns.ListCompanyCampaignsAsync(company.CompanyId, status, skip, pageSize, cancellationToken);
+        var summaries = new List<CampaignSummaryDto>(campaigns.Count);
+        foreach (var campaign in campaigns)
+        {
+            var targetCount = await domainUnitOfWork.Campaigns.CountCampaignTargetsAsync(campaign.Id, cancellationToken);
+            summaries.Add(CampaignDtoMapper.ToSummary(campaign, targetCount));
+        }
+
+        return new CampaignPageDto
+        {
+            Page = new CampaignPageMetadataDto
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            },
+            Items = summaries
+        };
+    }
+
+    public async Task<CampaignDetailDto> GetCompanyCampaignDetailAsync(string actorUserId, string campaignId, CancellationToken cancellationToken = default)
+    {
+        var company = await ResolveApprovedCompanyActorAsync(actorUserId, cancellationToken);
+        return await LoadCompanyCampaignDetailAsync(company.CompanyId, campaignId, cancellationToken);
+    }
+
+    public Task<CampaignQueueCreationResultDto> CreateQueueForApprovedCampaignAsync(string campaignId, DateTime queuedAtUtc, string? actorUserId = null, CancellationToken cancellationToken = default)
+    {
+        return domainUnitOfWork.ExecuteInTransactionAsync(
+            transactionCancellationToken => CreateQueueForApprovedCampaignInTransactionAsync(campaignId, queuedAtUtc, actorUserId, transactionCancellationToken),
             cancellationToken);
-
-        try
-        {
-            return await domainUnitOfWork.ExecuteInTransactionAsync<CampaignAssetDto>(async transactionCancellationToken =>
-            {
-                var lockedCompany = await GetApprovedCompanyForUpdateAsync(companyUserId, transactionCancellationToken);
-                var lockedCampaign = await GetOwnedCampaignForUpdateAsync(lockedCompany.Id, campaignId, transactionCancellationToken);
-                if (lockedCampaign.Status != CampaignStatus.Draft)
-                {
-                    throw new WorkflowConflictException("Campaign assets can only be replaced while the campaign is a draft.");
-                }
-
-                var lockedAsset = await domainUnitOfWork.StoredFiles.FindStoredFileForUpdateAsync(assetId, transactionCancellationToken)
-                    ?? throw new WorkflowNotFoundException("Not found.");
-                EnsureReplaceableAsset(lockedAsset, lockedCampaign.Id);
-
-                var replacement = new StoredFile
-                {
-                    OwnerType = StoredFileOwnerType.Campaign,
-                    OwnerId = lockedCampaign.Id,
-                    Purpose = StoredFilePurpose.CampaignMedia,
-                    OriginalFileName = request.OriginalFileName.Trim(),
-                    ContentType = request.ContentType.Trim(),
-                    SizeBytes = request.SizeBytes,
-                    StorageKey = upload.StorageKey,
-                    StorageResourceType = upload.ResourceType,
-                    Visibility = StoredFileVisibility.Private,
-                    ReviewStatus = StoredFileReviewStatus.Pending,
-                    StorageState = StorageObjectState.Active,
-                    CreatedAtUtc = DateTime.UtcNow
-                };
-
-                lockedAsset.SupersededByFileId = replacement.Id;
-                await domainUnitOfWork.StoredFiles.AddStoredFileAsync(replacement, transactionCancellationToken);
-                return ToCampaignAssetDto(replacement);
-            }, cancellationToken);
-        }
-        catch
-        {
-            try
-            {
-                await fileStorageProvider.DeleteAsync(upload.StorageKey, upload.ResourceType, CancellationToken.None);
-            }
-            catch (Exception cleanupException)
-            {
-                await RecordStorageCleanupFailureAsync(upload.StorageKey, cleanupException, CancellationToken.None);
-            }
-
-            throw;
-        }
     }
 
-    public async Task DeleteAssetAsync(
-        string companyUserId,
-        string campaignId,
-        string assetId,
-        CancellationToken cancellationToken = default)
-    {
-        var deletion = await domainUnitOfWork.ExecuteInTransactionAsync<AssetDeletionRequest?>(async transactionCancellationToken =>
-        {
-            var company = await GetApprovedCompanyForUpdateAsync(companyUserId, transactionCancellationToken);
-            var campaign = await GetOwnedCampaignForUpdateAsync(company.Id, campaignId, transactionCancellationToken);
-            if (campaign.Status != CampaignStatus.Draft)
-            {
-                throw new WorkflowConflictException("Campaign assets can only be deleted while the campaign is a draft.");
-            }
-
-            var asset = await domainUnitOfWork.StoredFiles.FindStoredFileForUpdateAsync(assetId, transactionCancellationToken)
-                ?? throw new WorkflowNotFoundException("Not found.");
-
-            if (asset.StorageState == StorageObjectState.Deleted)
-            {
-                return null;
-            }
-
-            EnsureDeletableAsset(asset, campaign.Id);
-            asset.StorageState = StorageObjectState.DeletionPending;
-            return new AssetDeletionRequest(asset.Id, asset.StorageKey, asset.StorageResourceType);
-        }, cancellationToken);
-
-        if (deletion is null)
-        {
-            return;
-        }
-
-        try
-        {
-            await fileStorageProvider.DeleteAsync(deletion.StorageKey, deletion.ResourceType, cancellationToken);
-        }
-        catch (FileStorageUnavailableException)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            throw new FileStorageUnavailableException("File storage provider is unavailable.", exception);
-        }
-
-        await domainUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
-        {
-            var asset = await domainUnitOfWork.StoredFiles.FindStoredFileForUpdateAsync(deletion.AssetId, transactionCancellationToken)
-                ?? throw new WorkflowNotFoundException("Not found.");
-            if (asset.StorageState != StorageObjectState.Deleted)
-            {
-                asset.StorageState = StorageObjectState.Deleted;
-                asset.DeletedAtUtc = DateTime.UtcNow;
-            }
-        }, cancellationToken);
-    }
-
-    public async Task<TargetPreviewDto> PreviewTargetsAsync(string companyUserId, string campaignId, CancellationToken cancellationToken = default)
-    {
-        var company = await GetApprovedCompanyAsync(companyUserId, cancellationToken);
-        await GetOwnedCampaignAsync(company.Id, campaignId, cancellationToken);
-        var eligibleDoctors = await ResolveEligibleDoctorsAsync(cancellationToken);
-        var platformFeePercent = await GetActivePlatformFeePercentAsync(cancellationToken);
-        var estimatedTotalCost = CalculateEstimatedTotalCost(eligibleDoctors, platformFeePercent);
-
-        return new TargetPreviewDto(eligibleDoctors.Count, estimatedTotalCost, "EGP");
-    }
-
-    public async Task<CampaignSubmissionDto> SubmitCampaignAsync(string companyUserId, string campaignId, string idempotencyKey, CancellationToken cancellationToken = default)
-    {
-        var safeIdempotencyKey = ValidateIdempotencyKey(idempotencyKey);
-
-        return await domainUnitOfWork.ExecuteInTransactionAsync<CampaignSubmissionDto>(async transactionCancellationToken =>
-        {
-            var company = await GetApprovedCompanyForUpdateAsync(companyUserId, transactionCancellationToken);
-            var campaign = await GetOwnedCampaignForUpdateAsync(company.Id, campaignId, transactionCancellationToken);
-            var financialKey = CreateCampaignFinancialIdempotencyKey(company.Id, campaign.Id, safeIdempotencyKey);
-            var reserveAlreadyExists = await domainUnitOfWork.WalletTransactions.IdempotencyKeyExistsAsync(
-                WalletTransactionType.Reserve,
-                financialKey,
-                transactionCancellationToken);
-            if (reserveAlreadyExists && campaign.Status == CampaignStatus.PendingReview)
-            {
-                var existingTargets = await domainUnitOfWork.Campaigns.ListCampaignTargetsAsync(campaign.Id, transactionCancellationToken);
-                return new CampaignSubmissionDto(campaign.Id, campaign.Status.ToString(), existingTargets.Count, existingTargets.Sum(target => target.PricePerMessageSnapshot));
-            }
-
-            if (reserveAlreadyExists)
-            {
-                throw new WorkflowConflictException("Idempotency conflict.");
-            }
-
-            if (campaign.Status != CampaignStatus.Draft)
-            {
-                throw new WorkflowConflictException("Campaign is not in a submit-ready state.");
-            }
-
-            var hasApprovedAsset = await domainUnitOfWork.StoredFiles.HasStoredFileAsync(
-                StoredFileOwnerType.Campaign,
-                campaign.Id,
-                StoredFilePurpose.CampaignMedia,
-                StoredFileReviewStatus.Approved,
-                transactionCancellationToken);
-            if (!hasApprovedAsset)
-            {
-                throw new WorkflowValidationException("At least one campaign asset must be approved before submission.");
-            }
-
-            var eligibleDoctors = await ResolveEligibleDoctorsAsync(transactionCancellationToken);
-            if (eligibleDoctors.Count == 0)
-            {
-                throw new WorkflowValidationException("At least one eligible priced doctor is required before submission.");
-            }
-
-            var targetSnapshots = eligibleDoctors
-                .Select(doctor => CampaignTargetEligibility.CreateSnapshot(campaign.Id, doctor))
-                .ToArray();
-            await domainUnitOfWork.Campaigns.ReplaceCampaignTargetsAsync(campaign.Id, targetSnapshots, transactionCancellationToken);
-
-            var platformFeePercent = await GetActivePlatformFeePercentAsync(transactionCancellationToken);
-            var reservedAmount = CalculateEstimatedTotalCost(eligibleDoctors, platformFeePercent);
-            var wallet = await domainUnitOfWork.Wallets.FindActiveWalletForUpdateAsync(WalletOwnerType.Company, company.Id, transactionCancellationToken)
-                ?? throw new WorkflowValidationException("The company wallet must be funded before submission.");
-            if (wallet.AvailableBalance < reservedAmount)
-            {
-                throw new WorkflowValidationException("The company wallet has insufficient available funds.");
-            }
-
-            var transactionId = Guid.NewGuid().ToString("N");
-            await domainUnitOfWork.Wallets.StageAvailableBalanceChangeAsync(wallet.Id, -reservedAmount, transactionCancellationToken);
-            await domainUnitOfWork.Wallets.StageReservedBalanceChangeAsync(wallet.Id, reservedAmount, transactionCancellationToken);
-            await domainUnitOfWork.WalletTransactions.AddTransactionAsync(
-                transactionId,
-                wallet.Id,
-                WalletTransactionType.Reserve,
-                financialKey,
-                reservedAmount,
-                transactionCancellationToken);
-            await domainUnitOfWork.WalletLedgerEntries.AddLedgerEntryAsync(new WalletLedgerEntry
-            {
-                WalletTransactionId = transactionId,
-                WalletId = wallet.Id,
-                Direction = WalletLedgerEntryDirection.Debit,
-                BalanceType = WalletBalanceType.Available,
-                Amount = reservedAmount,
-                CampaignId = campaign.Id,
-                CompanyId = company.Id,
-                IdempotencyKey = financialKey
-            }, transactionCancellationToken);
-            await domainUnitOfWork.WalletLedgerEntries.AddLedgerEntryAsync(new WalletLedgerEntry
-            {
-                WalletTransactionId = transactionId,
-                WalletId = wallet.Id,
-                Direction = WalletLedgerEntryDirection.Credit,
-                BalanceType = WalletBalanceType.Reserved,
-                Amount = reservedAmount,
-                CampaignId = campaign.Id,
-                CompanyId = company.Id,
-                IdempotencyKey = financialKey
-            }, transactionCancellationToken);
-
-            var submittedAtUtc = DateTime.UtcNow;
-            campaign.Status = CampaignStatus.PendingReview;
-            campaign.UpdatedAtUtc = submittedAtUtc;
-            await domainUnitOfWork.AuditEvents.AddAuditEventAsync(
-                Guid.NewGuid().ToString("N"),
-                "CampaignSubmitted",
-                AuditOutcome.Success,
-                submittedAtUtc,
-                "Campaign submitted and company funds reserved.",
-                targetType: AuditTargetType.Campaign,
-                targetId: campaign.Id,
-                cancellationToken: transactionCancellationToken);
-
-            return new CampaignSubmissionDto(campaign.Id, campaign.Status.ToString(), eligibleDoctors.Count, reservedAmount);
-        }, cancellationToken);
-    }
-
-    public async Task<QueueSummaryDto> GetQueueSummaryAsync(
-        string companyUserId,
-        string campaignId,
-        CancellationToken cancellationToken = default)
-    {
-        var company = await GetApprovedCompanyAsync(companyUserId, cancellationToken);
-        var campaign = await GetOwnedCampaignAsync(company.Id, campaignId, cancellationToken);
-        var counts = await domainUnitOfWork.MessageQueues.GetQueueItemCountsByCampaignAsync(campaign.Id, cancellationToken);
-
-        return new QueueSummaryDto(
-            campaign.Id,
-            counts.GetValueOrDefault(QueueItemStatus.Queued),
-            counts.GetValueOrDefault(QueueItemStatus.Activated),
-            counts.GetValueOrDefault(QueueItemStatus.Cancelled),
-            ExpiredQueueCount,
-            DateTime.UtcNow);
-    }
-
-    private Task<Core.Entities.Profiles.CompanyProfile> GetApprovedCompanyAsync(
-        string companyUserId,
-        CancellationToken cancellationToken)
-        => ResolveApprovedCompanyAsync(companyUserId, useUpdateLock: false, cancellationToken);
-
-    private Task<Core.Entities.Profiles.CompanyProfile> GetApprovedCompanyForUpdateAsync(
-        string companyUserId,
-        CancellationToken cancellationToken)
-        => ResolveApprovedCompanyAsync(companyUserId, useUpdateLock: true, cancellationToken);
-
-    private async Task<Core.Entities.Profiles.CompanyProfile> ResolveApprovedCompanyAsync(
-        string companyUserId,
-        bool useUpdateLock,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(companyUserId))
-        {
-            throw new WorkflowUnauthorizedException("Authentication denied.");
-        }
-
-        var user = useUpdateLock
-            ? await identityUnitOfWork.Users.FindByIdForUpdateAsync(companyUserId, cancellationToken)
-            : await identityUnitOfWork.Users.FindByIdAsync(companyUserId, cancellationToken);
-        if (user is null)
-        {
-            throw new WorkflowUnauthorizedException("Authentication denied.");
-        }
-
-        if (user.Role != UserRole.Company || user.AccountStatus != AccountStatus.Approved || user.IsDeleted)
-        {
-            throw new WorkflowForbiddenException("Forbidden.");
-        }
-
-        var company = await identityUnitOfWork.Profiles.FindCompanyProfileByUserIdAsync(companyUserId, cancellationToken);
-        if (company is null || company.IsDeleted)
-        {
-            throw new WorkflowNotFoundException("Not found.");
-        }
-
-        return company;
-    }
-
-    private async Task<Campaign> GetOwnedCampaignAsync(string companyId, string campaignId, CancellationToken cancellationToken)
+    private async Task<CampaignQueueCreationResultDto> CreateQueueForApprovedCampaignInTransactionAsync(string campaignId, DateTime queuedAtUtc, string? actorUserId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(campaignId))
         {
-            throw new WorkflowNotFoundException("Not found.");
+            throw new Phase5ValidationException("Validation failed.", ["Campaign id is required."]);
         }
 
-        var campaign = await domainUnitOfWork.Campaigns.FindActiveCampaignAsync(campaignId, cancellationToken)
-            ?? throw new WorkflowNotFoundException("Not found.");
-        if (!string.Equals(campaign.CompanyId, companyId, StringComparison.Ordinal))
+        var normalizedCampaignId = campaignId.Trim();
+        var auditActorId = string.IsNullOrWhiteSpace(actorUserId) ? null : actorUserId.Trim();
+        const string auditActorRole = "System";
+        var campaign = await domainUnitOfWork.Campaigns.FindApprovedCampaignForQueueAsync(normalizedCampaignId, cancellationToken);
+        if (campaign is null)
         {
-            throw new WorkflowForbiddenException("Forbidden.");
+            await AddAuditAsync("Phase5QueueCreationNoOp", auditActorId, auditActorRole, AuditTargetType.Campaign, normalizedCampaignId, AuditOutcome.Info, "Queue creation skipped because the campaign is not approved or is not active.", new { CampaignId = normalizedCampaignId }, cancellationToken);
+            return new CampaignQueueCreationResultDto { CampaignId = normalizedCampaignId };
         }
 
-        return campaign;
-    }
-
-    private async Task<Campaign> GetOwnedCampaignForUpdateAsync(string companyId, string campaignId, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(campaignId))
+        var targets = await domainUnitOfWork.Campaigns.ListCampaignTargetsAsync(normalizedCampaignId, cancellationToken);
+        if (targets.Count == 0)
         {
-            throw new WorkflowNotFoundException("Not found.");
+            await AddAuditAsync("Phase5QueueCreationNoOp", auditActorId, auditActorRole, AuditTargetType.Campaign, normalizedCampaignId, AuditOutcome.Info, "Queue creation skipped because the campaign has no targets.", new { CampaignId = normalizedCampaignId }, cancellationToken);
+            return new CampaignQueueCreationResultDto { CampaignId = normalizedCampaignId };
         }
 
-        var campaign = await domainUnitOfWork.Campaigns.FindActiveCampaignForUpdateAsync(campaignId, cancellationToken)
-            ?? throw new WorkflowNotFoundException("Not found.");
-        if (!string.Equals(campaign.CompanyId, companyId, StringComparison.Ordinal))
-        {
-            throw new WorkflowForbiddenException("Forbidden.");
-        }
+        var targetDoctorIds = targets.Select(target => target.DoctorId).Distinct(StringComparer.Ordinal).ToArray();
+        var eligibleDoctors = await domainUnitOfWork.Profiles.ListEligibleDoctorsByIdsAsync(targetDoctorIds, cancellationToken);
+        var eligibleDoctorIds = eligibleDoctors.Select(doctor => doctor.Id).ToHashSet(StringComparer.Ordinal);
+        var createdCount = 0;
+        var skippedCount = 0;
+        var duplicateExistingCount = 0;
 
-        return campaign;
-    }
-
-    private async Task<IReadOnlyList<DoctorProfile>> ResolveEligibleDoctorsAsync(CancellationToken cancellationToken)
-    {
-        var profiles = await identityUnitOfWork.Profiles.ListDoctorProfilesAsync(cancellationToken);
-        var eligibleDoctors = new List<DoctorProfile>();
-        foreach (var profile in profiles)
+        foreach (var target in targets)
         {
-            if (profile.IsDeleted
-                || profile.Status != DoctorMarketplaceStatus.Active
-                || profile.PricePerMessage is not > 0m
-                || !MoneyRules.HasTwoOrFewerDecimalPlaces(profile.PricePerMessage.Value))
+            if (await domainUnitOfWork.MessageQueues.QueueItemExistsAsync(normalizedCampaignId, target.DoctorId, cancellationToken))
             {
+                duplicateExistingCount++;
+                await AddAuditAsync("Phase5QueueCreationDuplicateRetry", auditActorId, auditActorRole, AuditTargetType.Campaign, normalizedCampaignId, AuditOutcome.Info, "Existing queue item preserved during retry.", new { CampaignId = normalizedCampaignId, target.DoctorId }, cancellationToken);
                 continue;
             }
 
-            var user = await identityUnitOfWork.Users.FindByIdAsync(profile.UserId, cancellationToken);
-            if (user is not null && CampaignTargetEligibility.IsEligible(profile, user))
+            if (!eligibleDoctorIds.Contains(target.DoctorId))
             {
-                eligibleDoctors.Add(profile);
+                skippedCount++;
+                await AddAuditAsync("Phase5QueueCreationSkippedTarget", auditActorId, auditActorRole, AuditTargetType.Campaign, normalizedCampaignId, AuditOutcome.Info, "Campaign target was no longer eligible at queue creation time.", new { CampaignId = normalizedCampaignId, target.DoctorId }, cancellationToken);
+                continue;
             }
+
+            var wasCreated = await domainUnitOfWork.MessageQueues.TryAddQueueItemAsync(new DoctorMessageQueue
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                CampaignId = normalizedCampaignId,
+                DoctorId = target.DoctorId,
+                QueuedAtUtc = queuedAtUtc,
+                CampaignSubmittedAtUtc = campaign.CreatedAtUtc,
+                Status = QueueItemStatus.Queued,
+                CreatedAtUtc = DateTime.UtcNow
+            }, cancellationToken);
+            if (wasCreated)
+            {
+                createdCount++;
+                continue;
+            }
+
+            duplicateExistingCount++;
+            await AddAuditAsync("Phase5QueueCreationDuplicateRetry", auditActorId, auditActorRole, AuditTargetType.Campaign, normalizedCampaignId, AuditOutcome.Info, "Existing queue item preserved during concurrent retry.", new { CampaignId = normalizedCampaignId, target.DoctorId }, cancellationToken);
         }
 
-        return eligibleDoctors;
+        await AddAuditAsync("Phase5QueueCreationSucceeded", auditActorId, auditActorRole, AuditTargetType.Campaign, normalizedCampaignId, AuditOutcome.Success, "Approved campaign queue creation processed.", new { CampaignId = normalizedCampaignId, CreatedCount = createdCount, SkippedCount = skippedCount, DuplicateExistingCount = duplicateExistingCount }, cancellationToken);
+        return new CampaignQueueCreationResultDto
+        {
+            CampaignId = normalizedCampaignId,
+            CreatedCount = createdCount,
+            SkippedCount = skippedCount,
+            DuplicateExistingCount = duplicateExistingCount
+        };
     }
 
-    private async Task<decimal> GetActivePlatformFeePercentAsync(CancellationToken cancellationToken)
+    private async Task ValidateCreateCampaignRequestAsync(string actorUserId, CompanyActor company, CreateCampaignRequestDto request, CancellationToken cancellationToken)
     {
-        var feePercent = await domainUnitOfWork.PolicyHistory.FindActivePlatformFeePercentAsync(DateTime.UtcNow, cancellationToken)
-            ?? DefaultPlatformFeePercent;
-        if (feePercent is < 0m or > 100m)
-        {
-            throw new WorkflowConflictException("The active platform fee policy is invalid.");
-        }
-
-        return feePercent;
-    }
-
-    private static decimal CalculateEstimatedTotalCost(IReadOnlyList<DoctorProfile> doctors, decimal platformFeePercent)
-    {
-        var total = 0m;
-        foreach (var doctor in doctors)
-        {
-            var price = doctor.PricePerMessage!.Value;
-            var platformFee = decimal.Round(price * platformFeePercent / 100m, 2, MidpointRounding.AwayFromZero);
-            var doctorEarnings = price - platformFee;
-            total += platformFee + doctorEarnings;
-        }
-
-        return MoneyRules.EnsureValid(total, nameof(total));
-    }
-
-    private static void EnsureReplaceableAsset(StoredFile asset, string campaignId)
-    {
-        EnsureCampaignAsset(asset, campaignId);
-        if (asset.StorageState != StorageObjectState.Active
-            || asset.DeletedAtUtc is not null
-            || !string.IsNullOrWhiteSpace(asset.SupersededByFileId))
-        {
-            throw new WorkflowConflictException("Campaign asset is not replaceable.");
-        }
-
-        if (asset.ReviewStatus is not (StoredFileReviewStatus.Pending or StoredFileReviewStatus.Rejected))
-        {
-            throw new WorkflowConflictException("Approved campaign assets are immutable.");
-        }
-    }
-
-    private static void EnsureDeletableAsset(StoredFile asset, string campaignId)
-    {
-        EnsureCampaignAsset(asset, campaignId);
-        if (asset.StorageState == StorageObjectState.DeletionPending)
+        var validationResult = await createCampaignValidator.ValidateAsync(request, cancellationToken);
+        if (validationResult.IsValid)
         {
             return;
         }
 
-        if (asset.StorageState != StorageObjectState.Active
-            || asset.DeletedAtUtc is not null
-            || !string.IsNullOrWhiteSpace(asset.SupersededByFileId))
+        await AddAuditAsync("Phase5CampaignSubmissionValidationFailed", actorUserId, company.ActorRole, AuditTargetType.Company, company.CompanyId, AuditOutcome.Denied, "Campaign content validation failed.", new { ErrorCount = validationResult.Errors.Count }, cancellationToken);
+        await domainUnitOfWork.SaveChangesAsync(cancellationToken);
+        throw new Phase5ValidationException("Validation failed.", validationResult.Errors.Select(error => error.ErrorMessage).ToArray());
+    }
+
+    private async Task<IReadOnlyList<StoredFile>> ValidateAssetsAsync(string actorUserId, CompanyActor company, IReadOnlyList<string> assetIds, CancellationToken cancellationToken)
+    {
+        var assets = new List<StoredFile>(assetIds.Count);
+        foreach (var assetId in assetIds.Distinct(StringComparer.Ordinal))
         {
-            throw new WorkflowConflictException("Campaign asset is not deletable.");
+            var file = await domainUnitOfWork.StoredFiles.FindByIdAsync(assetId, cancellationToken);
+            var isAvailable = await domainUnitOfWork.StoredFiles.IsAvailableAsApprovedAssetAsync(assetId, cancellationToken);
+            if (file is null ||
+                !isAvailable ||
+                file.OwnerType != StoredFileOwnerType.Company ||
+                file.OwnerId != company.CompanyId ||
+                file.Purpose is not (StoredFilePurpose.CampaignMedia or StoredFilePurpose.VoiceNote or StoredFilePurpose.ClinicalResearchAttachment) ||
+                file.RelatedCampaignId is not null)
+            {
+                await AddAuditAsync("Phase5CampaignAssetValidationFailed", actorUserId, company.ActorRole, AuditTargetType.StoredFile, assetId, AuditOutcome.Denied, "Campaign asset validation failed.", new { AssetId = assetId }, cancellationToken);
+                await domainUnitOfWork.SaveChangesAsync(cancellationToken);
+                throw new Phase5ValidationException("Validation failed.", ["Campaign assets must be approved, available, and owned by the company."]);
+            }
+
+            assets.Add(file);
         }
 
-        if (asset.ReviewStatus is not (StoredFileReviewStatus.Pending or StoredFileReviewStatus.Rejected))
+        if (assets.Count == 0)
         {
-            throw new WorkflowConflictException("Approved campaign assets are immutable.");
+            throw new Phase5ValidationException("Validation failed.", ["At least one approved campaign asset is required."]);
+        }
+
+        return assets;
+    }
+
+    private async Task<IReadOnlyList<CampaignTargetSnapshotDto>> ValidateTargetsAsync(string actorUserId, CompanyActor company, IReadOnlyList<string> targetDoctorIds, CancellationToken cancellationToken)
+    {
+        var requestedIds = targetDoctorIds.Distinct(StringComparer.Ordinal).ToArray();
+        var eligibleDoctors = await domainUnitOfWork.Profiles.ListEligibleDoctorsByIdsAsync(requestedIds, cancellationToken);
+        var eligibleById = eligibleDoctors
+            .Where(doctor => requestedIds.Contains(doctor.Id, StringComparer.Ordinal))
+            .ToDictionary(doctor => doctor.Id, StringComparer.Ordinal);
+
+        if (eligibleById.Count != requestedIds.Length)
+        {
+            await AddAuditAsync("Phase5CampaignTargetValidationFailed", actorUserId, company.ActorRole, AuditTargetType.Company, company.CompanyId, AuditOutcome.Denied, "Campaign target validation failed.", new { RequestedCount = requestedIds.Length, EligibleCount = eligibleById.Count }, cancellationToken);
+            await domainUnitOfWork.SaveChangesAsync(cancellationToken);
+            throw new Phase5ValidationException("Validation failed.", ["All selected target doctors must be eligible and positively priced."]);
+        }
+
+        return requestedIds.Select(id =>
+        {
+            var doctor = eligibleById[id];
+            return new CampaignTargetSnapshotDto
+            {
+                DoctorId = doctor.Id,
+                Specialization = doctor.Specialization,
+                ExperienceYears = doctor.ExperienceYears,
+                Location = doctor.Location,
+                ActivityScore = doctor.ActivityScore,
+                PricePerMessage = doctor.PricePerMessage ?? 0m
+            };
+        }).ToArray();
+    }
+
+    private async Task ValidateWalletSufficiencyAsync(string actorUserId, CompanyActor company, IReadOnlyList<CampaignTargetSnapshotDto> targets, CancellationToken cancellationToken)
+    {
+        var total = CampaignDtoMapper.CalculateTargetPriceTotal(targets);
+        var balances = await domainUnitOfWork.Wallets.GetActiveWalletBalancesAsync(WalletOwnerType.Company, company.CompanyId, cancellationToken);
+        if (balances is null || balances.Value.AvailableBalance < total)
+        {
+            await AddAuditAsync("Phase5CampaignInsufficientWalletBalance", actorUserId, company.ActorRole, AuditTargetType.Company, company.CompanyId, AuditOutcome.Denied, "Company wallet available balance is insufficient.", new { RequiredAmount = total, AvailableAmount = balances?.AvailableBalance ?? 0m }, cancellationToken);
+            await domainUnitOfWork.SaveChangesAsync(cancellationToken);
+            throw new Phase5ConflictException("Company wallet available balance is insufficient.");
         }
     }
 
-    private static void EnsureCampaignAsset(StoredFile asset, string campaignId)
+    private async Task<CampaignDetailDto> LoadCompanyCampaignDetailAsync(string companyId, string campaignId, CancellationToken cancellationToken)
     {
-        if (asset.OwnerType != StoredFileOwnerType.Campaign
-            || asset.Purpose != StoredFilePurpose.CampaignMedia
-            || !string.Equals(asset.OwnerId, campaignId, StringComparison.Ordinal))
+        var campaign = await domainUnitOfWork.Campaigns.FindCompanyCampaignAsync(companyId, campaignId, cancellationToken);
+        if (campaign is null)
         {
-            throw new WorkflowNotFoundException("Not found.");
+            throw new Phase5NotFoundException("Campaign was not found.");
+        }
+
+        var targets = await domainUnitOfWork.Campaigns.ListCampaignTargetsAsync(campaignId, cancellationToken);
+        var assets = await domainUnitOfWork.StoredFiles.ListByCampaignAsync(campaignId, null, cancellationToken);
+        return CampaignDtoMapper.ToDetail(campaign, assets, targets);
+    }
+
+    private async Task<CompanyActor> ResolveApprovedCompanyActorAsync(string actorUserId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(actorUserId))
+        {
+            throw new Phase5ForbiddenException("Forbidden.");
+        }
+
+        var user = await identityUnitOfWork.Users.FindByIdAsync(actorUserId, cancellationToken);
+        var profile = await identityUnitOfWork.Profiles.FindCompanyProfileByUserIdAsync(actorUserId, cancellationToken);
+        if (user is { Role: UserRole.Company, AccountStatus: AccountStatus.Approved, IsDeleted: false } && profile is { IsDeleted: false })
+        {
+            return new CompanyActor(profile.Id, user.Role.ToString());
+        }
+
+        await AddAuditAsync("Phase5CampaignOwnershipDenied", actorUserId, user?.Role.ToString() ?? "Unknown", AuditTargetType.User, actorUserId, AuditOutcome.Denied, "Actor is not an approved active company user.", new { ActorUserId = actorUserId }, cancellationToken);
+        await domainUnitOfWork.SaveChangesAsync(cancellationToken);
+        throw new Phase5ForbiddenException("Forbidden.");
+    }
+
+    private static void ValidatePagination(int pageNumber, int pageSize)
+    {
+        if (pageNumber < 1 || pageSize is < 1 or > 100)
+        {
+            throw new Phase5ValidationException("Validation failed.", ["PageNumber must be at least 1 and PageSize must be between 1 and 100."]);
         }
     }
 
-    private static string ValidateIdempotencyKey(string idempotencyKey)
+    private static string CreateRequestHash(CreateCampaignRequestDto request)
     {
-        var safeKey = idempotencyKey?.Trim();
-        if (string.IsNullOrWhiteSpace(safeKey) || safeKey.Length < 8 || safeKey.Length > 128)
+        var normalized = new
         {
-            throw new WorkflowValidationException("Validation failed.");
+            Title = NormalizeRequiredText(request.Title),
+            Description = NormalizeRequiredText(request.Description),
+            ClinicalResearchInfo = NormalizeRequiredText(request.ClinicalResearchInfo),
+            AssetIds = (request.AssetIds ?? Array.Empty<string>()).Select(NormalizeRequiredText).OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            TargetDoctorIds = (request.TargetDoctorIds ?? Array.Empty<string>()).Select(NormalizeRequiredText).OrderBy(value => value, StringComparer.Ordinal).ToArray()
+        };
+        var json = JsonSerializer.Serialize(normalized, HashJsonOptions);
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json)));
+    }
+
+    private static string NormalizeRequiredText(string? value)
+    {
+        return value?.Trim() ?? string.Empty;
+    }
+
+    private async Task AddAuditAsync(
+        string eventType,
+        string? actorUserId,
+        string? actorRole,
+        AuditTargetType targetType,
+        string targetId,
+        AuditOutcome outcome,
+        string reason,
+        object metadata,
+        CancellationToken cancellationToken)
+    {
+        await domainUnitOfWork.AuditEvents.AddPhase5AuditEventAsync(
+            Guid.NewGuid().ToString("N"),
+            eventType,
+            actorUserId,
+            actorRole,
+            targetType,
+            targetId,
+            outcome,
+            reason,
+            correlationId: null,
+            JsonSerializer.Serialize(metadata, HashJsonOptions),
+            DateTime.UtcNow,
+            cancellationToken);
+    }
+
+    private sealed record CompanyActor(string CompanyId, string ActorRole);
+
+    private sealed record SubmissionProcessingResult(CampaignSubmissionResultDto? Result, Phase5WorkflowException? Exception)
+    {
+        public static SubmissionProcessingResult Success(CampaignSubmissionResultDto result)
+        {
+            return new SubmissionProcessingResult(result, null);
         }
 
-        return safeKey;
+        public static SubmissionProcessingResult Failure(Phase5WorkflowException exception)
+        {
+            return new SubmissionProcessingResult(null, exception);
+        }
     }
-
-    private static string CreateCampaignFinancialIdempotencyKey(string companyId, string campaignId, string idempotencyKey)
-    {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"campaign-reserve:{companyId}:{campaignId}:{idempotencyKey}"));
-        return Convert.ToHexString(bytes);
-    }
-
-    private Task RecordStorageCleanupFailureAsync(string storageKey, Exception exception, CancellationToken cancellationToken)
-    {
-        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(storageKey)));
-
-        return auditLogger.LogAsync(new AuditEvent(
-            AuditEventCategory.System,
-            $"FileStorageCompensationFailed:{exception.GetType().Name}",
-            currentUserContext.UserId,
-            currentUserContext.Role,
-            "StoredFileObject",
-            fingerprint,
-            currentUserContext.CorrelationId,
-            DateTime.UtcNow), cancellationToken);
-    }
-
-    private static CampaignDto ToCampaignDto(Campaign campaign)
-        => new(campaign.Id, campaign.CompanyId, campaign.Title, campaign.Description, campaign.Status.ToString());
-
-    private static CampaignAssetDto ToCampaignAssetDto(StoredFile asset)
-        => new(asset.Id, asset.OwnerId, asset.ReviewStatus.ToString(), asset.ReviewReason);
-
-    private static string? NormalizeOptionalText(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private sealed record AssetDeletionRequest(string AssetId, string StorageKey, string ResourceType);
 }

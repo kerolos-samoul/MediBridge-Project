@@ -62,12 +62,14 @@ public sealed class AuthAuditSafetyTests
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
         var user = await db.Users.SingleAsync(candidate => candidate.Email == email);
-        var auditEvent = await db.AuthenticationAuditEvents.SingleAsync(candidate => candidate.TargetUserId == user.Id);
-        var serializedAuditEvent = System.Text.Json.JsonSerializer.Serialize(auditEvent);
+        var auditEvents = await db.AuthenticationAuditEvents.Where(candidate => candidate.TargetUserId == user.Id).ToListAsync();
+        Assert.NotEmpty(auditEvents);
+        var serializedAuditEvent = System.Text.Json.JsonSerializer.Serialize(auditEvents);
 
         Assert.DoesNotContain(password, serializedAuditEvent, StringComparison.Ordinal);
         Assert.DoesNotContain("RefreshToken", serializedAuditEvent, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("AccessToken", serializedAuditEvent, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("MediBridge email verification OTP", serializedAuditEvent, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("RequestBody", serializedAuditEvent, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ResponseBody", serializedAuditEvent, StringComparison.OrdinalIgnoreCase);
     }

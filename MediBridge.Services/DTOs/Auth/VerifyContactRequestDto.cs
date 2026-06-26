@@ -4,7 +4,8 @@ namespace MediBridge.Services.DTOs.Auth;
 
 public sealed class VerifyContactRequestDto
 {
-    public string Contact { get; set; } = string.Empty;
     public ContactVerificationChannel Channel { get; set; }
     public string VerificationToken { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Otp { get; set; } = string.Empty;
 }

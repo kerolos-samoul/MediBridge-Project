@@ -11,4 +11,11 @@ public static class AuthorizationPolicies
     public const string AdminOnly = "AdminOnly";
     public const string DoctorOnly = "DoctorOnly";
     public const string CompanyOnly = "CompanyOnly";
+    public const string AdminFileReview = "AdminFileReview";
+    public const string CompanyCampaignFileUpload = "CompanyCampaignFileUpload";
+    public const string DoctorVerificationUpload = "DoctorVerificationUpload";
+    public const string AuthenticatedFileAccess = "AuthenticatedFileAccess";
+    public const string Phase5CompanyDoctorSearch = "Phase5CompanyDoctorSearch";
+    public const string Phase5CompanyCampaignAccess = "Phase5CompanyCampaignAccess";
+    public const string Phase5CompanyWalletAccess = "Phase5CompanyWalletAccess";
 }

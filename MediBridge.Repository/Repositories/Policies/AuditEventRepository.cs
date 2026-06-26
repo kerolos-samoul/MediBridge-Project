@@ -35,6 +35,36 @@ public sealed class AuditEventRepository : IAuditEventRepository
         }, cancellationToken);
     }
 
+    public async Task AddPhase5AuditEventAsync(
+        string auditEventId,
+        string eventType,
+        string? actorUserId,
+        string? actorRole,
+        AuditTargetType? targetType,
+        string? targetId,
+        AuditOutcome outcome,
+        string? reason,
+        string? correlationId,
+        string? metadata,
+        DateTime createdAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        await context.AuditEvents.AddAsync(new AuditEvent
+        {
+            Id = auditEventId,
+            EventType = eventType,
+            ActorUserId = actorUserId,
+            ActorRole = actorRole,
+            TargetType = targetType,
+            TargetId = targetId,
+            Outcome = outcome,
+            Reason = reason,
+            CorrelationId = correlationId,
+            Metadata = AuditMetadataRules.EnsureSafe(metadata, nameof(metadata)),
+            CreatedAtUtc = createdAtUtc
+        }, cancellationToken);
+    }
+
     public Task<string?> FindAuditEventIdAsync(string auditEventId, CancellationToken cancellationToken = default)
     {
         return context.AuditEvents

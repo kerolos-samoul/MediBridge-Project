@@ -15,6 +15,7 @@ public sealed class DoctorMessageQueueConfiguration : IEntityTypeConfiguration<D
         builder.Property(queue => queue.Status).HasConversion<int>();
         builder.HasOne<DoctorProfile>().WithMany().HasForeignKey(queue => queue.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Campaign>().WithMany().HasForeignKey(queue => queue.CampaignId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(queue => new { queue.CampaignId, queue.DoctorId }).IsUnique();
         builder.HasIndex(queue => new { queue.DoctorId, queue.Status, queue.QueuedAtUtc, queue.Id });
     }
 }

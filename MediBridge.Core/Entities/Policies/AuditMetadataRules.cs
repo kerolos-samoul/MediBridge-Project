@@ -14,7 +14,12 @@ public static class AuditMetadataRules
         "request_body",
         "responsebody",
         "response_body",
-        "secret"
+        "secret",
+        "payload",
+        "storagekey",
+        "storage_key",
+        "stacktrace",
+        "stack_trace"
     ];
 
     public static string? EnsureSafe(string? metadata, string paramName)

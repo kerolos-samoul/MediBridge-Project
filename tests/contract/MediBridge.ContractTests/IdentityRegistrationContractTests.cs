@@ -29,11 +29,6 @@ public sealed class IdentityRegistrationContractTests
         Assert.Equal("Doctor", data.GetProperty("Role").GetString());
         Assert.Equal("Pending", data.GetProperty("AccountStatus").GetString());
         Assert.False(string.IsNullOrWhiteSpace(data.GetProperty("UserId").GetString()));
-        Assert.True(data.GetProperty("VerificationRequired").GetBoolean());
-        Assert.Equal("Email", data.GetProperty("VerificationChannel").GetString());
-        Assert.Contains("***", data.GetProperty("MaskedVerificationDestination").GetString());
-        Assert.True(data.GetProperty("VerificationExpiresAtUtc").GetDateTime() > DateTime.UtcNow);
-        Assert.Equal("Sent", data.GetProperty("VerificationDeliveryStatus").GetString());
     }
 
     [Fact]

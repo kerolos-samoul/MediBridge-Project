@@ -26,18 +26,6 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
         return user?.ToDomain();
     }
 
-    public async Task<ApplicationUser?> FindByIdForUpdateAsync(string userId, CancellationToken cancellationToken = default)
-    {
-        var user = await context.Users
-            .FromSqlInterpolated($"""
-                SELECT *
-                FROM [Users] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
-                WHERE [Id] = {userId}
-                """)
-            .SingleOrDefaultAsync(cancellationToken);
-        return user?.ToDomain();
-    }
-
     public async Task<ApplicationUser?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = NormalizeEmail(email);
@@ -90,11 +78,6 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
 
         if (result.Succeeded is false)
         {
-            if (result.Errors.Any(IsDuplicateIdentityError))
-            {
-                throw new IdentityRecordConflictException("Duplicate email, phone, or license.");
-            }
-
             throw new InvalidOperationException(string.Join(", ", result.Errors.Select(error => error.Description)));
         }
 
@@ -159,12 +142,6 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
     {
         return email.Trim().ToUpperInvariant();
     }
-
-    private static bool IsDuplicateIdentityError(IdentityError error)
-    {
-        return error.Code.StartsWith("Duplicate", StringComparison.OrdinalIgnoreCase)
-            || error.Description.Contains("already", StringComparison.OrdinalIgnoreCase);
-    }
 }
 
 public sealed class ProfileRepository : IProfileRepository
@@ -186,22 +163,9 @@ public sealed class ProfileRepository : IProfileRepository
         await context.CompanyProfiles.AddAsync(profile, cancellationToken);
     }
 
-    public Task<DoctorProfile?> FindDoctorProfileByIdAsync(string doctorId, CancellationToken cancellationToken = default)
-    {
-        return context.DoctorProfiles.FirstOrDefaultAsync(profile => profile.Id == doctorId, cancellationToken);
-    }
-
     public Task<DoctorProfile?> FindDoctorProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         return context.DoctorProfiles.FirstOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<DoctorProfile>> ListDoctorProfilesAsync(CancellationToken cancellationToken = default)
-    {
-        return await context.DoctorProfiles
-            .OrderBy(profile => profile.CreatedAtUtc)
-            .ThenBy(profile => profile.Id)
-            .ToListAsync(cancellationToken);
     }
 
     public Task<CompanyProfile?> FindCompanyProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default)
@@ -212,6 +176,95 @@ public sealed class ProfileRepository : IProfileRepository
     public Task<bool> CompanyLicenseExistsAsync(string licenseNumber, CancellationToken cancellationToken = default)
     {
         return context.CompanyProfiles.AnyAsync(profile => profile.LicenseNumber == licenseNumber, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DoctorProfile>> SearchEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, int skip, int take, CancellationToken cancellationToken = default)
+    {
+        return await ApplyEligibleDoctorFilters(criteria)
+            .OrderByDescending(profile => profile.ActivityScore)
+            .ThenBy(profile => profile.PricePerMessage)
+            .ThenBy(profile => profile.Id)
+            .Skip(Math.Max(skip, 0))
+            .Take(Math.Max(take, 1))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DoctorProfile>> ListEligibleDoctorsByIdsAsync(IReadOnlyCollection<string> doctorIds, CancellationToken cancellationToken = default)
+    {
+        var distinctIds = doctorIds
+            .Where(id => string.IsNullOrWhiteSpace(id) is false)
+            .Select(id => id.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (distinctIds.Length == 0)
+        {
+            return Array.Empty<DoctorProfile>();
+        }
+
+        return await ApplyEligibleDoctorFilters(new EligibleDoctorSearchCriteria(null, null, null, null, null, null, null))
+            .Where(profile => distinctIds.Contains(profile.Id))
+            .OrderByDescending(profile => profile.ActivityScore)
+            .ThenBy(profile => profile.PricePerMessage)
+            .ThenBy(profile => profile.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, CancellationToken cancellationToken = default)
+    {
+        return ApplyEligibleDoctorFilters(criteria).CountAsync(cancellationToken);
+    }
+
+    private IQueryable<DoctorProfile> ApplyEligibleDoctorFilters(EligibleDoctorSearchCriteria criteria)
+    {
+        var query =
+            from profile in context.DoctorProfiles
+            join user in context.Users on profile.UserId equals user.Id
+            where !profile.IsDeleted
+                  && profile.Status == DoctorMarketplaceStatus.Active
+                  && profile.PricePerMessage > 0
+                  && !user.IsDeleted
+                  && user.Role == UserRole.Doctor
+                  && user.AccountStatus == AccountStatus.Approved
+            select profile;
+
+        if (string.IsNullOrWhiteSpace(criteria.Specialization) is false)
+        {
+            var specialization = criteria.Specialization.Trim();
+            query = query.Where(profile => profile.Specialization == specialization);
+        }
+
+        if (criteria.MinExperienceYears.HasValue)
+        {
+            query = query.Where(profile => profile.ExperienceYears >= criteria.MinExperienceYears.Value);
+        }
+
+        if (criteria.MaxExperienceYears.HasValue)
+        {
+            query = query.Where(profile => profile.ExperienceYears <= criteria.MaxExperienceYears.Value);
+        }
+
+        if (string.IsNullOrWhiteSpace(criteria.Location) is false)
+        {
+            var location = criteria.Location.Trim();
+            query = query.Where(profile => profile.Location == location);
+        }
+
+        if (criteria.MinActivityScore.HasValue)
+        {
+            query = query.Where(profile => profile.ActivityScore >= criteria.MinActivityScore.Value);
+        }
+
+        if (criteria.MinPrice.HasValue)
+        {
+            query = query.Where(profile => profile.PricePerMessage >= criteria.MinPrice.Value);
+        }
+
+        if (criteria.MaxPrice.HasValue)
+        {
+            query = query.Where(profile => profile.PricePerMessage <= criteria.MaxPrice.Value);
+        }
+
+        return query;
     }
 }
 
@@ -336,68 +389,26 @@ public sealed class ContactVerificationFlowRepository : IContactVerificationFlow
                 FROM [ContactVerificationFlows] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
                 WHERE [TokenHash] = {tokenHash}
                     AND [ConsumedAtUtc] IS NULL
+                    AND [SupersededAtUtc] IS NULL
+                    AND [MaxAttemptsReachedAtUtc] IS NULL
                     AND [ExpiresAtUtc] >= {now}
                 """)
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public Task<ContactVerificationFlow?> FindLatestActiveForUpdateAsync(
+    public async Task<IReadOnlyList<ContactVerificationFlow>> ListUnconsumedByUserDestinationAsync(
         string userId,
         ContactVerificationChannel channel,
-        DateTime nowUtc,
+        string destinationHash,
         CancellationToken cancellationToken = default)
     {
-        var channelValue = channel.ToString();
-        return context.ContactVerificationFlows
-            .FromSqlInterpolated($"""
-                SELECT TOP(1) *
-                FROM [ContactVerificationFlows] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
-                WHERE [UserId] = {userId}
-                    AND [Channel] = {channelValue}
-                    AND [ConsumedAtUtc] IS NULL
-                    AND [SupersededAtUtc] IS NULL
-                    AND [MaxAttemptsReachedAtUtc] IS NULL
-                    AND [ExpiresAtUtc] > {nowUtc}
-                ORDER BY [CreatedAtUtc] DESC
-                """)
-            .SingleOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task SupersedeActiveAsync(
-        string userId,
-        ContactVerificationChannel channel,
-        DateTime supersededAtUtc,
-        CancellationToken cancellationToken = default)
-    {
-        var flows = await context.ContactVerificationFlows
+        return await context.ContactVerificationFlows
             .Where(flow => flow.UserId == userId
-                && flow.Channel == channel
-                && flow.ConsumedAtUtc == null
-                && flow.SupersededAtUtc == null)
+                           && flow.Channel == channel
+                           && flow.DestinationHash == destinationHash
+                           && flow.ConsumedAtUtc == null)
+            .OrderByDescending(flow => flow.CreatedAtUtc)
             .ToListAsync(cancellationToken);
-        foreach (var flow in flows)
-        {
-            flow.SupersededAtUtc = supersededAtUtc;
-        }
-    }
-
-    public Task RecordFailedAttemptAsync(ContactVerificationFlow flow, DateTime attemptedAtUtc, CancellationToken cancellationToken = default)
-    {
-        flow.FailedAttemptCount++;
-        if (flow.FailedAttemptCount >= flow.MaxAttemptCount)
-        {
-            flow.MaxAttemptsReachedAtUtc = attemptedAtUtc;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task MarkSentAsync(ContactVerificationFlow flow, DateTime sentAtUtc, CancellationToken cancellationToken = default)
-    {
-        flow.LastSentAtUtc = sentAtUtc;
-        flow.ResendCount++;
-        flow.ResendWindowStartedAtUtc ??= sentAtUtc;
-        return Task.CompletedTask;
     }
 
     public Task MarkConsumedAsync(ContactVerificationFlow flow, DateTime consumedAtUtc, CancellationToken cancellationToken = default)

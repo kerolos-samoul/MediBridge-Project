@@ -6,10 +6,10 @@ using MediBridge.Core.Entities.Identity;
 using MediBridge.Core.Entities.Profiles;
 using MediBridge.Core.Enums;
 using MediBridge.Core.Interfaces;
-using MediBridge.Core.Interfaces.Notifications;
 using MediBridge.Services.Config;
+using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 
 namespace MediBridge.Services.Services;
 
@@ -27,10 +27,11 @@ public sealed class AuthService : IAuthService
     private readonly IValidator<ForgotPasswordRequestDto> forgotPasswordValidator;
     private readonly IValidator<ResetPasswordRequestDto> resetPasswordValidator;
     private readonly IValidator<VerifyContactRequestDto> verifyContactValidator;
-    private readonly IValidator<ResendContactVerificationRequestDto> resendContactVerificationValidator;
+    private readonly IValidator<RequestContactVerificationDto> requestContactVerificationValidator;
     private readonly ICurrentUserContext currentUserContext;
-    private readonly IEmailDelivery emailDelivery;
     private readonly ContactVerificationOptions contactVerificationOptions;
+    private readonly IEmailSender emailSender;
+    private readonly ILogger<AuthService> logger;
 
     public AuthService(
         IIdentityUnitOfWork identityUnitOfWork,
@@ -43,10 +44,11 @@ public sealed class AuthService : IAuthService
         IValidator<ForgotPasswordRequestDto> forgotPasswordValidator,
         IValidator<ResetPasswordRequestDto> resetPasswordValidator,
         IValidator<VerifyContactRequestDto> verifyContactValidator,
-        IValidator<ResendContactVerificationRequestDto> resendContactVerificationValidator,
+        IValidator<RequestContactVerificationDto> requestContactVerificationValidator,
         ICurrentUserContext currentUserContext,
-        IEmailDelivery emailDelivery,
-        IOptions<ContactVerificationOptions> contactVerificationOptions)
+        ContactVerificationOptions contactVerificationOptions,
+        IEmailSender emailSender,
+        ILogger<AuthService> logger)
     {
         this.identityUnitOfWork = identityUnitOfWork;
         this.authTokenService = authTokenService;
@@ -58,10 +60,11 @@ public sealed class AuthService : IAuthService
         this.forgotPasswordValidator = forgotPasswordValidator;
         this.resetPasswordValidator = resetPasswordValidator;
         this.verifyContactValidator = verifyContactValidator;
-        this.resendContactVerificationValidator = resendContactVerificationValidator;
+        this.requestContactVerificationValidator = requestContactVerificationValidator;
         this.currentUserContext = currentUserContext;
-        this.emailDelivery = emailDelivery;
-        this.contactVerificationOptions = contactVerificationOptions.Value;
+        this.contactVerificationOptions = contactVerificationOptions;
+        this.emailSender = emailSender;
+        this.logger = logger;
     }
 
     public async Task<RegistrationResultDto> RegisterDoctorAsync(RegisterDoctorRequestDto request, CancellationToken cancellationToken = default)
@@ -70,6 +73,7 @@ public sealed class AuthService : IAuthService
 
         var normalizedEmail = request.Email.Trim();
         var normalizedPhone = request.PhoneNumber?.Trim();
+        logger.LogInformation("Doctor registration starting. Email: {Email}, HasPhoneNumber: {HasPhoneNumber}", normalizedEmail, !string.IsNullOrWhiteSpace(normalizedPhone));
 
         if (await identityUnitOfWork.Users.ExistsByEmailAsync(normalizedEmail, cancellationToken))
         {
@@ -81,70 +85,52 @@ public sealed class AuthService : IAuthService
             throw new RegistrationConflictException("Duplicate email, phone, or license.");
         }
 
-        try
+        var operationResult = await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            var issue = await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+            var now = DateTime.UtcNow;
+            var user = new ApplicationUser
             {
-                var now = DateTime.UtcNow;
-                var user = new ApplicationUser
-                {
-                    Email = normalizedEmail,
-                    PhoneNumber = normalizedPhone,
-                    Role = UserRole.Doctor,
-                    AccountStatus = AccountStatus.Pending,
-                    CreatedAtUtc = now,
-                    LastStatusChangedAtUtc = now,
-                    IsDeleted = false
-                };
+                Email = normalizedEmail,
+                PhoneNumber = normalizedPhone,
+                Role = UserRole.Doctor,
+                AccountStatus = AccountStatus.Pending,
+                CreatedAtUtc = now,
+                LastStatusChangedAtUtc = now,
+                IsDeleted = false
+            };
 
-                await identityUnitOfWork.Users.AddAsync(user, request.Password, transactionCancellationToken);
-                await identityUnitOfWork.Profiles.AddDoctorProfileAsync(new DoctorProfile
-                {
-                    UserId = user.Id,
-                    User = user,
-                    Specialization = request.Specialization.Trim(),
-                    ExperienceYears = request.ExperienceYears,
-                    Location = request.Location.Trim(),
-                    VerificationDocumentType = request.VerificationMetadata.DocumentType.Trim(),
-                    VerificationOriginalFileName = request.VerificationMetadata.OriginalFileName.Trim(),
-                    VerificationContentType = request.VerificationMetadata.ContentType.Trim(),
-                    VerificationSizeBytes = request.VerificationMetadata.SizeBytes,
-                    VerificationReference = request.VerificationMetadata.Reference.Trim(),
-                    CreatedAtUtc = now
-                }, transactionCancellationToken);
+            await identityUnitOfWork.Users.AddAsync(user, request.Password, transactionCancellationToken);
+            await identityUnitOfWork.Profiles.AddDoctorProfileAsync(new DoctorProfile
+            {
+                UserId = user.Id,
+                User = user,
+                Specialization = request.Specialization.Trim(),
+                ExperienceYears = request.ExperienceYears,
+                Location = request.Location.Trim(),
+                VerificationDocumentType = request.VerificationMetadata.DocumentType.Trim(),
+                VerificationOriginalFileName = request.VerificationMetadata.OriginalFileName.Trim(),
+                VerificationContentType = request.VerificationMetadata.ContentType.Trim(),
+                VerificationSizeBytes = request.VerificationMetadata.SizeBytes,
+                VerificationReference = request.VerificationMetadata.Reference.Trim(),
+                CreatedAtUtc = now
+            }, transactionCancellationToken);
 
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(CreateRegistrationAuditEvent(user, now), transactionCancellationToken);
-                var contactVerification = await CreateEmailContactVerificationIssueAsync(
-                    user,
-                    normalizedEmail,
-                    now,
-                    resendCount: 0,
-                    resendWindowStartedAtUtc: now,
-                    previousTokenHash: null,
-                    transactionCancellationToken);
+            await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(CreateRegistrationAuditEvent(user, now), transactionCancellationToken);
+            var otp = await IssueEmailVerificationOtpAsync(user, normalizedEmail, now, transactionCancellationToken);
+            logger.LogInformation("Doctor registration database changes prepared. UserId: {UserId}, Role: {Role}, AccountStatus: {AccountStatus}", user.Id, user.Role, user.AccountStatus);
 
-                return new ContactVerificationRegistrationIssue(
-                    new RegistrationResultDto
-                    {
-                        UserId = user.Id,
-                        Role = user.Role,
-                        AccountStatus = user.AccountStatus,
-                        VerificationRequired = true,
-                        VerificationChannel = ContactVerificationChannel.Email,
-                        MaskedVerificationDestination = MaskEmail(normalizedEmail),
-                        VerificationExpiresAtUtc = contactVerification.ExpiresAtUtc,
-                        VerificationDeliveryStatus = "Pending"
-                    },
-                    contactVerification);
-            }, cancellationToken);
+            return new RegistrationOperationResult(new RegistrationResultDto
+            {
+                UserId = user.Id,
+                Role = user.Role,
+                AccountStatus = user.AccountStatus
+            }, user.Id, user.Role, normalizedEmail, otp);
+        }, cancellationToken);
 
-            await DeliverContactVerificationAsync(issue.ContactVerification, issue.Result, cancellationToken);
-            return issue.Result;
-        }
-        catch (IdentityRecordConflictException)
-        {
-            throw new RegistrationConflictException("Duplicate email, phone, or license.");
-        }
+        logger.LogInformation("Doctor registration database transaction committed. UserId: {UserId}", operationResult.UserId);
+        await SendEmailVerificationOtpAsync(operationResult.UserId, operationResult.Role, operationResult.Email, operationResult.Otp, cancellationToken);
+        logger.LogInformation("Doctor registration completed. UserId: {UserId}, Role: {Role}, AccountStatus: {AccountStatus}", operationResult.UserId, operationResult.Role, operationResult.Result.AccountStatus);
+        return operationResult.Result;
     }
 
     public async Task<RegistrationResultDto> RegisterCompanyAsync(RegisterCompanyRequestDto request, CancellationToken cancellationToken = default)
@@ -154,6 +140,7 @@ public sealed class AuthService : IAuthService
         var normalizedEmail = request.Email.Trim();
         var normalizedPhone = request.PhoneNumber?.Trim();
         var normalizedLicenseNumber = request.LicenseNumber.Trim();
+        logger.LogInformation("Company registration starting. Email: {Email}, HasPhoneNumber: {HasPhoneNumber}, LicenseNumberPresent: {LicenseNumberPresent}", normalizedEmail, !string.IsNullOrWhiteSpace(normalizedPhone), !string.IsNullOrWhiteSpace(normalizedLicenseNumber));
 
         if (await identityUnitOfWork.Users.ExistsByEmailAsync(normalizedEmail, cancellationToken))
         {
@@ -170,70 +157,52 @@ public sealed class AuthService : IAuthService
             throw new RegistrationConflictException("Duplicate email, phone, or license.");
         }
 
-        try
+        var operationResult = await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            var issue = await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+            var now = DateTime.UtcNow;
+            var user = new ApplicationUser
             {
-                var now = DateTime.UtcNow;
-                var user = new ApplicationUser
-                {
-                    Email = normalizedEmail,
-                    PhoneNumber = normalizedPhone,
-                    Role = UserRole.Company,
-                    AccountStatus = AccountStatus.Pending,
-                    CreatedAtUtc = now,
-                    LastStatusChangedAtUtc = now,
-                    IsDeleted = false
-                };
+                Email = normalizedEmail,
+                PhoneNumber = normalizedPhone,
+                Role = UserRole.Company,
+                AccountStatus = AccountStatus.Pending,
+                CreatedAtUtc = now,
+                LastStatusChangedAtUtc = now,
+                IsDeleted = false
+            };
 
-                await identityUnitOfWork.Users.AddAsync(user, request.Password, transactionCancellationToken);
-                await identityUnitOfWork.Profiles.AddCompanyProfileAsync(new CompanyProfile
-                {
-                    UserId = user.Id,
-                    User = user,
-                    CompanyName = request.CompanyName.Trim(),
-                    LicenseNumber = normalizedLicenseNumber,
-                    ContactName = request.ContactName.Trim(),
-                    VerificationDocumentType = request.VerificationMetadata.DocumentType.Trim(),
-                    VerificationOriginalFileName = request.VerificationMetadata.OriginalFileName.Trim(),
-                    VerificationContentType = request.VerificationMetadata.ContentType.Trim(),
-                    VerificationSizeBytes = request.VerificationMetadata.SizeBytes,
-                    VerificationReference = request.VerificationMetadata.Reference.Trim(),
-                    CreatedAtUtc = now
-                }, transactionCancellationToken);
+            await identityUnitOfWork.Users.AddAsync(user, request.Password, transactionCancellationToken);
+            await identityUnitOfWork.Profiles.AddCompanyProfileAsync(new CompanyProfile
+            {
+                UserId = user.Id,
+                User = user,
+                CompanyName = request.CompanyName.Trim(),
+                LicenseNumber = normalizedLicenseNumber,
+                ContactName = request.ContactName.Trim(),
+                VerificationDocumentType = request.VerificationMetadata.DocumentType.Trim(),
+                VerificationOriginalFileName = request.VerificationMetadata.OriginalFileName.Trim(),
+                VerificationContentType = request.VerificationMetadata.ContentType.Trim(),
+                VerificationSizeBytes = request.VerificationMetadata.SizeBytes,
+                VerificationReference = request.VerificationMetadata.Reference.Trim(),
+                CreatedAtUtc = now
+            }, transactionCancellationToken);
 
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(CreateRegistrationAuditEvent(user, now), transactionCancellationToken);
-                var contactVerification = await CreateEmailContactVerificationIssueAsync(
-                    user,
-                    normalizedEmail,
-                    now,
-                    resendCount: 0,
-                    resendWindowStartedAtUtc: now,
-                    previousTokenHash: null,
-                    transactionCancellationToken);
+            await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(CreateRegistrationAuditEvent(user, now), transactionCancellationToken);
+            var otp = await IssueEmailVerificationOtpAsync(user, normalizedEmail, now, transactionCancellationToken);
+            logger.LogInformation("Company registration database changes prepared. UserId: {UserId}, Role: {Role}, AccountStatus: {AccountStatus}", user.Id, user.Role, user.AccountStatus);
 
-                return new ContactVerificationRegistrationIssue(
-                    new RegistrationResultDto
-                    {
-                        UserId = user.Id,
-                        Role = user.Role,
-                        AccountStatus = user.AccountStatus,
-                        VerificationRequired = true,
-                        VerificationChannel = ContactVerificationChannel.Email,
-                        MaskedVerificationDestination = MaskEmail(normalizedEmail),
-                        VerificationExpiresAtUtc = contactVerification.ExpiresAtUtc,
-                        VerificationDeliveryStatus = "Pending"
-                    },
-                    contactVerification);
-            }, cancellationToken);
+            return new RegistrationOperationResult(new RegistrationResultDto
+            {
+                UserId = user.Id,
+                Role = user.Role,
+                AccountStatus = user.AccountStatus
+            }, user.Id, user.Role, normalizedEmail, otp);
+        }, cancellationToken);
 
-            await DeliverContactVerificationAsync(issue.ContactVerification, issue.Result, cancellationToken);
-            return issue.Result;
-        }
-        catch (IdentityRecordConflictException)
-        {
-            throw new RegistrationConflictException("Duplicate email, phone, or license.");
-        }
+        logger.LogInformation("Company registration database transaction committed. UserId: {UserId}", operationResult.UserId);
+        await SendEmailVerificationOtpAsync(operationResult.UserId, operationResult.Role, operationResult.Email, operationResult.Otp, cancellationToken);
+        logger.LogInformation("Company registration completed. UserId: {UserId}, Role: {Role}, AccountStatus: {AccountStatus}", operationResult.UserId, operationResult.Role, operationResult.Result.AccountStatus);
+        return operationResult.Result;
     }
 
     public async Task<AuthResultDto> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken = default)
@@ -260,12 +229,6 @@ public sealed class AuthService : IAuthService
         {
             await RecordAuditEventAsync(CreateAuditEvent(AuthAuditEventType.LoginDenied, user, "Denied", "Account status denied.", now), cancellationToken);
             throw new AccountStatusDeniedException("Account status does not allow token issuance.");
-        }
-
-        if (RequiresEmailVerification(user))
-        {
-            await RecordAuditEventAsync(CreateAuditEvent(AuthAuditEventType.LoginDenied, user, "Denied", "ContactVerificationRequired", now), cancellationToken);
-            throw new AccountStatusDeniedException("Contact verification is required before token issuance.");
         }
 
         return await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
@@ -343,15 +306,6 @@ public sealed class AuthService : IAuthService
                     transactionCancellationToken);
 
                 return RefreshOperationResult.AuthDenied("Account status does not allow token issuance.");
-            }
-
-            if (RequiresEmailVerification(user))
-            {
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
-                    CreateAuditEvent(AuthAuditEventType.Refresh, user, "Denied", "ContactVerificationRequired", now),
-                    transactionCancellationToken);
-
-                return RefreshOperationResult.AuthDenied("Contact verification is required before token issuance.");
             }
 
             credential.RevokedAtUtc = now;
@@ -489,126 +443,43 @@ public sealed class AuthService : IAuthService
     {
         await verifyContactValidator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var normalizedDestination = NormalizeEmailForOneTimeSecret(request.Contact);
-        var plaintextSecret = request.VerificationToken.Trim();
-        var now = DateTime.UtcNow;
-        var user = await identityUnitOfWork.Users.FindByContactAsync(request.Contact.Trim(), cancellationToken);
-
-        if (user is null || user.IsDeleted)
+        if (!string.IsNullOrWhiteSpace(request.Otp))
         {
-            await RecordAuditEventAsync(CreateAuditEvent(AuthAuditEventType.ContactVerificationDenied, null, "Denied", "InvalidOrExpired", now), cancellationToken);
-            throw new ValidationException("Invalid verification token.");
-        }
-
-        await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
-        {
-            var lockedUser = await identityUnitOfWork.Users.FindByIdForUpdateAsync(user.Id, transactionCancellationToken)
-                ?? throw new ValidationException("Invalid verification token.");
-
-            var flow = await identityUnitOfWork.ContactVerificationFlows.FindLatestActiveForUpdateAsync(
-                lockedUser.Id,
-                ContactVerificationChannel.Email,
-                now,
-                transactionCancellationToken);
-
-            if (flow is null
-                || !string.Equals(flow.DestinationHash, authTokenService.HashToken(normalizedDestination), StringComparison.Ordinal))
-            {
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
-                    CreateAuditEvent(AuthAuditEventType.ContactVerificationDenied, lockedUser, "Denied", "InvalidOrExpired", now),
-                    transactionCancellationToken);
-                throw new ValidationException("Invalid verification token.");
-            }
-
-            if (!authTokenService.VerifyOneTimeSecret(normalizedDestination, plaintextSecret, flow.TokenHash))
-            {
-                await identityUnitOfWork.ContactVerificationFlows.RecordFailedAttemptAsync(flow, now, transactionCancellationToken);
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
-                    CreateAuditEvent(AuthAuditEventType.ContactVerificationDenied, lockedUser, "Denied", "InvalidCode", now),
-                    transactionCancellationToken);
-                throw new ValidationException("Invalid verification token.");
-            }
-
-            lockedUser.EmailVerified = true;
-            await identityUnitOfWork.Users.UpdateAsync(lockedUser, transactionCancellationToken);
-            await identityUnitOfWork.ContactVerificationFlows.MarkConsumedAsync(flow, now, transactionCancellationToken);
-            await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
-                CreateAuditEvent(AuthAuditEventType.ContactVerificationCompleted, lockedUser, "Success", null, now),
-                transactionCancellationToken);
-        }, cancellationToken);
-    }
-
-    public async Task ResendContactVerificationAsync(ResendContactVerificationRequestDto request, CancellationToken cancellationToken = default)
-    {
-        await resendContactVerificationValidator.ValidateAndThrowAsync(request, cancellationToken);
-
-        var contact = request.Contact.Trim();
-        var existingUser = await identityUnitOfWork.Users.FindByContactAsync(contact, cancellationToken);
-        if (existingUser is null || existingUser.IsDeleted || existingUser.EmailVerified || existingUser.Role is not (UserRole.Doctor or UserRole.Company))
-        {
+            await VerifyEmailOtpAsync(request, cancellationToken);
             return;
         }
 
-        var issue = await identityUnitOfWork.ExecuteInTransactionAsync<ContactVerificationIssue?>(async transactionCancellationToken =>
+        var tokenHash = authTokenService.HashToken(request.VerificationToken.Trim());
+        var now = DateTime.UtcNow;
+
+        await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            var now = DateTime.UtcNow;
-            var lockedUser = await identityUnitOfWork.Users.FindByIdForUpdateAsync(existingUser.Id, transactionCancellationToken);
-            if (lockedUser is null
-                || lockedUser.IsDeleted
-                || lockedUser.EmailVerified
-                || lockedUser.Role is not (UserRole.Doctor or UserRole.Company))
+            var flow = await identityUnitOfWork.ContactVerificationFlows.FindUnconsumedByTokenHashAsync(tokenHash, transactionCancellationToken)
+                ?? throw new ValidationException("Invalid verification token.");
+
+            if (flow.Channel != request.Channel)
             {
-                return null;
+                throw new ValidationException("Invalid verification token.");
             }
 
-            var latestFlow = await identityUnitOfWork.ContactVerificationFlows.FindLatestActiveForUpdateAsync(
-                lockedUser.Id,
-                ContactVerificationChannel.Email,
-                now,
-                transactionCancellationToken);
+            var user = await identityUnitOfWork.Users.FindByIdAsync(flow.UserId, transactionCancellationToken)
+                ?? throw new ValidationException("Invalid verification token.");
 
-            if (latestFlow?.LastSentAtUtc is not null
-                && latestFlow.LastSentAtUtc.Value.AddSeconds(contactVerificationOptions.ResendCooldownSeconds) > now)
+            if (request.Channel == ContactVerificationChannel.Email)
             {
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
-                    CreateAuditEvent(AuthAuditEventType.ContactVerificationDenied, lockedUser, "Denied", "Cooldown", now),
-                    transactionCancellationToken);
-                throw new ContactVerificationRateLimitedException();
+                user.EmailVerified = true;
+            }
+            else
+            {
+                user.PhoneVerified = true;
             }
 
-            var existingWindowStartedAt = latestFlow?.ResendWindowStartedAtUtc;
-            var isExistingWindowActive = existingWindowStartedAt.HasValue
-                && existingWindowStartedAt.Value.AddMinutes(contactVerificationOptions.ResendWindowMinutes) > now;
-            var resendCountInWindow = isExistingWindowActive ? latestFlow?.ResendCount ?? 0 : 0;
-
-            if (resendCountInWindow >= contactVerificationOptions.MaxResendsPerWindow)
-            {
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
-                    CreateAuditEvent(AuthAuditEventType.ContactVerificationDenied, lockedUser, "Denied", "ResendLimit", now),
-                    transactionCancellationToken);
-                throw new ContactVerificationRateLimitedException();
-            }
-
-            await identityUnitOfWork.ContactVerificationFlows.SupersedeActiveAsync(
-                lockedUser.Id,
-                ContactVerificationChannel.Email,
-                now,
-                transactionCancellationToken);
-
-            return await CreateEmailContactVerificationIssueAsync(
-                lockedUser,
-                lockedUser.Email,
-                now,
-                resendCountInWindow + 1,
-                isExistingWindowActive ? existingWindowStartedAt!.Value : now,
-                latestFlow?.TokenHash,
+            await identityUnitOfWork.Users.UpdateAsync(user, transactionCancellationToken);
+            await identityUnitOfWork.ContactVerificationFlows.MarkConsumedAsync(flow, now, transactionCancellationToken);
+            await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
+                CreateAuditEvent(AuthAuditEventType.ContactVerificationCompleted, user, "Success", null, now),
                 transactionCancellationToken);
         }, cancellationToken);
-
-        if (issue is not null)
-        {
-            await DeliverContactVerificationAsync(issue, result: null, cancellationToken);
-        }
     }
 
     public async Task<RegistrationResultDto> ResubmitRegistrationAsync(ResubmissionRequestDto request, CancellationToken cancellationToken = default)
@@ -618,62 +489,55 @@ public sealed class AuthService : IAuthService
         var tokenHash = authTokenService.HashToken(request.ResubmissionToken.Trim());
         var now = DateTime.UtcNow;
 
-        try
+        return await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            return await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+            var resubmissionToken = await identityUnitOfWork.AccountResubmissionTokens.FindUnconsumedByTokenHashForUpdateAsync(tokenHash, transactionCancellationToken)
+                ?? throw new AccountStatusDeniedException("Account status denied.");
+
+            var user = await identityUnitOfWork.Users.FindByIdAsync(resubmissionToken.UserId, transactionCancellationToken)
+                ?? throw new AccountStatusDeniedException("Account status denied.");
+
+            if (user.IsDeleted || user.AccountStatus != AccountStatus.Rejected || user.Role is not (UserRole.Doctor or UserRole.Company))
             {
-                var resubmissionToken = await identityUnitOfWork.AccountResubmissionTokens.FindUnconsumedByTokenHashForUpdateAsync(tokenHash, transactionCancellationToken)
-                    ?? throw new AccountStatusDeniedException("Account status denied.");
+                throw new AccountStatusDeniedException("Account status denied.");
+            }
 
-                var user = await identityUnitOfWork.Users.FindByIdAsync(resubmissionToken.UserId, transactionCancellationToken)
-                    ?? throw new AccountStatusDeniedException("Account status denied.");
+            var updatedProfileFields = await UpdateResubmittedProfileAsync(user.Id, user.Role, request, now, transactionCancellationToken);
+            var updatedVerificationMetadata = JsonSerializer.Serialize(request.VerificationMetadata);
 
-                if (user.IsDeleted || user.AccountStatus != AccountStatus.Rejected || user.Role is not (UserRole.Doctor or UserRole.Company))
-                {
-                    throw new AccountStatusDeniedException("Account status denied.");
-                }
+            await identityUnitOfWork.AccountResubmissionTokens.MarkConsumedAsync(resubmissionToken, now, transactionCancellationToken);
+            await identityUnitOfWork.AccountResubmissions.AddAsync(new AccountResubmission
+            {
+                UserId = user.Id,
+                SubmittedAtUtc = now,
+                UpdatedProfileFields = updatedProfileFields,
+                UpdatedVerificationMetadata = updatedVerificationMetadata
+            }, transactionCancellationToken);
 
-                var updatedProfileFields = await UpdateResubmittedProfileAsync(user.Id, user.Role, request, now, transactionCancellationToken);
-                var updatedVerificationMetadata = JsonSerializer.Serialize(request.VerificationMetadata);
+            user.AccountStatus = AccountStatus.Pending;
+            user.ApprovedAtUtc = null;
+            user.LastStatusChangedAtUtc = now;
+            await identityUnitOfWork.Users.UpdateAsync(user, transactionCancellationToken);
 
-                await identityUnitOfWork.AccountResubmissionTokens.MarkConsumedAsync(resubmissionToken, now, transactionCancellationToken);
-                await identityUnitOfWork.AccountResubmissions.AddAsync(new AccountResubmission
-                {
-                    UserId = user.Id,
-                    SubmittedAtUtc = now,
-                    UpdatedProfileFields = updatedProfileFields,
-                    UpdatedVerificationMetadata = updatedVerificationMetadata
-                }, transactionCancellationToken);
+            await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(new AuthenticationAuditEvent
+            {
+                EventType = AuthAuditEventType.AccountResubmission,
+                ActorUserId = null,
+                TargetUserId = user.Id,
+                Role = user.Role,
+                Outcome = "Success",
+                Reason = null,
+                CorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N"),
+                CreatedAtUtc = now
+            }, transactionCancellationToken);
 
-                user.AccountStatus = AccountStatus.Pending;
-                user.ApprovedAtUtc = null;
-                user.LastStatusChangedAtUtc = now;
-                await identityUnitOfWork.Users.UpdateAsync(user, transactionCancellationToken);
-
-                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(new AuthenticationAuditEvent
-                {
-                    EventType = AuthAuditEventType.AccountResubmission,
-                    ActorUserId = null,
-                    TargetUserId = user.Id,
-                    Role = user.Role,
-                    Outcome = "Success",
-                    Reason = null,
-                    CorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N"),
-                    CreatedAtUtc = now
-                }, transactionCancellationToken);
-
-                return new RegistrationResultDto
-                {
-                    UserId = user.Id,
-                    Role = user.Role,
-                    AccountStatus = user.AccountStatus
-                };
-            }, cancellationToken);
-        }
-        catch (IdentityRecordConflictException)
-        {
-            throw new RegistrationConflictException("Duplicate email, phone, or license.");
-        }
+            return new RegistrationResultDto
+            {
+                UserId = user.Id,
+                Role = user.Role,
+                AccountStatus = user.AccountStatus
+            };
+        }, cancellationToken);
     }
 
     private async Task<string> UpdateResubmittedProfileAsync(
@@ -783,6 +647,258 @@ public sealed class AuthService : IAuthService
         };
     }
 
+    private async Task<string> IssueEmailVerificationOtpAsync(
+        ApplicationUser user,
+        string email,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var otp = CreateNumericOtp(contactVerificationOptions.OtpLength);
+        var flow = new ContactVerificationFlow
+        {
+            UserId = user.Id,
+            Channel = ContactVerificationChannel.Email,
+            DestinationHash = authTokenService.HashToken(email),
+            TokenHash = authTokenService.HashToken(otp),
+            ExpiresAtUtc = now.AddMinutes(contactVerificationOptions.ExpirationMinutes),
+            LastSentAtUtc = now,
+            CreatedAtUtc = now
+        };
+
+        await identityUnitOfWork.ContactVerificationFlows.AddAsync(flow, cancellationToken);
+        logger.LogInformation(
+            "Email OTP contact verification flow created. FlowId: {FlowId}, UserId: {UserId}, Channel: {Channel}, ExpiresAtUtc: {ExpiresAtUtc}, LastSentAtUtc: {LastSentAtUtc}",
+            flow.Id,
+            flow.UserId,
+            flow.Channel,
+            flow.ExpiresAtUtc,
+            flow.LastSentAtUtc);
+        await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
+            CreateAuditEvent(AuthAuditEventType.ContactVerificationRequested, user, "Success", null, now),
+            cancellationToken);
+        return otp;
+    }
+
+    private async Task VerifyEmailOtpAsync(VerifyContactRequestDto request, CancellationToken cancellationToken)
+    {
+        if (request.Channel != ContactVerificationChannel.Email)
+        {
+            throw new ValidationException("Invalid verification token.");
+        }
+
+        var normalizedEmail = request.Email.Trim();
+        var tokenHash = authTokenService.HashToken(request.Otp.Trim());
+        var destinationHash = authTokenService.HashToken(normalizedEmail);
+        var now = DateTime.UtcNow;
+        var verificationFailed = false;
+
+        await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+        {
+            var flow = await identityUnitOfWork.ContactVerificationFlows.FindUnconsumedByTokenHashAsync(tokenHash, transactionCancellationToken);
+            if (flow is null)
+            {
+                await RecordFailedEmailOtpAttemptAsync(normalizedEmail, destinationHash, now, transactionCancellationToken);
+                verificationFailed = true;
+                return;
+            }
+
+            if (flow.Channel != ContactVerificationChannel.Email || flow.DestinationHash != destinationHash)
+            {
+                await RecordFailedEmailOtpAttemptAsync(normalizedEmail, destinationHash, now, transactionCancellationToken);
+                verificationFailed = true;
+                return;
+            }
+
+            var user = await identityUnitOfWork.Users.FindByIdAsync(flow.UserId, transactionCancellationToken)
+                ?? throw new ValidationException("Invalid verification token.");
+
+            if (!string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidationException("Invalid verification token.");
+            }
+
+            user.EmailVerified = true;
+            await identityUnitOfWork.Users.UpdateAsync(user, transactionCancellationToken);
+            await identityUnitOfWork.ContactVerificationFlows.MarkConsumedAsync(flow, now, transactionCancellationToken);
+            await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
+                CreateAuditEvent(AuthAuditEventType.ContactVerificationCompleted, user, "Success", null, now),
+                transactionCancellationToken);
+        }, cancellationToken);
+
+        if (verificationFailed)
+        {
+            throw new ValidationException("Invalid verification token.");
+        }
+    }
+
+    private async Task RecordFailedEmailOtpAttemptAsync(
+        string normalizedEmail,
+        string destinationHash,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var user = await identityUnitOfWork.Users.FindByEmailAsync(normalizedEmail, cancellationToken)
+            ?? throw new ValidationException("Invalid verification token.");
+
+        var flows = await identityUnitOfWork.ContactVerificationFlows.ListUnconsumedByUserDestinationAsync(
+            user.Id,
+            ContactVerificationChannel.Email,
+            destinationHash,
+            cancellationToken);
+
+        var activeFlow = flows.FirstOrDefault(flow => flow.SupersededAtUtc is null
+                                                     && flow.ExpiresAtUtc >= now
+                                                     && flow.MaxAttemptsReachedAtUtc is null)
+            ?? throw new ValidationException("Invalid verification token.");
+
+        activeFlow.FailedAttemptCount++;
+        if (activeFlow.FailedAttemptCount >= contactVerificationOptions.MaxAttempts)
+        {
+            activeFlow.MaxAttemptsReachedAtUtc = now;
+            await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
+                CreateAuditEvent(AuthAuditEventType.ContactVerificationMaxAttemptsReached, user, "Denied", "Max attempts reached.", now),
+                cancellationToken);
+        }
+
+        await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
+            CreateAuditEvent(AuthAuditEventType.ContactVerificationFailed, user, "Denied", "Invalid verification token.", now),
+            cancellationToken);
+    }
+
+    private async Task SendEmailVerificationOtpAsync(string userId, UserRole role, string registeredEmail, string otp, CancellationToken cancellationToken)
+    {
+        logger.LogInformation(
+            "Email OTP delivery preparing. UserId: {UserId}, RegisteredEmail: {RegisteredEmail}, OverrideEnabled: {OverrideEnabled}, OverrideRecipientConfigured: {OverrideRecipientConfigured}",
+            userId,
+            registeredEmail,
+            contactVerificationOptions.AllowOverrideRecipientEmail,
+            !string.IsNullOrWhiteSpace(contactVerificationOptions.OverrideRecipientEmail));
+
+        var recipientEmail = contactVerificationOptions.AllowOverrideRecipientEmail
+            ? contactVerificationOptions.OverrideRecipientEmail?.Trim()
+            : registeredEmail;
+
+        if (string.IsNullOrWhiteSpace(recipientEmail))
+        {
+            recipientEmail = registeredEmail;
+        }
+
+        logger.LogInformation(
+            "Email OTP delivery recipient resolved. UserId: {UserId}, RegisteredEmail: {RegisteredEmail}, RecipientEmail: {RecipientEmail}",
+            userId,
+            registeredEmail,
+            recipientEmail);
+
+        try
+        {
+            await emailSender.SendAsync(new EmailMessageDto
+            {
+                RecipientEmail = recipientEmail,
+                Subject = "MediBridge email verification OTP",
+                Body = $"""
+                    Your MediBridge email verification OTP is: {otp}
+
+                    Registered email: {registeredEmail}
+                    This code expires in {contactVerificationOptions.ExpirationMinutes} minutes.
+                    """
+            }, cancellationToken);
+
+            await RecordAuditEventAsync(new AuthenticationAuditEvent
+            {
+                EventType = AuthAuditEventType.ContactVerificationSent,
+                ActorUserId = null,
+                TargetUserId = userId,
+                Role = role,
+                Outcome = "Success",
+                Reason = null,
+                CorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N"),
+                CreatedAtUtc = DateTime.UtcNow
+            }, cancellationToken);
+
+            logger.LogInformation(
+                "Email OTP delivery succeeded. UserId: {UserId}, RecipientEmail: {RecipientEmail}",
+                userId,
+                recipientEmail);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Email OTP delivery failed. UserId: {UserId}, RegisteredEmail: {RegisteredEmail}, RecipientEmail: {RecipientEmail}",
+                userId,
+                registeredEmail,
+                recipientEmail);
+
+            await RecordAuditEventAsync(new AuthenticationAuditEvent
+            {
+                EventType = AuthAuditEventType.ContactVerificationFailed,
+                ActorUserId = null,
+                TargetUserId = userId,
+                Role = role,
+                Outcome = "Denied",
+                Reason = "Email delivery failed.",
+                CorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N"),
+                CreatedAtUtc = DateTime.UtcNow
+            }, cancellationToken);
+        }
+    }
+
+    public async Task RequestContactVerificationAsync(RequestContactVerificationDto request, CancellationToken cancellationToken = default)
+    {
+        await requestContactVerificationValidator.ValidateAndThrowAsync(request, cancellationToken);
+
+        var normalizedEmail = request.Email.Trim();
+        var destinationHash = authTokenService.HashToken(normalizedEmail);
+        var now = DateTime.UtcNow;
+        string? otp = null;
+
+        await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+        {
+            var user = await identityUnitOfWork.Users.FindByEmailAsync(normalizedEmail, transactionCancellationToken)
+                ?? throw new ValidationException("Invalid contact verification request.");
+
+            if (user.IsDeleted || user.EmailVerified)
+            {
+                throw new ValidationException("Invalid contact verification request.");
+            }
+
+            var flows = await identityUnitOfWork.ContactVerificationFlows.ListUnconsumedByUserDestinationAsync(
+                user.Id,
+                ContactVerificationChannel.Email,
+                destinationHash,
+                transactionCancellationToken);
+
+            var latestFlow = flows.FirstOrDefault();
+            if (latestFlow is not null && latestFlow.LastSentAtUtc.AddSeconds(contactVerificationOptions.ResendCooldownSeconds) > now)
+            {
+                throw new ContactVerificationRateLimitedException("Email verification resend is temporarily rate limited.");
+            }
+
+            foreach (var flow in flows.Where(flow => flow.ExpiresAtUtc >= now))
+            {
+                flow.SupersededAtUtc = now;
+            }
+
+            otp = await IssueEmailVerificationOtpAsync(user, normalizedEmail, now, transactionCancellationToken);
+        }, cancellationToken);
+
+        var deliveryUser = await identityUnitOfWork.Users.FindByEmailAsync(normalizedEmail, cancellationToken)
+            ?? throw new ValidationException("Invalid contact verification request.");
+        await SendEmailVerificationOtpAsync(
+            deliveryUser.Id,
+            deliveryUser.Role,
+            normalizedEmail,
+            otp ?? throw new InvalidOperationException("OTP was not created."),
+            cancellationToken);
+    }
+
+    private static string CreateNumericOtp(int length)
+    {
+        var minimum = (int)Math.Pow(10, length - 1);
+        var maximumExclusive = (int)Math.Pow(10, length);
+        return RandomNumberGenerator.GetInt32(minimum, maximumExclusive).ToString("D" + length, System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     private AuthenticationAuditEvent CreateAuditEvent(
         AuthAuditEventType eventType,
         ApplicationUser? user,
@@ -810,110 +926,6 @@ public sealed class AuthService : IAuthService
             cancellationToken);
     }
 
-    private async Task<ContactVerificationIssue> CreateEmailContactVerificationIssueAsync(
-        ApplicationUser user,
-        string destinationEmail,
-        DateTime createdAtUtc,
-        int resendCount,
-        DateTime resendWindowStartedAtUtc,
-        string? previousTokenHash,
-        CancellationToken cancellationToken)
-    {
-        var destination = destinationEmail.Trim();
-        var normalizedDestination = NormalizeEmailForOneTimeSecret(destination);
-        var plaintextSecret = string.Empty;
-        var tokenHash = string.Empty;
-
-        for (var attempt = 0; attempt < 10; attempt++)
-        {
-            plaintextSecret = authTokenService.CreateNumericCode(contactVerificationOptions.OtpLength);
-            tokenHash = authTokenService.HashOneTimeSecret(normalizedDestination, plaintextSecret);
-            if (!string.Equals(tokenHash, previousTokenHash, StringComparison.Ordinal))
-            {
-                break;
-            }
-        }
-
-        if (string.Equals(tokenHash, previousTokenHash, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("Unable to issue a distinct contact verification code.");
-        }
-
-        var expiresAtUtc = createdAtUtc.AddMinutes(contactVerificationOptions.ExpirationMinutes);
-        var flow = new ContactVerificationFlow
-        {
-            UserId = user.Id,
-            Channel = ContactVerificationChannel.Email,
-            DestinationHash = authTokenService.HashToken(normalizedDestination),
-            TokenHash = tokenHash,
-            ExpiresAtUtc = expiresAtUtc,
-            CreatedAtUtc = createdAtUtc,
-            HashVersion = "hmac-sha256-v1",
-            LastSentAtUtc = createdAtUtc,
-            MaxAttemptCount = contactVerificationOptions.MaxAttempts,
-            ResendCount = resendCount,
-            ResendWindowStartedAtUtc = resendWindowStartedAtUtc
-        };
-
-        await identityUnitOfWork.ContactVerificationFlows.AddAsync(flow, cancellationToken);
-        await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
-            CreateAuditEvent(AuthAuditEventType.ContactVerificationIssued, user, "Issued", null, createdAtUtc),
-            cancellationToken);
-
-        return new ContactVerificationIssue(user, destination, plaintextSecret, expiresAtUtc);
-    }
-
-    private async Task DeliverContactVerificationAsync(
-        ContactVerificationIssue issue,
-        RegistrationResultDto? result,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await emailDelivery.SendContactVerificationAsync(issue.Destination, issue.PlaintextSecret, issue.ExpiresAtUtc, cancellationToken);
-            if (result is not null)
-            {
-                result.VerificationDeliveryStatus = "Sent";
-            }
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            if (result is not null)
-            {
-                result.VerificationDeliveryStatus = "Failed";
-            }
-
-            await RecordAuditEventAsync(
-                CreateAuditEvent(AuthAuditEventType.ContactVerificationDeliveryFailed, issue.User, "Failed", "DeliveryFailed", DateTime.UtcNow),
-                cancellationToken);
-        }
-    }
-
-    private static bool RequiresEmailVerification(ApplicationUser user)
-    {
-        return user.Role is UserRole.Doctor or UserRole.Company && !user.EmailVerified;
-    }
-
-    private static string NormalizeEmailForOneTimeSecret(string email)
-    {
-        return email.Trim().ToUpperInvariant();
-    }
-
-    private static string MaskEmail(string email)
-    {
-        var trimmed = email.Trim();
-        var atIndex = trimmed.IndexOf('@');
-        if (atIndex <= 0)
-        {
-            return "***";
-        }
-
-        var local = trimmed[..atIndex];
-        var domain = trimmed[atIndex..];
-        var prefix = local.Length <= 1 ? local : local[0].ToString();
-        return $"{prefix}***{domain}";
-    }
-
     private sealed record RefreshOperationResult(AuthResultDto? AuthResult, bool IsReuseDetected, string? AuthDeniedMessage)
     {
         public static RefreshOperationResult ReuseDetected()
@@ -932,13 +944,5 @@ public sealed class AuthService : IAuthService
         }
     }
 
-    private sealed record ContactVerificationIssue(
-        ApplicationUser User,
-        string Destination,
-        string PlaintextSecret,
-        DateTime ExpiresAtUtc);
-
-    private sealed record ContactVerificationRegistrationIssue(
-        RegistrationResultDto Result,
-        ContactVerificationIssue ContactVerification);
+    private sealed record RegistrationOperationResult(RegistrationResultDto Result, string UserId, UserRole Role, string Email, string Otp);
 }

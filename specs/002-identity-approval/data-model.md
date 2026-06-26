@@ -34,8 +34,8 @@ Pure domain identity record. This entity must not inherit from ASP.NET Identity 
 **Validation Rules**:
 
 - Doctor and Company registrations start with `AccountStatus = Pending`.
-- Doctor and Company token issuance is allowed only when `AccountStatus = Approved`, `EmailVerified = true`, and `IsDeleted = false`; seeded Admin token issuance requires an approved, verified Admin account.
-- `Pending`, `Rejected`, `Suspended`, `Inactive`, soft-deleted, and unverified Doctor or Company users cannot receive access credentials.
+- Token issuance is allowed only when `AccountStatus = Approved` and `IsDeleted = false`.
+- `Pending`, `Rejected`, `Suspended`, `Inactive`, and soft-deleted users cannot receive access credentials.
 - Role cannot change through public registration update/resubmission flows.
 
 ### DoctorProfile
@@ -104,7 +104,7 @@ Persisted refresh credential used for single-use session renewal.
 
 **Validation Rules**:
 
-- Refresh credential is valid only when not expired, not revoked, owning user is not deleted, owning user has `AccountStatus = Approved`, and Doctor or Company owning user has `EmailVerified = true`.
+- Refresh credential is valid only when not expired, not revoked, owning user is not deleted, and owning user has `AccountStatus = Approved`.
 - Every successful refresh revokes the presented credential and creates a replacement.
 - Reuse of an expired/revoked/replaced credential revokes the active credentials in the same family and records an audit event.
 
@@ -130,13 +130,13 @@ Time-limited, single-use account recovery flow.
 
 ### ContactVerificationFlow
 
-Time-limited, single-use email verification flow used for registration, resend, approval, and token-issuance gates.
+Time-limited, single-use email or phone verification flow.
 
 **Fields**:
 
 - `Id`: unique flow identifier
 - `UserId`: owning `ApplicationUser`
-- `Channel`: `Email`
+- `Channel`: `Email` or `Phone`
 - `DestinationHash`: hashed destination value
 - `TokenHash`: required unique token hash
 - `ExpiresAtUtc`: expiration timestamp
@@ -146,8 +146,8 @@ Time-limited, single-use email verification flow used for registration, resend, 
 **Validation Rules**:
 
 - Completion succeeds only once for unexpired flows.
-- Completion marks the matching email channel as verified.
-- Incomplete email verification blocks Doctor and Company approval, login, and refresh token issuance; seeded Admin accounts are created verified.
+- Completion marks the matching contact channel as verified.
+- Incomplete verification does not block Phase 2 token issuance when account status is `Approved`.
 
 ### AdminAccountDecision
 
@@ -168,7 +168,7 @@ Admin decision record for approval, rejection, suspension, inactivation, or reac
 
 - Only Admin users can create decision records.
 - Rejection and suspension require a reason.
-- Approval changes account status to `Approved` only when the pending Doctor or Company account has completed email verification; otherwise the decision is rejected and the account remains `Pending`.
+- Approval changes account status to `Approved`.
 - Rejection changes account status to `Rejected`.
 - Suspension changes account status to `Suspended` and revokes active refresh credentials.
 - Reactivation changes eligible accounts to `Approved`.

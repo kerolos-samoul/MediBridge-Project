@@ -36,6 +36,27 @@ public sealed class WalletRepository : IWalletRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<Wallet?> FindActiveWalletByOwnerAsync(WalletOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default)
+    {
+        return context.Wallets.FirstOrDefaultAsync(
+            wallet => wallet.OwnerType == ownerType && wallet.OwnerId == ownerId && !wallet.IsDeleted,
+            cancellationToken);
+    }
+
+    public Task<Wallet?> FindActiveWalletForUpdateAsync(string walletId, CancellationToken cancellationToken = default)
+    {
+        return context.Wallets
+            .FromSqlInterpolated($"SELECT * FROM [Wallets] WITH (UPDLOCK, ROWLOCK) WHERE [Id] = {walletId} AND [IsDeleted] = 0")
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<Wallet?> FindActiveWalletForUpdateByOwnerAsync(WalletOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default)
+    {
+        return context.Wallets
+            .FromSqlInterpolated($"SELECT * FROM [Wallets] WITH (UPDLOCK, ROWLOCK) WHERE [OwnerType] = {(int)ownerType} AND [OwnerId] = {ownerId} AND [IsDeleted] = 0")
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public Task<string?> FindWalletIdByOwnerIncludingDeletedAsync(WalletOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default)
     {
         return context.Wallets
@@ -43,6 +64,16 @@ public sealed class WalletRepository : IWalletRepository
             .Where(wallet => wallet.OwnerType == ownerType && wallet.OwnerId == ownerId)
             .Select(wallet => wallet.Id)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<(decimal AvailableBalance, decimal ReservedBalance)?> GetActiveWalletBalancesAsync(WalletOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default)
+    {
+        var wallet = await context.Wallets
+            .Where(candidate => candidate.OwnerType == ownerType && candidate.OwnerId == ownerId && !candidate.IsDeleted)
+            .Select(candidate => new { candidate.AvailableBalance, candidate.ReservedBalance })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return wallet is null ? null : (wallet.AvailableBalance, wallet.ReservedBalance);
     }
 
     public async Task StageAvailableBalanceChangeAsync(string walletId, decimal amountDelta, CancellationToken cancellationToken = default)

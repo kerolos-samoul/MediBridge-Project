@@ -132,7 +132,6 @@ public sealed class RefreshTokenRotationTests
         user.AccountStatus = status;
         user.ApprovedAtUtc = status == AccountStatus.Approved ? now : null;
         user.LastStatusChangedAtUtc = now;
-        user.EmailVerified = status == AccountStatus.Approved;
 
         await db.SaveChangesAsync();
     }

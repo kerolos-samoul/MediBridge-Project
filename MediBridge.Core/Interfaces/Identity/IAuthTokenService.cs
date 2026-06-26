@@ -8,7 +8,4 @@ public interface IAuthTokenService
     (string PlaintextToken, string TokenHash) CreateRefreshToken();
     (string PlaintextToken, string TokenHash) CreateOneTimeToken();
     string HashToken(string plaintextToken);
-    string CreateNumericCode(int length);
-    string HashOneTimeSecret(string normalizedDestination, string plaintextSecret);
-    bool VerifyOneTimeSecret(string normalizedDestination, string plaintextSecret, string expectedHash);
 }

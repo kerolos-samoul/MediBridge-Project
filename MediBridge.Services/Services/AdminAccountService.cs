@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediBridge.Core.Entities.Identity;
 using MediBridge.Core.Enums;
-using MediBridge.Core.Interfaces;
 using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Services.DTOs.Admin;
 using MediBridge.Services.DTOs.Auth;
@@ -14,18 +13,15 @@ public sealed class AdminAccountService : IAdminAccountService
     private static readonly TimeSpan ResubmissionTokenLifetime = TimeSpan.FromDays(7);
 
     private readonly IIdentityUnitOfWork identityUnitOfWork;
-    private readonly IDomainUnitOfWork domainUnitOfWork;
     private readonly IAuthTokenService authTokenService;
     private readonly IValidator<AdminAccountDecisionRequestDto> decisionValidator;
 
     public AdminAccountService(
         IIdentityUnitOfWork identityUnitOfWork,
-        IDomainUnitOfWork domainUnitOfWork,
         IAuthTokenService authTokenService,
         IValidator<AdminAccountDecisionRequestDto> decisionValidator)
     {
         this.identityUnitOfWork = identityUnitOfWork;
-        this.domainUnitOfWork = domainUnitOfWork;
         this.authTokenService = authTokenService;
         this.decisionValidator = decisionValidator;
     }
@@ -73,19 +69,12 @@ public sealed class AdminAccountService : IAdminAccountService
                 throw new UnauthorizedAccessException("Admin role is required.");
             }
 
-            var targetUser = await identityUnitOfWork.Users.FindByIdForUpdateAsync(targetUserId, transactionCancellationToken)
+            var targetUser = await identityUnitOfWork.Users.FindByIdAsync(targetUserId, transactionCancellationToken)
                 ?? throw new KeyNotFoundException("Target account was not found.");
 
             var now = DateTime.UtcNow;
             ValidateDecisionTransition(targetUser, request.Decision);
             var resultingStatus = MapDecisionToStatus(request.Decision);
-            if (resultingStatus == AccountStatus.Approved
-                && targetUser.Role is UserRole.Doctor or UserRole.Company
-                && !targetUser.EmailVerified)
-            {
-                throw new WorkflowConflictException("Contact verification is required before approval.");
-            }
-
             var decision = new AdminAccountDecision
             {
                 AdminUserId = adminUser.Id,
@@ -118,20 +107,6 @@ public sealed class AdminAccountService : IAdminAccountService
             targetUser.ApprovedAtUtc = resultingStatus == AccountStatus.Approved ? now : null;
             targetUser.LastStatusChangedAtUtc = now;
             await identityUnitOfWork.Users.UpdateAsync(targetUser, transactionCancellationToken);
-
-            if (targetUser.Role == UserRole.Company && resultingStatus == AccountStatus.Approved)
-            {
-                var companyProfile = await identityUnitOfWork.Profiles.FindCompanyProfileByUserIdAsync(targetUser.Id, transactionCancellationToken);
-                if (companyProfile is not null && !companyProfile.IsDeleted)
-                {
-                    await domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
-                        Guid.NewGuid().ToString("N"),
-                        WalletOwnerType.Company,
-                        companyProfile.Id,
-                        targetUser.Id,
-                        transactionCancellationToken);
-                }
-            }
 
             if (request.Decision is AdminAccountDecisionType.Suspend or AdminAccountDecisionType.Inactivate)
             {
@@ -212,7 +187,7 @@ public sealed class AdminAccountService : IAdminAccountService
 
     private static void ValidateDecisionTransition(ApplicationUser targetUser, AdminAccountDecisionType decision)
     {
-        if (targetUser.IsDeleted || targetUser.Role is not (UserRole.Doctor or UserRole.Company))
+        if (targetUser.IsDeleted)
         {
             throw new ValidationException("Validation failed.");
         }

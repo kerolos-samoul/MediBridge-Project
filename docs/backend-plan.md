@@ -88,7 +88,7 @@ work, JWT security, standard API envelope, and global exception handling).
 - Add a malware/virus scanning placeholder before a file can become approved or visible.
 - Add rate limiting for login, registration, refresh, top-up, withdrawal, and interaction endpoints.
 - Add refresh-token reuse detection; if a revoked refresh token is reused, revoke the user's active refresh-token family.
-- Add password reset and email/phone verification support as security infrastructure, even if delivery providers are stubbed in MVP.
+- Add password reset and email/phone verification support as security infrastructure. Email verification uses a six-digit, hashed, 10-minute OTP for Doctor and Company registration; development/testing delivery is redirected to `medibridge7@gmail.com` while the email body identifies the originally registered address.
 - Admin actions, authentication-sensitive events, financial events, and document review actions must be audit logged.
 
 ## Architecture (Backend)
@@ -345,13 +345,13 @@ This job runs daily to automatically compute and persist the Doctor Activity Sco
 
 - POST `/api/auth/register-doctor` (multipart; doc upload metadata)
 - POST `/api/auth/register-company`
-- POST `/api/auth/login` (denies Doctor/Company JWT if approval or email verification is incomplete)
+- POST `/api/auth/login` (denies JWT if `IsApproved=false`)
 - POST `/api/auth/refresh`
 - POST `/api/auth/logout`
 - POST `/api/auth/forgot-password`
 - POST `/api/auth/reset-password`
-- POST `/api/auth/verify-contact` (email verification OTP)
-- POST `/api/auth/resend-contact-verification` (non-enumerating email OTP resend)
+- POST `/api/auth/verify-contact` (legacy one-time token or Email OTP with original registered email)
+- POST `/api/auth/request-contact-verification` (resend Email OTP with cooldown and old OTP supersession)
 
 ### Doctor
 
@@ -366,10 +366,7 @@ This job runs daily to automatically compute and persist the Doctor Activity Sco
 ### Company
 
 - GET `/api/company/doctors` (filters incl. specialization/experience/location/activity/price)
-- POST `/api/company/campaigns` (create draft)
-- POST `/api/company/campaigns/{campaignId}/assets` (upload campaign media through backend storage)
-- POST `/api/company/campaigns/{campaignId}/assets/{assetId}/replacement` (replace only Pending/Rejected draft assets)
-- DELETE `/api/company/campaigns/{campaignId}/assets/{assetId}` (delete only Pending/Rejected draft assets; approved assets retained)
+- POST `/api/company/campaigns` (create + target list)
 - GET `/api/company/campaigns`
 - GET `/api/company/campaigns/{id}`
 - GET `/api/company/campaigns/{id}/deliveries`
@@ -392,8 +389,8 @@ This job runs daily to automatically compute and persist the Doctor Activity Sco
 
 ### Files
 
-- POST `/api/files` (authorized upload for non-campaign purposes; purpose-specific validation)
-- GET `/api/files/{fileId}` (authorized signed URL handoff returning `{ FileId, Url, ExpiresAtUtc }`)
+- POST `/api/files` (authorized upload; purpose-specific validation)
+- GET `/api/files/{id}` (authorized retrieval or signed URL handoff)
 - PUT `/api/admin/files/{id}/review` (verification/document/media review decision)
 
 ## Implementation Milestones (Execution Order)
@@ -536,16 +533,27 @@ Exit criteria (Definition of Done):
 Objective: Enable companies to target doctors and create campaigns that enqueue doctor-specific
 messages for the next daily injection.
 
-Detailed tasks:
+Implemented Phase 5 slice:
 
-- Implement doctor filtering (specialization, experience, location, activity, price) with
-  pagination.
-- Implement campaign creation with target doctor selection.
-- Persist `CampaignTarget` rows for selected doctors and targeting snapshots.
-- Put newly submitted campaigns into `PendingReview` rather than immediately activating them.
-- On admin approval, create `DoctorMessageQueue` rows per targeted doctor with FIFO ordering.
-- Implement company wallet top-up (gateway stub acceptable in v1).
-- Add company wallet querying (balance + transactions).
+- Company doctor search is available at `GET /api/company/doctors` with specialization,
+  experience, location, activity score, price filters, standard pagination, and deterministic
+  ordering by activity score descending, price ascending, then stable identifier ascending.
+- Campaign submission is available at `POST /api/company/campaigns` for approved company
+  users, requires an `Idempotency-Key`, required content, at least one approved campaign
+  asset, and 1-100 unique eligible target doctors.
+- Accepted campaign submissions are saved as `PendingReview`, persist immutable
+  `CampaignTarget` snapshots, and create no queue rows before approval.
+- Campaign list/detail are available at `GET /api/company/campaigns` and
+  `GET /api/company/campaigns/{id}` for the owning company only.
+- Approved-campaign queue creation exists as trusted service behavior and creates
+  retry-safe `DoctorMessageQueue` rows per still-eligible target with FIFO ordering keys.
+- Company wallet query and MVP stub top-up are available at `GET /api/company/wallet` and
+  `POST /api/company/wallet/topup`; top-up credits available balance only, creates an
+  append-only `TopUp` transaction plus available-balance ledger entry, and uses idempotency
+  to prevent duplicate financial effects.
+- Phase 5 scope excludes daily injector jobs, expiry jobs, doctor inbox/read/interact,
+  settlement, reporting analytics, withdrawals, weekly enforcement, activity score jobs,
+  and production payment gateway integration.
 
 Related components:
 

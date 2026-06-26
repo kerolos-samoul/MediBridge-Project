@@ -159,14 +159,14 @@ public sealed class AuthController : ControllerBase
         }
     }
 
-    [HttpPost("resend-contact-verification")]
+    [HttpPost("request-contact-verification")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicyNames.Login)]
-    public async Task<ActionResult<ApiEnvelope<object?>>> ResendContactVerification([FromBody] ResendContactVerificationRequestDto request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiEnvelope<object?>>> RequestContactVerification([FromBody] RequestContactVerificationDto request, CancellationToken cancellationToken)
     {
         try
         {
-            await authService.ResendContactVerificationAsync(request, cancellationToken);
+            await authService.RequestContactVerificationAsync(request, cancellationToken);
             return StatusCode(StatusCodes.Status202Accepted, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status202Accepted, "Accepted", null));
         }
         catch (ValidationException)
@@ -175,7 +175,7 @@ public sealed class AuthController : ControllerBase
         }
         catch (ContactVerificationRateLimitedException)
         {
-            return StatusCode(StatusCodes.Status429TooManyRequests, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status429TooManyRequests, "Too many requests.", null));
+            return StatusCode(StatusCodes.Status429TooManyRequests, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status429TooManyRequests, "Email verification resend is temporarily rate limited.", null));
         }
     }
 

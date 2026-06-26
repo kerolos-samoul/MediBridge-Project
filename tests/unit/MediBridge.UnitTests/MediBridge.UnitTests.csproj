@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="6.12.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
@@ -22,7 +21,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\MediBridge.Core\MediBridge.Core.csproj" />
     <ProjectReference Include="..\..\..\MediBridge.Services\MediBridge.Services.csproj" />
-    <ProjectReference Include="..\..\..\MediBridge.Repository\MediBridge.Repository.csproj" />
   </ItemGroup>
 
 </Project>

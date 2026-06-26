@@ -4,6 +4,7 @@ using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Services.Config;
 using MediBridge.Services.Interfaces;
 using MediBridge.Services.Services;
+using MediBridge.Services.Validators.Files;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,32 +18,50 @@ public static class IdentityServiceCollectionExtensions
         var tokenOptions = new AuthTokenOptions();
         configuration.GetSection(AuthTokenOptions.SectionName).Bind(tokenOptions);
         tokenOptions.Validate();
-
         var contactVerificationOptions = new ContactVerificationOptions();
         configuration.GetSection(ContactVerificationOptions.SectionName).Bind(contactVerificationOptions);
-        contactVerificationOptions.Validate(tokenOptions.SigningKey);
+        var contactVerificationErrors = contactVerificationOptions.Validate();
+        if (contactVerificationErrors.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(" ", contactVerificationErrors));
+        }
+        var smtpEmailOptions = new SmtpEmailOptions();
+        configuration.GetSection(SmtpEmailOptions.SectionName).Bind(smtpEmailOptions);
+        var smtpEmailErrors = smtpEmailOptions.Validate();
+        if (smtpEmailErrors.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(" ", smtpEmailErrors));
+        }
 
-        var passwordResetOptions = new PasswordResetOptions();
-        configuration.GetSection(PasswordResetOptions.SectionName).Bind(passwordResetOptions);
-        passwordResetOptions.Validate();
-
+        services.AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IOptions<FileStorageOptions>>().Value);
+        services.AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IOptions<CloudinaryStorageOptions>>().Value);
+        services.AddSingleton(contactVerificationOptions);
+        services.AddSingleton(smtpEmailOptions);
         services.AddSingleton<IAuthTokenService>(_ => new AuthTokenService(
             tokenOptions.Issuer,
             tokenOptions.Audience,
             tokenOptions.SigningKey,
-            contactVerificationOptions.OneTimeSecretHashingKey,
             tokenOptions.AccessTokenMinutes,
             tokenOptions.RefreshTokenDays));
-        services.AddSingleton(Options.Create(contactVerificationOptions));
-        services.AddSingleton(Options.Create(passwordResetOptions));
 
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IAdminAccountService, AdminAccountService>();
-        services.AddScoped<ICompanyWalletService, CompanyWalletService>();
+        services.AddScoped<FileUploadRequestValidator>();
+        services.AddScoped<FileReviewRequestValidator>();
+        services.AddScoped<IFileStorageProvider>(serviceProvider =>
+        {
+            var fileStorageOptions = serviceProvider.GetRequiredService<FileStorageOptions>();
+            return fileStorageOptions.UploadsEnabled
+                ? serviceProvider.GetRequiredService<CloudinaryFileStorageProvider>()
+                : serviceProvider.GetRequiredService<DisabledFileStorageProvider>();
+        });
+        services.AddScoped<CloudinaryFileStorageProvider>();
+        services.AddScoped<DisabledFileStorageProvider>();
+        services.AddScoped<IFileWorkflowService, FileWorkflowService>();
+        services.AddScoped<ICompanyDoctorSearchService, CompanyDoctorSearchService>();
         services.AddScoped<ICampaignWorkflowService, CampaignWorkflowService>();
-        services.AddScoped<IFileAccessService, FileAccessService>();
-        services.AddScoped<IAdminPricingService, AdminPricingService>();
-        services.AddScoped<IAdminCampaignReviewService, AdminCampaignReviewService>();
+        services.AddScoped<ICompanyWalletService, CompanyWalletService>();
 
         RegisterValidators(services, typeof(IdentityServiceCollectionExtensions).Assembly);
 

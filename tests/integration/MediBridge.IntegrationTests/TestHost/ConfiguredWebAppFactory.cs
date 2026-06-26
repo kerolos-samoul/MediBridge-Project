@@ -2,13 +2,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc.Testing;
-using MediBridge.Core.Interfaces.Files;
-using MediBridge.Core.Interfaces.Notifications;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MediBridge.Repository.Data;
+using MediBridge.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediBridge.IntegrationTests.TestHost;
@@ -26,11 +25,13 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
             ["Jwt__Issuer"] = "MediBridge.IntegrationTests",
             ["Jwt__Audience"] = "MediBridge.IntegrationTests.ApiClients",
             ["Jwt__SigningKey"] = "IntegrationTestSigningKey-ReplaceBeforeProduction-32Chars",
-            ["Identity__SeedDevelopmentAdmin"] = "false",
+            ["Email__Smtp__Host"] = "localhost",
+            ["Email__Smtp__Port"] = "2525",
+            ["Email__Smtp__Username"] = "integration-test-smtp-user",
+            ["Email__Smtp__Password"] = "integration-test-smtp-password",
+            ["Email__Smtp__FromEmail"] = "no-reply.integration@example.com",
             ["FileStorage__UploadsEnabled"] = "false",
-            ["ContactVerification__OneTimeSecretHashingKey"] = "integration-test-contact-verification-hashing-key",
-            ["ContactVerification__AllowOverrideRecipientEmail"] = "false",
-            ["PasswordReset__ResetLinkBaseUri"] = "https://localhost/reset-password"
+            ["Identity__SeedDevelopmentAdmin"] = "false"
         });
     }
 
@@ -46,23 +47,24 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
                 ["Jwt:Issuer"] = "MediBridge.IntegrationTests",
                 ["Jwt:Audience"] = "MediBridge.IntegrationTests.ApiClients",
                 ["Jwt:SigningKey"] = "IntegrationTestSigningKey-ReplaceBeforeProduction-32Chars",
-                ["Identity:SeedDevelopmentAdmin"] = "false",
+                ["Email:Smtp:Host"] = "localhost",
+                ["Email:Smtp:Port"] = "2525",
+                ["Email:Smtp:Username"] = "integration-test-smtp-user",
+                ["Email:Smtp:Password"] = "integration-test-smtp-password",
+                ["Email:Smtp:FromEmail"] = "no-reply.integration@example.com",
                 ["FileStorage:UploadsEnabled"] = "false",
-                ["ContactVerification:OneTimeSecretHashingKey"] = "integration-test-contact-verification-hashing-key",
-                ["ContactVerification:AllowOverrideRecipientEmail"] = "false",
-                ["PasswordReset:ResetLinkBaseUri"] = "https://localhost/reset-password"
+                ["Identity:SeedDevelopmentAdmin"] = "false"
             });
         });
+        ConfigureAppConfigurationCore(builder);
         builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureServices(services =>
         {
-            services.RemoveAll<IFileStorageProvider>();
-            services.AddSingleton<IFileStorageProvider, IntegrationFileStorageProvider>();
-            services.RemoveAll<IEmailDelivery>();
-            services.AddSingleton<InMemoryEmailDelivery>();
-            services.AddSingleton<IEmailDelivery>(provider => provider.GetRequiredService<InMemoryEmailDelivery>());
             services.AddSingleton<IStartupFilter, ForceHttpsStartupFilter>();
             services.Configure<HttpsRedirectionOptions>(options => options.HttpsPort = 443);
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<TestEmailSink>();
+            services.AddSingleton<IEmailSender, TestEmailSender>();
         });
 
         ConfigureWebHostCore(builder);
@@ -75,15 +77,6 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
         await context.Database.MigrateAsync();
     }
 
-    public string GetLatestContactVerificationCode(string destination)
-    {
-        return Services.GetRequiredService<InMemoryEmailDelivery>()
-            .GetLatestSecret(destination, "ContactVerification")
-            ?? throw new InvalidOperationException("No contact verification message was delivered.");
-    }
-
-    public int DeliveredEmailCount => Services.GetRequiredService<InMemoryEmailDelivery>().Count;
-
     protected override void ConfigureClient(HttpClient client)
     {
         client.BaseAddress = new Uri("https://localhost");
@@ -91,95 +84,11 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
 
     private string ConnectionString => $"Server=(localdb)\\MSSQLLocalDB;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;";
 
-    private sealed class IntegrationFileStorageProvider : IFileStorageProvider
-    {
-        public Task<FileStorageUploadResult> UploadAsync(
-            FileStorageUpload request,
-            Stream content,
-            CancellationToken cancellationToken = default)
-        {
-            var storageKey = $"integration/{Guid.NewGuid():N}/{Path.GetFileName(request.OriginalFileName)}";
-            return Task.FromResult(new FileStorageUploadResult(storageKey, "raw"));
-        }
-
-        public Task<SignedFileUrl> CreateSignedReadUrlAsync(
-            string storageKey,
-            string resourceType,
-            TimeSpan lifetime,
-            CancellationToken cancellationToken = default)
-        {
-            var url = new Uri($"https://files.test/{Uri.EscapeDataString(storageKey)}");
-            return Task.FromResult(new SignedFileUrl(url, DateTime.UtcNow.Add(lifetime)));
-        }
-
-        public Task DeleteAsync(
-            string storageKey,
-            string resourceType,
-            CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-    }
-
-    private sealed class InMemoryEmailDelivery : IEmailDelivery
-    {
-        private readonly List<DeliveredMessage> messages = new();
-        private readonly object gate = new();
-
-        public int Count
-        {
-            get
-            {
-                lock (gate)
-                {
-                    return messages.Count;
-                }
-            }
-        }
-
-        public string? GetLatestSecret(string destination, string kind)
-        {
-            lock (gate)
-            {
-                return messages
-                    .Where(message => string.Equals(message.Destination, destination, StringComparison.OrdinalIgnoreCase)
-                        && string.Equals(message.Kind, kind, StringComparison.Ordinal))
-                    .OrderBy(message => message.ExpiresAtUtc)
-                    .LastOrDefault()
-                    ?.Secret;
-            }
-        }
-
-        public Task SendContactVerificationAsync(
-            string destination,
-            string oneTimeCode,
-            DateTime expiresAtUtc,
-            CancellationToken cancellationToken = default)
-        {
-            lock (gate)
-            {
-                messages.Add(new DeliveredMessage(destination, "ContactVerification", oneTimeCode, expiresAtUtc));
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public Task SendPasswordResetAsync(
-            string destination,
-            string resetToken,
-            DateTime expiresAtUtc,
-            CancellationToken cancellationToken = default)
-        {
-            lock (gate)
-            {
-                messages.Add(new DeliveredMessage(destination, "PasswordReset", resetToken, expiresAtUtc));
-            }
-
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed record DeliveredMessage(string Destination, string Kind, string Secret, DateTime ExpiresAtUtc);
-
     protected virtual void ConfigureWebHostCore(IWebHostBuilder builder)
+    {
+    }
+
+    protected virtual void ConfigureAppConfigurationCore(IWebHostBuilder builder)
     {
     }
 

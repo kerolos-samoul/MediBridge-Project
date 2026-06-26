@@ -2,10 +2,12 @@ using MediBridge.APIs.Config;
 using MediBridge.APIs.Contracts;
 using MediBridge.APIs.Security;
 using MediBridge.Core.Interfaces;
+using MediBridge.Services.Config;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
@@ -34,6 +36,18 @@ public static class ServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<RateLimitingOptions>, RateLimitingOptionsValidator>();
+
+        services
+            .AddOptions<FileStorageOptions>()
+            .Bind(configuration.GetSection(FileStorageOptions.SectionName))
+            .Validate(options => options.Validate().Count == 0, "File storage options must match Phase 4 requirements.")
+            .ValidateOnStart();
+
+        services
+            .AddOptions<CloudinaryStorageOptions>()
+            .Bind(configuration.GetSection(CloudinaryStorageOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<CloudinaryStorageOptions>, CloudinaryStorageOptionsValidator>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
@@ -81,6 +95,27 @@ public static class ServiceCollectionExtensions
             options.AddPolicy(
                 AuthorizationPolicies.CompanyOnly,
                 policy => policy.RequireRole(AuthorizationPolicies.Company));
+            options.AddPolicy(
+                AuthorizationPolicies.AdminFileReview,
+                policy => policy.RequireRole(AuthorizationPolicies.Admin));
+            options.AddPolicy(
+                AuthorizationPolicies.CompanyCampaignFileUpload,
+                policy => policy.RequireRole(AuthorizationPolicies.Company));
+            options.AddPolicy(
+                AuthorizationPolicies.DoctorVerificationUpload,
+                policy => policy.RequireRole(AuthorizationPolicies.Doctor));
+            options.AddPolicy(
+                AuthorizationPolicies.AuthenticatedFileAccess,
+                policy => policy.RequireAuthenticatedUser());
+            options.AddPolicy(
+                AuthorizationPolicies.Phase5CompanyDoctorSearch,
+                policy => policy.RequireRole(AuthorizationPolicies.Company));
+            options.AddPolicy(
+                AuthorizationPolicies.Phase5CompanyCampaignAccess,
+                policy => policy.RequireRole(AuthorizationPolicies.Company));
+            options.AddPolicy(
+                AuthorizationPolicies.Phase5CompanyWalletAccess,
+                policy => policy.RequireRole(AuthorizationPolicies.Company));
         });
 
         return services;
@@ -108,6 +143,27 @@ public static class ServiceCollectionExtensions
             foreach (var policyName in RateLimitPolicyNames.All)
             {
                 var policy = options.GetPolicy(policyName);
+                if (policyName is RateLimitPolicyNames.FileUpload or RateLimitPolicyNames.Phase5CampaignSubmission or RateLimitPolicyNames.Phase5WalletTopUp)
+                {
+                    rateLimiterOptions.AddPolicy(policyName, context =>
+                    {
+                        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.User.FindFirstValue("sub");
+                        var partitionKey = string.IsNullOrWhiteSpace(userId)
+                            ? $"anonymous:{context.Connection.RemoteIpAddress}"
+                            : $"user:{userId}";
+
+                        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = policy.PermitLimit,
+                            Window = TimeSpan.FromSeconds(policy.WindowSeconds),
+                            QueueLimit = policy.QueueLimit,
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            AutoReplenishment = true
+                        });
+                    });
+                    continue;
+                }
+
                 rateLimiterOptions.AddFixedWindowLimiter(policyName, limiterOptions =>
                 {
                     limiterOptions.PermitLimit = policy.PermitLimit;

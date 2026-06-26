@@ -135,7 +135,6 @@ public sealed class RefreshTokenReuseDetectionTests
         user.AccountStatus = status;
         user.ApprovedAtUtc = status == AccountStatus.Approved ? now : null;
         user.LastStatusChangedAtUtc = now;
-        user.EmailVerified = status == AccountStatus.Approved;
 
         await db.SaveChangesAsync();
     }

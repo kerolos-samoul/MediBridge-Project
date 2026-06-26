@@ -205,7 +205,6 @@ public sealed class AuthTokenContractTests
         user.AccountStatus = status;
         user.ApprovedAtUtc = status == AccountStatus.Approved ? DateTime.UtcNow : null;
         user.LastStatusChangedAtUtc = DateTime.UtcNow;
-        user.EmailVerified = status == AccountStatus.Approved;
         await db.SaveChangesAsync();
     }
 

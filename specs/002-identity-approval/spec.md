@@ -11,7 +11,7 @@
 
 - Q: How should Phase 2 represent account lifecycle beyond initial approval? -> A: Use a single account status: `Pending`, `Approved`, `Rejected`, `Suspended`, `Inactive`, plus soft-delete for deletion.
 - Q: What verification document handling belongs in Phase 2 registration? -> A: Capture verification metadata only: document type, original file name, content type, size, and a client-provided reference or placeholder.
-- Q: Should contact verification be required before production login token issuance? -> A: Doctor and Company token issuance requires both `AccountStatus = Approved` and completed email verification. The seeded Admin account is exempt because it is created verified.
+- Q: Should contact verification be required before Phase 2 login token issuance? -> A: `Approved` account status is sufficient for login; contact verification is supported but not required for token issuance in Phase 2.
 - Q: Can rejected Doctor or Company accounts resubmit corrected registration information? -> A: Rejected accounts may resubmit corrected registration/verification metadata and return to `Pending`.
 - Q: How can rejected accounts resubmit if they cannot receive JWT access tokens? -> A: Use a time-limited, single-use resubmission token issued for the rejected account; resubmission remains public token-based and does not require JWT.
 
@@ -44,11 +44,10 @@ As an approved Doctor, Company user, or Admin, I can sign in, refresh my session
 **Acceptance Scenarios**:
 
 1. **Given** a registered Doctor or Company account has account status `Pending`, **When** the user attempts to log in, **Then** no access token is issued and the user receives an approval-pending response.
-2. **Given** a Doctor or Company user with account status `Approved` and `EmailVerified = true` provides valid credentials, **When** login succeeds, **Then** the user receives role-bearing access credentials and a refresh credential suitable for future renewal.
+2. **Given** a user with account status `Approved` provides valid credentials, **When** login succeeds, **Then** the user receives role-bearing access credentials and a refresh credential suitable for future renewal.
 3. **Given** a valid refresh credential is used, **When** the session is refreshed, **Then** the old refresh credential becomes unusable and a replacement refresh credential is issued.
 4. **Given** a user logs out, changes password, is soft-deleted, or is suspended by an admin, **When** existing refresh credentials are used afterward, **Then** they are rejected.
 5. **Given** a previously revoked refresh credential is reused, **When** reuse is detected, **Then** the user's active refresh-token family is revoked.
-6. **Given** a Doctor or Company user has account status `Approved` but `EmailVerified = false`, **When** the user logs in with valid credentials or refreshes a session, **Then** token issuance is denied until email verification is completed.
 
 ---
 
@@ -80,11 +79,10 @@ As an Admin, I can review pending Doctor and Company accounts and approve or rej
 **Acceptance Scenarios**:
 
 1. **Given** pending Doctor and Company accounts exist, **When** an Admin views pending accounts, **Then** the Admin can see enough submitted profile and verification metadata to make a decision.
-2. **Given** an Admin approves a pending account with verified email, **When** the user next logs in with valid credentials, **Then** access credentials can be issued for the approved role.
+2. **Given** an Admin approves a pending account, **When** the user next logs in with valid credentials, **Then** access credentials can be issued for the approved role.
 3. **Given** an Admin rejects a pending account with a reason, **When** the user attempts to log in, **Then** access remains blocked and the decision reason is retained for review.
 4. **Given** an Admin approval, rejection, suspension, or reactivation decision occurs, **When** the decision is saved, **Then** the decision is audit logged with actor, target, decision, reason, and time.
 5. **Given** a Doctor or Company account has account status `Rejected`, **When** the user resubmits corrected registration or verification metadata with a valid time-limited single-use resubmission token, **Then** the account returns to account status `Pending` for a new Admin decision.
-6. **Given** a pending Doctor or Company account has not completed email verification, **When** an Admin attempts to approve the account, **Then** the decision is rejected with HTTP `409` and the account remains `Pending`.
 
 ---
 
@@ -100,8 +98,8 @@ As a registered user, I can start password reset and contact verification flows 
 
 1. **Given** a registered user requests a password reset, **When** the request is accepted, **Then** a time-limited reset flow is created without revealing whether the account exists to unauthorized observers.
 2. **Given** a user completes password reset with a valid unused reset credential, **When** the new password is accepted, **Then** existing refresh credentials for that user are revoked.
-3. **Given** a user requests email verification or registration issues an email verification challenge, **When** the request is accepted, **Then** a time-limited verification flow is recorded, delivered through the configured provider when available, and can be completed once.
-4. **Given** a Doctor or Company user has account status `Approved` but has not completed email verification, **When** the user logs in with valid credentials, **Then** token issuance is denied until verification is complete.
+3. **Given** a user requests email or phone verification, **When** the request is accepted, **Then** a time-limited verification flow is recorded and can be completed once.
+4. **Given** a user has account status `Approved` but has not completed contact verification, **When** the user logs in with valid credentials, **Then** token issuance is allowed in Phase 2.
 
 ### Edge Cases
 
@@ -113,7 +111,7 @@ As a registered user, I can start password reset and contact verification flows 
 - Admin approval decisions must not upload, store, review, or mutate verification file contents directly; file storage and review remain in the dedicated file-storage phase.
 - Account approval must not create wallet, campaign, queue, delivery, pricing, or payout behavior.
 - Public account recovery responses must avoid account enumeration.
-- Email verification failures or incomplete email verification block Doctor and Company token issuance and block Admin approval until verification succeeds; the seeded Admin remains verified by construction.
+- Contact verification failures or incomplete contact verification must not block token issuance for users with account status `Approved` in Phase 2.
 - Rejected accounts that resubmit corrected registration or verification metadata must remain blocked from token issuance until an Admin approves the new pending review.
 - Rejected-account resubmission tokens must be time-limited, single-use, and invalid after successful resubmission, expiry, or account approval.
 
@@ -123,16 +121,16 @@ As a registered user, I can start password reset and contact verification flows 
 
 - **FR-001**: System MUST allow Doctor registration with account credentials, role, contact details, specialization, experience, location, and verification metadata containing document type, original file name, content type, size, and a client-provided reference or placeholder.
 - **FR-002**: System MUST allow Company registration with account credentials, role, company name, license number, contact details, and verification metadata containing document type, original file name, content type, size, and a client-provided reference or placeholder.
-- **FR-003**: System MUST default all newly registered Doctor and Company accounts to account status `Pending` and prevent them from receiving access credentials until status is `Approved` and email is verified.
+- **FR-003**: System MUST default all newly registered Doctor and Company accounts to account status `Pending` and prevent them from receiving access credentials until status is `Approved`.
 - **FR-004**: System MUST create or identify an Admin account that can manage account approval workflows.
-- **FR-005**: System MUST authenticate users with valid credentials and issue role-bearing access credentials to Doctor and Company users only when account status is `Approved`, email is verified, and soft-delete state is not deleted. Seeded Admin authentication requires an approved, verified Admin account.
-- **FR-006**: System MUST deny login and token issuance for users whose account status is `Pending`, `Rejected`, `Suspended`, or `Inactive`, for users that are soft-deleted, and for Doctor or Company users whose email is not verified.
+- **FR-005**: System MUST authenticate users with valid credentials and issue role-bearing access credentials only when account status is `Approved` and soft-delete state is not deleted.
+- **FR-006**: System MUST deny login and token issuance for users whose account status is `Pending`, `Rejected`, `Suspended`, or `Inactive`, and for users that are soft-deleted.
 - **FR-007**: System MUST support roles for Admin, Doctor, and Company and enforce role-aware authorization on secured routes.
 - **FR-008**: System MUST support refresh credentials with expiration, single-use rotation, logout revocation, password-change revocation, suspension revocation, and reuse detection that revokes the active credential family.
 - **FR-009**: System MUST allow approved users to log out and revoke active refresh credentials for that user session.
 - **FR-010**: System MUST support password reset initiation and completion with time-limited, single-use reset flows while preventing public account enumeration.
-- **FR-011**: System MUST support email verification initiation, resend, delivery status reporting, and completion through time-limited, single-use verification flows.
-- **FR-011A**: System MUST require completed email verification before Doctor or Company token issuance and before Admin approval. The seeded Admin account is exempt because it is created verified.
+- **FR-011**: System MUST support email or phone verification initiation and completion through provider-stub-ready, time-limited, single-use verification flows.
+- **FR-011A**: System MUST NOT require completed email or phone verification before token issuance when account status is `Approved` in Phase 2.
 - **FR-012**: System MUST allow Admin users to list pending Doctor and Company accounts with submitted profile and verification metadata needed for review.
 - **FR-013**: System MUST allow Admin users to approve or reject pending Doctor and Company accounts with an optional decision note for approvals and a required reason for rejections.
 - **FR-014**: System MUST allow Admin users to suspend and reactivate user accounts when required for security or policy enforcement.
@@ -179,14 +177,14 @@ As a registered user, I can start password reset and contact verification flows 
 
 - **SC-001**: 100% of sampled Doctor and Company registrations create accounts with account status `Pending`, not approved access.
 - **SC-002**: 100% of sampled `Pending`, `Rejected`, `Suspended`, `Inactive`, and soft-deleted users are denied access credential issuance.
-- **SC-003**: 100% of sampled Doctor and Company users with account status `Approved`, verified email, and valid credentials can complete login and receive role-bearing access credentials in under 2 minutes from starting the login attempt.
+- **SC-003**: 100% of sampled users with account status `Approved` and valid credentials can complete login and receive role-bearing access credentials in under 2 minutes from starting the login attempt.
 - **SC-004**: 100% of sampled secured-route checks deny anonymous users and users with the wrong role.
 - **SC-005**: 100% of sampled refresh attempts rotate refresh credentials, reject reused credentials, and revoke the active credential family when reuse is detected.
 - **SC-006**: 100% of sampled logout, password-change, and admin-suspension flows make previously active refresh credentials unusable.
 - **SC-007**: 100% of sampled Admin approval and rejection decisions are reflected in the user's next login outcome and have an audit event with actor, target, decision, and timestamp.
 - **SC-007A**: 100% of sampled rejected Doctor and Company account resubmissions return the account to `Pending` and continue denying token issuance until Admin approval.
 - **SC-008**: 100% of sampled account recovery responses avoid publicly revealing whether an account exists.
-- **SC-008A**: 100% of sampled Doctor and Company users with account status `Approved` and incomplete email verification are denied access credentials, and 100% of sampled Admin approval attempts for unverified pending Doctor or Company accounts return `409` while leaving the account `Pending`.
+- **SC-008A**: 100% of sampled users with account status `Approved` and incomplete contact verification can still receive access credentials when credentials are otherwise valid.
 - **SC-009**: 95% of valid registration, login, refresh, logout, password reset, verification, and approval requests complete with user-visible results in under 2 seconds in the QA environment.
 - **SC-010**: Architecture checks confirm 0 controller actions contain identity business rules, credential rotation rules, approval decisions, or audit construction logic.
 - **SC-011**: Scope validation confirms 0 Phase 2 changes implement campaign, queue, delivery, wallet, settlement, payout, pricing, platform-fee, or file-review workflows.
@@ -196,8 +194,8 @@ As a registered user, I can start password reset and contact verification flows 
 - Phase 1 foundation behavior, including the response envelope, safe exception handling, correlation IDs, metadata-only logging, JWT settings scaffolding, rate-limit policy names, current-user context, ownership helpers, and audit abstraction, remains available.
 - Registration requires verification metadata only: document type, original file name, content type, size, and a client-provided reference or placeholder. Binary file upload, storage, and review behavior is delivered in the dedicated file-storage phase.
 - Admin account creation may be satisfied by seeding or another controlled creation process, as long as an Admin can perform approval decisions before Doctor and Company accounts are approved.
-- Contact verification and password reset provider delivery must be safe to replace with real providers, and recorded flows must be time-limited, single-use, and auditable.
-- Email verification is a production security gate for Doctor and Company token issuance and Admin approval; the seeded Admin account is created verified.
+- Contact verification and password reset provider delivery may be stubbed in MVP, but recorded flows must still be time-limited, single-use, and auditable.
+- Contact verification is security infrastructure in Phase 2, not a prerequisite for token issuance; this may become stricter in a later production-readiness phase.
 - The internal role value `Company` is the implementation code for the constitution term `Pharmaceutical Company`; user-facing documentation may display "Pharmaceutical Company".
 - Doctor and Company approval uses a single account-level approval gate in this phase; deeper verification-document review can be added in the file-storage phase.
 - Account suspension is a security/account-state control in this phase and does not implement later weekly-enforcement policy automation.

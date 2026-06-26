@@ -30,18 +30,15 @@ Expected result:
 3. Confirm response `Data.accountStatus` is `Pending`.
 4. Attempt login for the Doctor.
 5. Confirm no access token is issued while status is `Pending`.
-6. Attempt to approve the unverified Doctor account as Admin.
-7. Confirm approval returns conflict (`409`) and the account remains `Pending`.
-8. Complete email verification for the Doctor.
-9. Login as Admin.
-10. List pending accounts with pagination.
-11. Approve the verified Doctor account.
-12. Login as the Doctor.
-13. Confirm access token and refresh token are returned.
-14. Refresh the session.
-15. Confirm the old refresh token cannot be used again.
-16. Logout with the current refresh token.
-17. Confirm the logged-out refresh token cannot be used.
+6. Login as Admin.
+7. List pending accounts with pagination.
+8. Approve the Doctor account.
+9. Login as the Doctor.
+10. Confirm access token and refresh token are returned.
+11. Refresh the session.
+12. Confirm the old refresh token cannot be used again.
+13. Logout with the current refresh token.
+14. Confirm the logged-out refresh token cannot be used.
 
 ## Rejected Resubmission Smoke Flow
 
@@ -58,9 +55,13 @@ Expected result:
 2. Confirm both initiation responses use the same accepted envelope shape.
 3. Complete reset for the known account with a valid reset token.
 4. Confirm existing refresh credentials for that user are revoked.
-5. Start or resend email verification for a registered account.
-6. Complete verification once and confirm replay is rejected.
-7. Confirm an approved but unverified Doctor or Company account cannot receive tokens until email verification is complete.
+5. Register a Doctor or Company and confirm an Email OTP is generated immediately.
+6. In Development/testing, confirm the OTP email is delivered to `medibridge7@gmail.com` and the message body includes `Registered email: <original-email>`.
+7. Complete `POST /api/auth/verify-contact` with `{ "Channel": "Email", "Email": "<original-email>", "Otp": "<six-digit-code>" }`.
+8. Confirm `EmailVerified = true`, the OTP flow is consumed, and `AccountStatus` remains independent of email verification.
+9. Confirm OTP replay, expired OTP, max-attempt-locked OTP, and superseded OTP all return the validation envelope.
+10. Call `POST /api/auth/request-contact-verification` after cooldown to resend an OTP and confirm immediate resend is blocked with `429`.
+11. Confirm an `Approved` account can still receive tokens before contact verification is complete in Phase 2.
 
 ## Out of Scope Guard
 

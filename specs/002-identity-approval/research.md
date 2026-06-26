@@ -18,13 +18,13 @@
 - `IsApproved` only: rejected because rejection, suspension, and inactive states need distinct business meaning.
 - Multiple flags: rejected because flag combinations can become contradictory.
 
-## Decision: Gate token issuance on `AccountStatus = Approved`, verified email, and not deleted
+## Decision: Gate token issuance on `AccountStatus = Approved` and not deleted
 
-**Rationale**: The production security baseline requires denial of JWT issuance when unapproved or when a Doctor/Company email remains unverified. This keeps approval and contact verification aligned before marketplace access while preserving the seeded Admin as verified by construction.
+**Rationale**: The backend plan requires denial of JWT issuance when unapproved. Clarification further states contact verification is supported infrastructure but not required for Phase 2 token issuance. This keeps the MVP approval gate simple and testable.
 
 **Alternatives considered**:
 
-- Gate only on account status: rejected because it permits approved but unverified Doctor/Company accounts to access secured marketplace capabilities.
+- Require verified email/phone before login: rejected for Phase 2 because delivery providers can be stubbed and approval is the requested business gate.
 - Allow pending login with limited token: rejected because the spec requires pending accounts to receive no access credentials.
 
 ## Decision: Store refresh credentials with rotation family tracking

@@ -1,6 +1,197 @@
 @MediBridge.APIs_HostAddress = http://localhost:5246
+@DoctorToken = replace-with-doctor-jwt
+@CompanyToken = replace-with-company-jwt
+@AdminToken = replace-with-admin-jwt
+@FileId = replace-with-file-id
+@CampaignId = replace-with-campaign-id
+@AssetId = replace-with-approved-campaign-asset-id
+@DoctorId = replace-with-eligible-doctor-id
+@CampaignIdempotencyKey = campaign-idem-001
+@WalletTopUpIdempotencyKey = wallet-topup-idem-001
+@RegisteredEmail = doctor@example.com
+@EmailOtp = replace-with-six-digit-otp
 
-GET {{MediBridge.APIs_HostAddress}}/weatherforecast/
+### Register a doctor and send Email OTP to medibridge7@gmail.com
+POST {{MediBridge.APIs_HostAddress}}/api/auth/register-doctor
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Email": "{{RegisteredEmail}}",
+  "Password": "Password1!",
+  "PhoneNumber": "5551000001",
+  "Specialization": "Cardiology",
+  "ExperienceYears": 5,
+  "Location": "Cairo",
+  "VerificationMetadata": {
+    "DocumentType": "License",
+    "OriginalFileName": "license.pdf",
+    "ContentType": "application/pdf",
+    "SizeBytes": 1024,
+    "Reference": "manual-smoke-license"
+  }
+}
+
+### Verify Email OTP
+POST {{MediBridge.APIs_HostAddress}}/api/auth/verify-contact
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Channel": "Email",
+  "Email": "{{RegisteredEmail}}",
+  "Otp": "{{EmailOtp}}"
+}
+
+### Resend Email OTP after cooldown
+POST {{MediBridge.APIs_HostAddress}}/api/auth/request-contact-verification
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Email": "{{RegisteredEmail}}",
+  "Channel": "Email"
+}
+
+### Upload a doctor or company verification document
+POST {{MediBridge.APIs_HostAddress}}/api/files/verification-documents
+Authorization: Bearer {{DoctorToken}}
+Content-Type: multipart/form-data; boundary=verificationBoundary
+Accept: application/json
+
+--verificationBoundary
+Content-Disposition: form-data; name="file"; filename="verification.pdf"
+Content-Type: application/pdf
+
+< ./samples/verification.pdf
+--verificationBoundary--
+
+### Upload an owned campaign file
+POST {{MediBridge.APIs_HostAddress}}/api/campaigns/{{CampaignId}}/files
+Authorization: Bearer {{CompanyToken}}
+Content-Type: multipart/form-data; boundary=campaignFileBoundary
+Accept: application/json
+
+--campaignFileBoundary
+Content-Disposition: form-data; name="purpose"
+
+CampaignMedia
+--campaignFileBoundary
+Content-Disposition: form-data; name="file"; filename="campaign-media.png"
+Content-Type: image/png
+
+< ./samples/campaign-media.png
+--campaignFileBoundary--
+
+### Create a 10-minute private file access grant
+POST {{MediBridge.APIs_HostAddress}}/api/files/{{FileId}}/access
+Authorization: Bearer {{DoctorToken}}
+Accept: application/json
+
+### Replace a rejected or outdated file
+POST {{MediBridge.APIs_HostAddress}}/api/files/{{FileId}}/replacement
+Authorization: Bearer {{DoctorToken}}
+Content-Type: multipart/form-data; boundary=replacementBoundary
+Accept: application/json
+
+--replacementBoundary
+Content-Disposition: form-data; name="file"; filename="replacement.pdf"
+Content-Type: application/pdf
+
+< ./samples/replacement.pdf
+--replacementBoundary--
+
+### Delete a file
+DELETE {{MediBridge.APIs_HostAddress}}/api/files/{{FileId}}
+Authorization: Bearer {{DoctorToken}}
+Accept: application/json
+
+### List pending files for admin review
+GET {{MediBridge.APIs_HostAddress}}/api/admin/files/pending?pageNumber=1&pageSize=20
+Authorization: Bearer {{AdminToken}}
+Accept: application/json
+
+### Record an admin review decision
+PUT {{MediBridge.APIs_HostAddress}}/api/admin/files/{{FileId}}/review
+Authorization: Bearer {{AdminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "decision": "Approved",
+  "reason": "Verification document accepted.",
+  "notes": "Reviewed during Phase 4 file workflow validation."
+}
+
+### Get append-only review history
+GET {{MediBridge.APIs_HostAddress}}/api/admin/files/{{FileId}}/reviews
+Authorization: Bearer {{AdminToken}}
 Accept: application/json
 
 ###
+
+### Search eligible company campaign doctors
+GET {{MediBridge.APIs_HostAddress}}/api/company/doctors?PageNumber=1&PageSize=20&specialization=Cardiology&minExperienceYears=3&maxExperienceYears=20&location=Cairo&minActivityScore=70&minPrice=10&maxPrice=100
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Expected envelope shape
+# {
+#   "Code": 200,
+#   "Message": "Success",
+#   "Data": {
+#     "Page": { "PageNumber": 1, "PageSize": 20, "TotalCount": 1 },
+#     "Items": [
+#       {
+#         "DoctorId": "doctor-id",
+#         "Specialization": "Cardiology",
+#         "ExperienceYears": 7,
+#         "Location": "Cairo",
+#         "ActivityScore": 95,
+#         "PricePerMessage": 50
+#       }
+#     ]
+#   }
+# }
+
+### Submit a company campaign for review
+POST {{MediBridge.APIs_HostAddress}}/api/company/campaigns
+Authorization: Bearer {{CompanyToken}}
+Idempotency-Key: {{CampaignIdempotencyKey}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Title": "Cardiology awareness campaign",
+  "Description": "Evidence-backed product information for selected cardiologists.",
+  "ClinicalResearchInfo": "Summarized approved clinical research reference for review.",
+  "AssetIds": ["{{AssetId}}"],
+  "TargetDoctorIds": ["{{DoctorId}}"]
+}
+
+### List company-owned campaigns
+GET {{MediBridge.APIs_HostAddress}}/api/company/campaigns?PageNumber=1&PageSize=20&status=PendingReview
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Get company-owned campaign detail
+GET {{MediBridge.APIs_HostAddress}}/api/company/campaigns/{{CampaignId}}
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Query company wallet
+GET {{MediBridge.APIs_HostAddress}}/api/company/wallet?PageNumber=1&PageSize=20
+Authorization: Bearer {{CompanyToken}}
+Accept: application/json
+
+### Top up company wallet through MVP gateway stub
+POST {{MediBridge.APIs_HostAddress}}/api/company/wallet/topup
+Authorization: Bearer {{CompanyToken}}
+Idempotency-Key: {{WalletTopUpIdempotencyKey}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Amount": 150.00,
+  "Description": "Manual Phase 5 wallet top-up smoke check"
+}
