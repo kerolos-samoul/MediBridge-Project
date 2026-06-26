@@ -140,6 +140,9 @@ public sealed class Phase4FileValidationTests
             grant.Url.Should().Contain("expires_at=");
             grant.Url.Should().Contain("signature=");
             grant.Url.Should().Contain("public_id=");
+            grant.Url.Should().NotContain("__cld_token__");
+            grant.Url.Should().NotContain("api_secret=");
+            grant.Url.Should().NotContain("test-token");
             grant.Url.ToLowerInvariant().Should().NotContain("/raw/private/verification/doctor/file.pdf");
         }
         finally
