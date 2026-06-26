@@ -110,21 +110,34 @@ public sealed class CloudinaryFileStorageProvider : IFileStorageProvider
 
         var expiresAtUtc = DateTime.UtcNow.Add(boundedLifetime);
         var expirationUnix = new DateTimeOffset(expiresAtUtc).ToUnixTimeSeconds();
-        var authToken = new AuthToken(cloudinary.Api.Account.ApiSecret).Expiration(expirationUnix);
-        var url = cloudinary.Api.Url
-            .Secure(options.UseSecureUrls)
-            .ResourceType(NormalizeResourceType(resourceType))
-            .Type(AuthenticatedStorageType)
-            .Signed(true)
-            .AuthToken(authToken)
-            .BuildUrl(storageKey);
-
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var signedUri) || signedUri.Scheme != Uri.UriSchemeHttps)
+        try
         {
-            throw new FileStorageUnavailableException("File storage provider did not return a secure signed URL.");
-        }
+            var url = cloudinary.DownloadPrivate(
+                storageKey,
+                attachment: null,
+                format: null,
+                type: AuthenticatedStorageType,
+                expiresAt: expirationUnix,
+                resourceType: NormalizeResourceType(resourceType),
+                transformation: null,
+                targetFilename: null);
 
-        return Task.FromResult(new SignedFileUrl(signedUri, expiresAtUtc));
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var signedUri)
+                || (options.UseSecureUrls && signedUri.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new FileStorageUnavailableException("File storage provider did not return a secure signed URL.");
+            }
+
+            return Task.FromResult(new SignedFileUrl(signedUri, expiresAtUtc));
+        }
+        catch (FileStorageUnavailableException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new FileStorageUnavailableException("File storage provider is unavailable.", ex);
+        }
     }
 
     public async Task DeleteAsync(

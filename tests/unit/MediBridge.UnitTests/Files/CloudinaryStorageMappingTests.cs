@@ -1,5 +1,7 @@
+using CloudinaryDotNet;
 using MediBridge.Core.Interfaces.Files;
 using MediBridge.Repository.Storage;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace MediBridge.UnitTests.Files;
@@ -39,5 +41,36 @@ public sealed class CloudinaryStorageMappingTests
         Assert.False(string.IsNullOrWhiteSpace(publicId));
         Assert.DoesNotContain("campaign.png", publicId, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/", publicId, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SignedReadUrl_WithNormalApiSecret_UsesPrivateDownloadUrlWithoutAuthToken()
+    {
+        var provider = new CloudinaryFileStorageProvider(
+            new Cloudinary("cloudinary://123456789012345:not-a-hex-api-secret@demo-cloud"),
+            Options.Create(new CloudinaryStorageOptions
+            {
+                CloudinaryUrl = "cloudinary://123456789012345:not-a-hex-api-secret@demo-cloud",
+                FolderPrefix = "medibridge",
+                UseSecureUrls = true,
+                SignedUrlMinutes = 5
+            }));
+
+        var signedUrl = await provider.CreateSignedReadUrlAsync(
+            "medibridge/campaigns/file-id",
+            "raw",
+            TimeSpan.FromMinutes(5));
+
+        Assert.Equal(Uri.UriSchemeHttps, signedUrl.Url.Scheme);
+        Assert.Equal("api.cloudinary.com", signedUrl.Url.Host);
+        Assert.Equal("/v1_1/demo-cloud/raw/download", signedUrl.Url.AbsolutePath);
+        Assert.Contains("expires_at=", signedUrl.Url.Query, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("public_id=medibridge/campaigns/file-id", signedUrl.Url.Query, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("signature=", signedUrl.Url.Query, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("type=authenticated", signedUrl.Url.Query, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("api_secret", signedUrl.Url.Query, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("not-a-hex-api-secret", signedUrl.Url.Query, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("__cld_token__", signedUrl.Url.Query, StringComparison.OrdinalIgnoreCase);
+        Assert.InRange(signedUrl.ExpiresAtUtc, DateTime.UtcNow, DateTime.UtcNow.AddMinutes(6));
     }
 }
