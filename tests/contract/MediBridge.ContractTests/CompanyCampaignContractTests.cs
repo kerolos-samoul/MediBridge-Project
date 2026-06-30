@@ -127,7 +127,6 @@ public sealed class CompanyCampaignContractTests
     [InlineData("missing-key")]
     [InlineData("missing-title")]
     [InlineData("missing-description")]
-    [InlineData("missing-research")]
     [InlineData("missing-asset")]
     [InlineData("no-targets")]
     [InlineData("over-100-targets")]
@@ -154,6 +153,35 @@ public sealed class CompanyCampaignContractTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
         Phase5ContractTestHelpers.AssertEnvelope(document.RootElement, 400);
+    }
+
+    [Fact]
+    public async Task PostCompanyCampaigns_WithoutClinicalResearch_StillReturnsCreated()
+    {
+        using var factory = new ContractWebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var seed = await SeedReadyCampaignInputsAsync(factory);
+        Phase5ContractTestHelpers.AuthorizeAsCompany(client, seed.CompanyUserId);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/company/campaigns")
+        {
+            Content = Phase5ContractTestHelpers.CreateJsonContent(new
+            {
+                Title = "Campaign without research",
+                Description = "Clinical research is optional.",
+                ClinicalResearchInfo = (string?)null,
+                AssetIds = new[] { seed.AssetId },
+                TargetDoctorIds = new[] { seed.DoctorId }
+            })
+        };
+        Phase5ContractTestHelpers.AddIdempotencyKey(request);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var data = Phase5ContractTestHelpers.AssertDataEnvelope(document, 201);
+        Assert.Equal("PendingReview", data.GetProperty("Status").GetString());
     }
 
     [Fact]
