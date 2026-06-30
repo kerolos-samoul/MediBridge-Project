@@ -92,8 +92,58 @@ public sealed class Phase4CampaignFileIntegrationTests
         Assert.Equal(0, storageProvider.UploadCallCount);
     }
 
+    [Fact]
+    public async Task CampaignFileUpload_WithOwnedRevisionRequiredCampaign_IsAllowed()
+    {
+        await using var factory = CreateFactory(out var storageProvider);
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var email = await Phase6IdentityTestHelpers.RegisterCompanyAsync(client);
+        await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, email, AccountStatus.Approved);
+        var user = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, email);
+        var campaignId = await SeedCampaignAsync(factory.Services, user.Id, CampaignStatus.RevisionRequired);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Company", user.Id));
+
+        using var response = await client.PostAsync(
+            $"/api/campaigns/{campaignId}/files",
+            CreateMultipart("CampaignMedia", "revision.png", "image/png", 1024));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(1, storageProvider.UploadCallCount);
+    }
+
+    [Theory]
+    [InlineData(CampaignStatus.RevisionRequired, "replace", HttpStatusCode.Created)]
+    [InlineData(CampaignStatus.RevisionRequired, "delete", HttpStatusCode.OK)]
+    [InlineData(CampaignStatus.Rejected, "replace", HttpStatusCode.Forbidden)]
+    [InlineData(CampaignStatus.Rejected, "delete", HttpStatusCode.Forbidden)]
+    public async Task CampaignFileChanges_RequireDraftOrRevisionRequiredCampaign(
+        CampaignStatus status,
+        string operation,
+        HttpStatusCode expectedStatus)
+    {
+        await using var factory = CreateFactory(out var storageProvider);
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var email = await Phase6IdentityTestHelpers.RegisterCompanyAsync(client);
+        await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, email, AccountStatus.Approved);
+        var user = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, email);
+        var campaignId = await SeedCampaignAsync(factory.Services, user.Id, status);
+        var fileId = await SeedOwnedCampaignFileAsync(factory.Services, user.Id, campaignId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Company", user.Id));
+
+        var response = operation == "replace"
+            ? await client.PostAsync($"/api/files/{fileId}/replacement", CreateReplacementMultipart())
+            : await client.DeleteAsync($"/api/files/{fileId}");
+
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.Equal(expectedStatus == HttpStatusCode.Created ? 1 : 0, storageProvider.UploadCallCount);
+        Assert.Equal(expectedStatus == HttpStatusCode.OK ? 1 : 0, storageProvider.DeleteCallCount);
+    }
+
     [Theory]
     [InlineData(CampaignStatus.PendingReview)]
+    [InlineData(CampaignStatus.Rejected)]
     [InlineData(CampaignStatus.Approved)]
     [InlineData(CampaignStatus.Active)]
     [InlineData(CampaignStatus.Completed)]
@@ -187,6 +237,15 @@ public sealed class Phase4CampaignFileIntegrationTests
         return content;
     }
 
+    private static MultipartFormDataContent CreateReplacementMultipart()
+    {
+        var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(new byte[1024]);
+        fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/png");
+        content.Add(fileContent, "File", "replacement.png");
+        return content;
+    }
+
     private static async Task<string> SeedCampaignAsync(IServiceProvider services, string companyUserId, CampaignStatus status = CampaignStatus.Draft)
     {
         using var scope = services.CreateScope();
@@ -260,6 +319,42 @@ public sealed class Phase4CampaignFileIntegrationTests
         }
 
         db.StoredFiles.Add(file);
+        await db.SaveChangesAsync();
+        return file.Id;
+    }
+
+    private static async Task<string> SeedOwnedCampaignFileAsync(
+        IServiceProvider services,
+        string companyUserId,
+        string campaignId)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var companyId = await db.CompanyProfiles
+            .Where(profile => profile.UserId == companyUserId)
+            .Select(profile => profile.Id)
+            .SingleAsync();
+        var file = new StoredFile
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            OwnerType = StoredFileOwnerType.Company,
+            OwnerId = companyId,
+            RelatedCampaignId = campaignId,
+            Purpose = StoredFilePurpose.CampaignMedia,
+            OriginalFileName = "rejected.png",
+            ContentType = "image/png",
+            SizeBytes = 1024,
+            StorageKey = $"campaigns/{campaignId}/rejected.png",
+            StorageProvider = "FakeStorage",
+            StorageResourceType = StoredFileStorageResourceType.Image,
+            StorageDeliveryType = StoredFileStorageDeliveryType.Private,
+            Visibility = StoredFileVisibility.Private,
+            ReviewStatus = StoredFileReviewStatus.Rejected,
+            UploadStatus = StoredFileUploadStatus.Stored,
+            SafetyScanStatus = StoredFileSafetyScanStatus.Deferred,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+        await db.StoredFiles.AddAsync(file);
         await db.SaveChangesAsync();
         return file.Id;
     }

@@ -9,8 +9,8 @@ public sealed class CreateCampaignRequestValidator : AbstractValidator<CreateCam
     {
         RuleFor(request => request.Title).NotEmpty().MaximumLength(200);
         RuleFor(request => request.Description).NotEmpty().MaximumLength(4000);
-        RuleFor(request => request.ClinicalResearchInfo).NotEmpty().MaximumLength(4000);
-        RuleFor(request => request.AssetIds).NotNull().Must(ids => ids.Count > 0).WithMessage("At least one approved campaign asset is required.");
+        RuleFor(request => request.ClinicalResearchInfo).MaximumLength(4000);
+        RuleFor(request => request.AssetIds).NotNull().Must(ids => ids.Count > 0).WithMessage("At least one campaign media asset is required.");
         RuleForEach(request => request.AssetIds).NotEmpty();
         RuleFor(request => request.TargetDoctorIds)
             .NotNull()

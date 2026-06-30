@@ -17,6 +17,8 @@ public interface IProfileRepository
     Task AddCompanyProfileAsync(CompanyProfile profile, CancellationToken cancellationToken = default);
     Task<DoctorProfile?> FindDoctorProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default);
     Task<CompanyProfile?> FindCompanyProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default);
+    Task<CompanyProfile?> FindCompanyProfileByIdAsync(string companyId, CancellationToken cancellationToken = default);
+    Task<CompanyProfile?> FindCompanyProfileByIdForUpdateAsync(string companyId, CancellationToken cancellationToken = default);
     Task<bool> CompanyLicenseExistsAsync(string licenseNumber, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DoctorProfile>> SearchEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, int skip, int take, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DoctorProfile>> ListEligibleDoctorsByIdsAsync(IReadOnlyCollection<string> doctorIds, CancellationToken cancellationToken = default);

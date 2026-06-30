@@ -39,6 +39,8 @@ public sealed class Phase5ScopeGuardTests
             [
                 "api/company/campaigns",
                 "api/company/campaigns/{campaignId}",
+                "api/company/campaigns/{campaignId}/review-outcome",
+                "api/company/campaigns/{campaignId}/submit",
                 "api/company/doctors",
                 "api/company/wallet",
                 "api/company/wallet/topup"

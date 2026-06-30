@@ -6,6 +6,11 @@ public abstract class Phase5WorkflowException : Exception
         : base(message)
     {
     }
+
+    protected Phase5WorkflowException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 public sealed class Phase5ValidationException : Phase5WorkflowException
@@ -39,6 +44,14 @@ public sealed class Phase5ForbiddenException : Phase5WorkflowException
 {
     public Phase5ForbiddenException(string message)
         : base(message)
+    {
+    }
+}
+
+public sealed class Phase5ServiceUnavailableException : Phase5WorkflowException
+{
+    public Phase5ServiceUnavailableException(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 }

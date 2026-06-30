@@ -6,6 +6,7 @@ namespace MediBridge.Core.Interfaces.Identity;
 public interface IApplicationUserRepository
 {
     Task<ApplicationUser?> FindByIdAsync(string userId, CancellationToken cancellationToken = default);
+    Task<ApplicationUser?> FindByIdForUpdateAsync(string userId, CancellationToken cancellationToken = default);
     Task<ApplicationUser?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task<ApplicationUser?> FindByContactAsync(string contact, CancellationToken cancellationToken = default);
     Task<bool> ValidatePasswordAsync(string email, string password, CancellationToken cancellationToken = default);

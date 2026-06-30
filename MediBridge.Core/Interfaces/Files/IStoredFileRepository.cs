@@ -12,6 +12,9 @@ public interface IStoredFileRepository
     Task<IReadOnlyList<string>> ListActiveStoredFileIdsByOwnerAsync(StoredFileOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StoredFile>> ListByOwnerAsync(StoredFileOwnerType ownerType, string ownerId, StoredFilePurpose? purpose = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StoredFile>> ListByCampaignAsync(string campaignId, StoredFilePurpose? purpose = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StoredFile>> ListActiveReviewableCampaignFilesAsync(string campaignId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StoredFile>> ListActiveOptionalCampaignFilesAsync(string campaignId, CancellationToken cancellationToken = default);
+    Task<bool> HasActiveApprovedCampaignMediaAsync(string campaignId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListStoredFileReviewIdsAsync(StoredFileReviewStatus reviewStatus, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<StoredFile>> ListByReviewStatusAsync(StoredFileReviewStatus reviewStatus, int skip = 0, int take = 100, CancellationToken cancellationToken = default);
     Task<int> CountByReviewStatusAsync(StoredFileReviewStatus reviewStatus, CancellationToken cancellationToken = default);

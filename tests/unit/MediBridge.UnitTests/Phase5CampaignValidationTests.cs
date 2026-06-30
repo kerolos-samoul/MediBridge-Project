@@ -12,7 +12,6 @@ public sealed class Phase5CampaignValidationTests
     [Theory]
     [InlineData("", "description", "research")]
     [InlineData("title", "", "research")]
-    [InlineData("title", "description", "")]
     public async Task Validator_RejectsMissingRequiredCampaignContent(string title, string description, string research)
     {
         var result = await validator.ValidateAsync(new CreateCampaignRequestDto
@@ -25,6 +24,23 @@ public sealed class Phase5CampaignValidationTests
         });
 
         Assert.False(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task Validator_AllowsOptionalClinicalResearch(string? research)
+    {
+        var result = await validator.ValidateAsync(new CreateCampaignRequestDto
+        {
+            Title = "Campaign",
+            Description = "Description",
+            ClinicalResearchInfo = research,
+            AssetIds = ["asset-1"],
+            TargetDoctorIds = ["doctor-1"]
+        });
+
+        Assert.True(result.IsValid);
     }
 
     [Theory]
@@ -45,7 +61,7 @@ public sealed class Phase5CampaignValidationTests
     }
 
     [Fact]
-    public async Task Validator_RejectsDuplicateTargetsAndMissingApprovedAssets()
+    public async Task Validator_RejectsDuplicateTargetsAndMissingCampaignAssets()
     {
         var result = await validator.ValidateAsync(new CreateCampaignRequestDto
         {

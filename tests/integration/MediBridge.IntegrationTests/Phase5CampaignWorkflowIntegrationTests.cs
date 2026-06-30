@@ -130,7 +130,7 @@ public sealed class Phase5CampaignWorkflowIntegrationTests : IClassFixture<WebAp
     }
 
     [Fact]
-    public async Task SubmitCampaign_RejectsUnavailableOrCrossCompanyAssetsWithoutPersistence()
+    public async Task SubmitCampaign_AcceptsPendingMedia_ButRejectsMissingOrCrossCompanyAssets()
     {
         await factory.InitializeDatabaseAsync();
         var seed = await SeedReadySubmissionAsync(availableBalance: 1000m);
@@ -144,11 +144,16 @@ public sealed class Phase5CampaignWorkflowIntegrationTests : IClassFixture<WebAp
         var crossCompanyResponse = await SubmitCampaignAsync(client, otherAsset, [seed.Doctor.DoctorId]);
 
         Assert.Equal(HttpStatusCode.BadRequest, missingResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, pendingResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, pendingResponse.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, crossCompanyResponse.StatusCode);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
-        Assert.Equal(0, await context.Campaigns.CountAsync(campaign => campaign.CompanyId == seed.Company.CompanyId));
+        var campaign = await context.Campaigns.SingleAsync(item => item.CompanyId == seed.Company.CompanyId);
+        Assert.Equal(CampaignStatus.PendingReview, campaign.Status);
+        Assert.NotNull(campaign.SubmittedAtUtc);
+        Assert.Equal(1, await context.CampaignSubmissionAttempts.CountAsync(attempt => attempt.CampaignId == campaign.Id));
+        Assert.Equal(0, await context.WalletTransactions.CountAsync());
+        Assert.Equal(0, await context.WalletLedgerEntries.CountAsync());
     }
 
     [Fact]

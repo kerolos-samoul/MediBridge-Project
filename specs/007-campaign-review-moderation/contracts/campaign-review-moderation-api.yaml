@@ -1,0 +1,557 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Campaign Review Moderation API
+  version: 1.0.0
+  description: >-
+    Secured HTTP contract for Draft/RevisionRequired company updates,
+    non-financial campaign submission, admin moderation, company review
+    outcomes, protected review-file access references, and
+    approval-triggered pending queue creation.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /api/company/campaigns/{campaignId}:
+    put:
+      summary: Update an owned draft or revision-required campaign
+      operationId: updateCompanyCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCampaignRequest'
+      responses:
+        '200':
+          description: Campaign content updated without changing submission or review history.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCampaign'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+  /api/company/campaigns/{campaignId}/submit:
+    post:
+      summary: Submit a draft or revision-required campaign without reserving funds
+      operationId: submitCompanyCampaignForReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Target snapshots and a new submission timestamp were committed after affordability validation; no wallet balance or ledger record changed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCampaignSubmission'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+  /api/admin/campaigns/pending-review:
+    get:
+      summary: List campaigns awaiting admin moderation
+      operationId: listPendingCampaignReviews
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Pending review campaigns returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopePendingCampaignPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/admin/campaigns/{campaignId}/review-detail:
+    get:
+      summary: Get admin campaign review detail
+      operationId: getCampaignReviewDetail
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '200':
+          description: Review package returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCampaignReviewDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+  /api/admin/campaigns/{campaignId}/review:
+    post:
+      summary: Approve, reject, or return a submitted campaign for revision
+      operationId: reviewCampaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewDecisionRequest'
+      responses:
+        '200':
+          description: Campaign review decision recorded; approval creates pending queue rows.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCampaignReviewResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+  /api/admin/campaigns/{campaignId}/queue:
+    get:
+      summary: Inspect doctor-level pending queue rows for a reviewed campaign
+      operationId: getAdminCampaignQueueRows
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '200':
+          description: Doctor-level queue rows returned for admin verification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeQueueRows'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/company/campaigns/{campaignId}/review-outcome:
+    get:
+      summary: Get owning-company campaign review outcome
+      operationId: getCompanyCampaignReviewOutcome
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '200':
+          description: Company-visible review outcome returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCompanyReviewOutcome'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CampaignId:
+      name: campaignId
+      in: path
+      required: true
+      schema:
+        type: string
+    PageNumber:
+      name: PageNumber
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: PageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+  responses:
+    ValidationError:
+      description: Validation failure in standard envelope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Unauthorized:
+      description: Missing or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Forbidden:
+      description: Authenticated user lacks required role or ownership.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    NotFound:
+      description: Resource not found or not visible to caller.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    ConflictError:
+      description: Idempotency conflict, stale decision, or invalid campaign state.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    StorageUnavailable:
+      description: Protected file storage is temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+  schemas:
+    EnvelopeEmpty:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    EnvelopePendingCampaignPage:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/PendingCampaignPage'
+    EnvelopeCampaign:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/Campaign'
+    EnvelopeCampaignSubmission:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/CampaignSubmission'
+    EnvelopeCampaignReviewDetail:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/CampaignReviewDetail'
+    EnvelopeCampaignReviewResult:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/CampaignReviewResult'
+    EnvelopeCompanyReviewOutcome:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/CompanyReviewOutcome'
+    EnvelopeQueueRows:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              type: array
+              items:
+                $ref: '#/components/schemas/QueueRow'
+    PendingCampaignPage:
+      type: object
+      required: [items, pageNumber, pageSize, totalCount]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendingCampaignSummary'
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+    PendingCampaignSummary:
+      type: object
+      required: [campaignId, companyId, companyName, title, descriptionSummary, status, submittedAtUtc, targetCount, hasApprovedMedia, reviewReadinessIssues]
+      properties:
+        campaignId:
+          type: string
+        companyId:
+          type: string
+        companyName:
+          type: string
+        title:
+          type: string
+        descriptionSummary:
+          type: string
+        status:
+          type: string
+          enum: [PendingReview]
+        submittedAtUtc:
+          type: string
+          format: date-time
+        targetCount:
+          type: integer
+          minimum: 0
+        hasApprovedMedia:
+          type: boolean
+        reviewReadinessIssues:
+          type: array
+          items:
+            type: string
+    CampaignReviewDetail:
+      type: object
+      required: [campaignId, companyId, companyName, title, description, status, submittedAtUtc, targetCount, reviewableMediaAssets, reviewReadinessIssues]
+      properties:
+        campaignId:
+          type: string
+        companyId:
+          type: string
+        companyName:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [PendingReview]
+        submittedAtUtc:
+          type: string
+          format: date-time
+        targetCount:
+          type: integer
+        reviewableMediaAssets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewFile'
+        optionalFiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewFile'
+        reviewReadinessIssues:
+          type: array
+          items:
+            type: string
+    ReviewFile:
+      type: object
+      required: [fileId, purpose, originalFileName, contentType, sizeBytes, reviewStatus, accessUrl, accessExpiresAtUtc]
+      properties:
+        fileId:
+          type: string
+        purpose:
+          type: string
+          enum: [CampaignMedia, VoiceNote, ClinicalResearchAttachment]
+        originalFileName:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+        reviewStatus:
+          type: string
+          enum: [Pending, Approved, Rejected]
+        accessUrl:
+          type: string
+          format: uri
+        accessExpiresAtUtc:
+          type: string
+          format: date-time
+    UpdateCampaignRequest:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        clinicalResearchInfo:
+          type: string
+          nullable: true
+          maxLength: 4000
+    Campaign:
+      type: object
+      required: [campaignId, companyId, title, description, status]
+      properties:
+        campaignId:
+          type: string
+        companyId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        clinicalResearchInfo:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [Draft, RevisionRequired]
+    CampaignSubmission:
+      type: object
+      required: [campaignId, status, targetCount, estimatedCost, currency, submittedAtUtc]
+      properties:
+        campaignId:
+          type: string
+        status:
+          type: string
+          enum: [PendingReview]
+        targetCount:
+          type: integer
+          minimum: 1
+        estimatedCost:
+          type: number
+          format: decimal
+          minimum: 0
+        currency:
+          type: string
+          enum: [EGP]
+        submittedAtUtc:
+          type: string
+          format: date-time
+    ReviewDecisionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [Approved, Rejected, RevisionRequired]
+        reason:
+          type: string
+          nullable: true
+          maxLength: 1000
+        notes:
+          type: string
+          nullable: true
+          maxLength: 1000
+    CampaignReviewResult:
+      type: object
+      required: [campaignId, decision, status, queuedCount, decisionTimeUtc, canResubmit]
+      properties:
+        campaignId:
+          type: string
+        decision:
+          type: string
+          enum: [Approved, Rejected, RevisionRequired]
+        status:
+          type: string
+          enum: [Approved, Rejected, RevisionRequired]
+        queuedCount:
+          type: integer
+          minimum: 0
+        decisionTimeUtc:
+          type: string
+          format: date-time
+        canResubmit:
+          type: boolean
+    CompanyReviewOutcome:
+      type: object
+      required: [campaignId, status, publicReason, decisionTimeUtc, canEdit, canResubmit, queuedCount]
+      properties:
+        campaignId:
+          type: string
+        status:
+          type: string
+          enum: [Draft, PendingReview, Approved, Rejected, RevisionRequired, Active, Paused, Cancelled, Completed]
+        publicReason:
+          type: string
+          nullable: true
+        decisionTimeUtc:
+          type: string
+          format: date-time
+          nullable: true
+        canEdit:
+          type: boolean
+        canResubmit:
+          type: boolean
+        queuedCount:
+          type: integer
+          minimum: 0
+    QueueRow:
+      type: object
+      required: [queueId, campaignId, doctorId, status, campaignSubmittedAtUtc, queuedAtUtc]
+      properties:
+        queueId:
+          type: string
+        campaignId:
+          type: string
+        doctorId:
+          type: string
+        status:
+          type: string
+          enum: [Queued, Activated, Cancelled]
+        campaignSubmittedAtUtc:
+          type: string
+          format: date-time
+        queuedAtUtc:
+          type: string
+          format: date-time

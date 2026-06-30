@@ -298,6 +298,8 @@ public sealed class FileWorkflowService : IFileWorkflowService
             throw new UnauthorizedAccessException("File replacement denied.");
         }
 
+        await EnsureCampaignFileEditableAsync(actorUserId, role, file, cancellationToken);
+
         if (role != UserRole.Admin && !await domainUnitOfWork.StoredFiles.IsOwnerActiveForNormalAccessAsync(file.OwnerType, file.OwnerId, cancellationToken))
         {
             throw new UnauthorizedAccessException("File owner is inactive.");
@@ -532,12 +534,34 @@ public sealed class FileWorkflowService : IFileWorkflowService
             throw new KeyNotFoundException("Campaign was not found.");
         }
 
-        if (!await domainUnitOfWork.Campaigns.IsActiveDraftCampaignOwnedByCompanyAsync(campaignId, companyProfile.Id, cancellationToken))
+        if (!await domainUnitOfWork.Campaigns.IsActiveEditableCampaignOwnedByCompanyAsync(campaignId, companyProfile.Id, cancellationToken))
         {
-            throw new UnauthorizedAccessException("Campaign upload requires an owned draft campaign.");
+            throw new UnauthorizedAccessException("Campaign file changes require an owned Draft or RevisionRequired campaign.");
         }
 
         return companyProfile.Id;
+    }
+
+    private async Task EnsureCampaignFileEditableAsync(
+        string actorUserId,
+        UserRole role,
+        StoredFile file,
+        CancellationToken cancellationToken)
+    {
+        if (role != UserRole.Company || string.IsNullOrWhiteSpace(file.RelatedCampaignId))
+        {
+            return;
+        }
+
+        var companyId = await ResolveCampaignOwnerAsync(
+            actorUserId,
+            file.RelatedCampaignId,
+            cancellationToken);
+        if (file.OwnerType != StoredFileOwnerType.Company
+            || !string.Equals(file.OwnerId, companyId, StringComparison.Ordinal))
+        {
+            throw new UnauthorizedAccessException("Campaign file changes require ownership.");
+        }
     }
 
     private async Task<FileAccessGrantDto> CreatePrivateAccessGrantCoreAsync(string actorUserId, UserRole role, string storedFileId, CancellationToken cancellationToken)
@@ -634,6 +658,8 @@ public sealed class FileWorkflowService : IFileWorkflowService
             await domainUnitOfWork.SaveChangesAsync(cancellationToken);
             throw new UnauthorizedAccessException("File deletion denied.");
         }
+
+        await EnsureCampaignFileEditableAsync(actorUserId, role, file, cancellationToken);
 
         if (role != UserRole.Admin && !await domainUnitOfWork.StoredFiles.IsOwnerActiveForNormalAccessAsync(file.OwnerType, file.OwnerId, cancellationToken))
         {

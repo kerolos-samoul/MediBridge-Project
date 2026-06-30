@@ -26,6 +26,18 @@ public sealed class ApplicationUserRepository : IApplicationUserRepository
         return user?.ToDomain();
     }
 
+    public async Task<ApplicationUser?> FindByIdForUpdateAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var identityUser = await context.Users
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [Users] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [Id] = {userId}
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+        return identityUser?.ToDomain();
+    }
+
     public async Task<ApplicationUser?> FindByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = NormalizeEmail(email);
@@ -171,6 +183,27 @@ public sealed class ProfileRepository : IProfileRepository
     public Task<CompanyProfile?> FindCompanyProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         return context.CompanyProfiles.FirstOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
+    }
+
+    public Task<CompanyProfile?> FindCompanyProfileByIdAsync(string companyId, CancellationToken cancellationToken = default)
+    {
+        return context.CompanyProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(profile => profile.Id == companyId && !profile.IsDeleted, cancellationToken);
+    }
+
+    public Task<CompanyProfile?> FindCompanyProfileByIdForUpdateAsync(
+        string companyId,
+        CancellationToken cancellationToken = default)
+    {
+        return context.CompanyProfiles
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [CompanyProfiles] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [Id] = {companyId}
+                    AND [IsDeleted] = CAST(0 AS bit)
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     public Task<bool> CompanyLicenseExistsAsync(string licenseNumber, CancellationToken cancellationToken = default)

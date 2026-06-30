@@ -74,6 +74,85 @@ public sealed class CompanyCampaignsController : ControllerBase
         return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }
 
+    [HttpPut("{campaignId}")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    [ProducesResponseType(typeof(ApiEnvelope<CampaignDraftDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiEnvelope<CampaignDraftDto>>> UpdateCampaign(
+        string campaignId,
+        [FromBody] UpdateCampaignRequestDto? request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        if (request is null)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+
+        var result = await campaignWorkflowService.UpdateCampaignAsync(
+            actorUserId,
+            campaignId,
+            request,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    [HttpPost("{campaignId}/submit")]
+    [EnableRateLimiting(RateLimitPolicyNames.Phase5CampaignSubmission)]
+    [ProducesResponseType(typeof(ApiEnvelope<CampaignSubmissionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiEnvelope<CampaignSubmissionDto>>> SubmitExistingCampaign(
+        string campaignId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault() ?? string.Empty;
+        var result = await campaignWorkflowService.SubmitCampaignAsync(
+            actorUserId,
+            campaignId,
+            idempotencyKey,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    [HttpGet("{campaignId}/review-outcome")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    [ProducesResponseType(typeof(ApiEnvelope<CompanyReviewOutcomeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiEnvelope<CompanyReviewOutcomeDto>>> GetReviewOutcome(
+        string campaignId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var result = await campaignWorkflowService.GetReviewOutcomeAsync(
+            actorUserId,
+            campaignId,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
     private bool TryGetActorUserId(out string actorUserId, out ActionResult unauthorizedResult)
     {
         actorUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? string.Empty;

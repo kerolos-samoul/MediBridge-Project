@@ -13,6 +13,7 @@ public sealed class Campaign : ISoftDeleteRecord
     public string Description { get; set; } = string.Empty;
     public CampaignStatus Status { get; set; } = CampaignStatus.Draft;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? SubmittedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }

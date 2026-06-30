@@ -87,6 +87,51 @@ public sealed class StoredFileRepository : IStoredFileRepository
         return await query.OrderBy(file => file.CreatedAtUtc).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<StoredFile>> ListActiveReviewableCampaignFilesAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        return await ActiveCampaignFiles(campaignId)
+            .Where(file => file.Purpose == StoredFilePurpose.CampaignMedia
+                && (file.ReviewStatus == StoredFileReviewStatus.Pending
+                    || file.ReviewStatus == StoredFileReviewStatus.Approved))
+            .OrderBy(file => file.CreatedAtUtc)
+            .ThenBy(file => file.Id)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StoredFile>> ListActiveOptionalCampaignFilesAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        return await ActiveCampaignFiles(campaignId)
+            .Where(file => file.Purpose == StoredFilePurpose.VoiceNote
+                || file.Purpose == StoredFilePurpose.ClinicalResearchAttachment)
+            .OrderBy(file => file.CreatedAtUtc)
+            .ThenBy(file => file.Id)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> HasActiveApprovedCampaignMediaAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        return ActiveCampaignFiles(campaignId).AnyAsync(
+            file => file.Purpose == StoredFilePurpose.CampaignMedia
+                && file.ReviewStatus == StoredFileReviewStatus.Approved,
+            cancellationToken);
+    }
+
+    private IQueryable<StoredFile> ActiveCampaignFiles(string campaignId)
+    {
+        return context.StoredFiles.Where(file => file.RelatedCampaignId == campaignId
+            && file.UploadStatus == StoredFileUploadStatus.Stored
+            && file.DeletedAtUtc == null
+            && file.ReplacedByFileId == null);
+    }
+
     public async Task<IReadOnlyList<string>> ListStoredFileReviewIdsAsync(StoredFileReviewStatus reviewStatus, CancellationToken cancellationToken = default)
     {
         return await context.StoredFiles
