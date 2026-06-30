@@ -8,6 +8,7 @@ using MediBridge.Core.Entities.Wallets;
 using MediBridge.Core.Enums;
 using MediBridge.Repository.Data;
 using MediBridge.Repository.Data.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -16,7 +17,7 @@ namespace MediBridge.ContractTests;
 public sealed class CompanyCampaignContractTests
 {
     [Fact]
-    public async Task PostCompanyCampaigns_WithValidRequest_Returns201PendingReviewEnvelope()
+    public async Task PostCompanyCampaigns_WithValidRequest_StillSubmitsCompleteCampaign()
     {
         using var factory = new ContractWebAppFactory();
         await factory.InitializeDatabaseAsync();
@@ -39,6 +40,87 @@ public sealed class CompanyCampaignContractTests
         Assert.Equal("PendingReview", data.GetProperty("Status").GetString());
         Assert.Equal(1, data.GetProperty("TargetCount").GetInt32());
         Assert.True(data.TryGetProperty("SubmittedAtUtc", out _));
+    }
+
+    [Fact]
+    public async Task PostCompanyCampaignDrafts_WithValidRequest_CreatesOwnedDraftCampaign()
+    {
+        using var factory = new ContractWebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var seed = await SeedReadyCampaignInputsAsync(factory);
+        Phase5ContractTestHelpers.AuthorizeAsCompany(client, seed.CompanyUserId);
+
+        var response = await client.PostAsync(
+            "/api/company/campaigns/drafts",
+            Phase5ContractTestHelpers.CreateJsonContent(new
+            {
+                Title = "Draft campaign",
+                Description = "Draft campaign description",
+                ClinicalResearchInfo = "Optional research context"
+            }));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var data = Phase5ContractTestHelpers.AssertDataEnvelope(document, 201);
+        var campaignId = data.GetProperty("CampaignId").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(campaignId));
+        Assert.Equal(seed.CompanyId, data.GetProperty("CompanyId").GetString());
+        Assert.Equal("Draft campaign", data.GetProperty("Title").GetString());
+        Assert.Equal("Draft campaign description", data.GetProperty("Description").GetString());
+        Assert.Equal("Optional research context", data.GetProperty("ClinicalResearchInfo").GetString());
+        Assert.Equal("Draft", data.GetProperty("Status").GetString());
+
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var persisted = await context.Campaigns.SingleAsync(campaign => campaign.Id == campaignId);
+        Assert.Equal(seed.CompanyId, persisted.CompanyId);
+        Assert.Equal(CampaignStatus.Draft, persisted.Status);
+    }
+
+    [Theory]
+    [InlineData("missing-title")]
+    [InlineData("long-title")]
+    [InlineData("missing-description")]
+    [InlineData("long-description")]
+    [InlineData("long-research")]
+    public async Task PostCompanyCampaignDrafts_WithInvalidRequest_Returns400Envelope(string scenario)
+    {
+        using var factory = new ContractWebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var seed = await SeedReadyCampaignInputsAsync(factory);
+        Phase5ContractTestHelpers.AuthorizeAsCompany(client, seed.CompanyUserId);
+
+        var response = await client.PostAsync(
+            "/api/company/campaigns/drafts",
+            Phase5ContractTestHelpers.CreateJsonContent(CreateDraftScenarioRequest(scenario)));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        Phase5ContractTestHelpers.AssertEnvelope(document.RootElement, 400);
+    }
+
+    [Theory]
+    [InlineData("/api/company/campaigns")]
+    [InlineData("/api/company/campaigns/drafts")]
+    public async Task PostCompanyCampaignEndpoints_RequireCompanyAuthorization(string route)
+    {
+        using var factory = new ContractWebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var anonymousClient = factory.CreateClient();
+        using var doctorClient = factory.CreateClient();
+        doctorClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            Phase5ContractTestHelpers.CreateToken("Doctor"));
+        var requestBody = Phase5ContractTestHelpers.CreateJsonContent(new { });
+        var doctorRequestBody = Phase5ContractTestHelpers.CreateJsonContent(new { });
+
+        var unauthorized = await anonymousClient.PostAsync(route, requestBody);
+        var forbidden = await doctorClient.PostAsync(route, doctorRequestBody);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, unauthorized.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
     }
 
     [Theory]
@@ -200,6 +282,19 @@ public sealed class CompanyCampaignContractTests
             "over-100-targets" => new { Title = "Title", Description = "Description", ClinicalResearchInfo = "Research", AssetIds = new[] { assetId }, TargetDoctorIds = Enumerable.Range(0, 101).Select(index => $"doctor-{index}").ToArray() },
             "duplicate-targets" => new { Title = "Title", Description = "Description", ClinicalResearchInfo = "Research", AssetIds = new[] { assetId }, TargetDoctorIds = new[] { doctorId, doctorId } },
             _ => Phase5ContractTestHelpers.CreateCampaignRequest([assetId], [doctorId])
+        };
+    }
+
+    private static object CreateDraftScenarioRequest(string scenario)
+    {
+        return scenario switch
+        {
+            "missing-title" => new { Title = "", Description = "Description", ClinicalResearchInfo = "Research" },
+            "long-title" => new { Title = new string('T', 201), Description = "Description", ClinicalResearchInfo = "Research" },
+            "missing-description" => new { Title = "Title", Description = "", ClinicalResearchInfo = "Research" },
+            "long-description" => new { Title = "Title", Description = new string('D', 4001), ClinicalResearchInfo = "Research" },
+            "long-research" => new { Title = "Title", Description = "Description", ClinicalResearchInfo = new string('R', 4001) },
+            _ => new { Title = "Title", Description = "Description", ClinicalResearchInfo = "Research" }
         };
     }
 
