@@ -38,6 +38,7 @@ public sealed class GlobalExceptionMiddleware
                 Phase5ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden."),
                 Phase5NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
                 Phase5ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
+                Phase5ServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Service unavailable."),
                 _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
             };
 
