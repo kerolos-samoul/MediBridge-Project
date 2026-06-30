@@ -72,4 +72,87 @@ public sealed class CampaignReviewMigrationTests : IClassFixture<WebAppFactory>
                 && operation.Sql.Contains("PriorStatus", StringComparison.Ordinal)
                 && operation.Sql.Contains("ResultingStatus", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Migration_GuardsReviewIdempotencyArtifactsFromEarlierMigrationLineage()
+    {
+        var migrationType = typeof(MediBridgeDbContext).Assembly
+            .GetTypes()
+            .Single(type => type.Name == "AddCampaignReviewModeration");
+        var migration = Activator.CreateInstance(migrationType);
+        var up = migrationType.GetMethod("Up", BindingFlags.Instance | BindingFlags.NonPublic);
+        var builder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
+
+        up!.Invoke(migration, [builder]);
+
+        var sql = string.Join(
+            Environment.NewLine,
+            builder.Operations.OfType<SqlOperation>().Select(operation => operation.Sql));
+
+        Assert.Contains("COL_LENGTH('dbo.CampaignReviewHistories', 'IdempotencyKey')", sql, StringComparison.Ordinal);
+        Assert.Contains("IX_CampaignReviewHistories_CampaignId_IdempotencyKey", sql, StringComparison.Ordinal);
+        Assert.Contains("sys.indexes", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            builder.Operations.OfType<AddColumnOperation>(),
+            operation => operation.Table == "CampaignReviewHistories" && operation.Name == "IdempotencyKey");
+        Assert.DoesNotContain(
+            builder.Operations.OfType<CreateIndexOperation>(),
+            operation => operation.Table == "CampaignReviewHistories" && operation.Name == "IX_CampaignReviewHistories_CampaignId_IdempotencyKey");
+    }
+
+    [Fact]
+    public void Phase5Migration_PreservesQueueIndexesFromDownstreamMigrationLineage()
+    {
+        var migrationType = typeof(MediBridgeDbContext).Assembly
+            .GetTypes()
+            .Single(type => type.Name == "Phase5CampaignQueueFoundation");
+        var migration = Activator.CreateInstance(migrationType);
+        var up = migrationType.GetMethod("Up", BindingFlags.Instance | BindingFlags.NonPublic);
+        var builder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
+
+        up!.Invoke(migration, [builder]);
+
+        var sql = string.Join(
+            Environment.NewLine,
+            builder.Operations.OfType<SqlOperation>().Select(operation => operation.Sql));
+
+        Assert.Contains("IX_DoctorMessageQueues_CampaignId", sql, StringComparison.Ordinal);
+        Assert.Contains("IX_DoctorMessageQueues_CampaignId_DoctorId", sql, StringComparison.Ordinal);
+        Assert.Contains("sys.indexes", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            builder.Operations.OfType<DropIndexOperation>(),
+            operation => operation.Table == "DoctorMessageQueues");
+        Assert.DoesNotContain(
+            builder.Operations.OfType<CreateIndexOperation>(),
+            operation => operation.Table == "DoctorMessageQueues");
+        Assert.Contains(
+            builder.Operations.OfType<CreateTableOperation>(),
+            operation => operation.Name == "CampaignSubmissionRequests");
+    }
+
+    [Fact]
+    public void StorageReconciliationMigration_ConvertsKnownResourceTypesToIntegratedEnumValues()
+    {
+        var migrationType = typeof(MediBridgeDbContext).Assembly
+            .GetTypes()
+            .SingleOrDefault(type => type.Name == "ReconcileStoredFileResourceType");
+
+        Assert.NotNull(migrationType);
+        var migration = Activator.CreateInstance(migrationType!);
+        var up = migrationType!.GetMethod("Up", BindingFlags.Instance | BindingFlags.NonPublic);
+        var builder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
+
+        up!.Invoke(migration, [builder]);
+
+        var sql = string.Join(
+            Environment.NewLine,
+            builder.Operations.OfType<SqlOperation>().Select(operation => operation.Sql));
+        var normalizedSql = sql.Replace("''", "'", StringComparison.Ordinal);
+
+        Assert.Contains("StorageResourceType", sql, StringComparison.Ordinal);
+        Assert.Contains("WHEN N'image' THEN 1", normalizedSql, StringComparison.Ordinal);
+        Assert.Contains("WHEN N'video' THEN 2", normalizedSql, StringComparison.Ordinal);
+        Assert.Contains("WHEN N'raw' THEN 3", normalizedSql, StringComparison.Ordinal);
+        Assert.Contains("THROW", sql, StringComparison.Ordinal);
+    }
 }

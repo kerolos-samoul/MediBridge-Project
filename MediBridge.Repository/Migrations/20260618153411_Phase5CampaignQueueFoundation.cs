@@ -11,9 +11,20 @@ namespace MediBridge.Repository.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_DoctorMessageQueues_CampaignId",
-                table: "DoctorMessageQueues");
+            migrationBuilder.Sql(
+                """
+                IF EXISTS
+                (
+                    SELECT 1
+                    FROM sys.indexes
+                    WHERE [object_id] = OBJECT_ID(N'[dbo].[DoctorMessageQueues]')
+                        AND [name] = N'IX_DoctorMessageQueues_CampaignId'
+                )
+                BEGIN
+                    DROP INDEX [IX_DoctorMessageQueues_CampaignId]
+                    ON [DoctorMessageQueues];
+                END;
+                """);
 
             migrationBuilder.CreateTable(
                 name: "CampaignSubmissionRequests",
@@ -45,11 +56,20 @@ namespace MediBridge.Repository.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_DoctorMessageQueues_CampaignId_DoctorId",
-                table: "DoctorMessageQueues",
-                columns: new[] { "CampaignId", "DoctorId" },
-                unique: true);
+            migrationBuilder.Sql(
+                """
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.indexes
+                    WHERE [object_id] = OBJECT_ID(N'[dbo].[DoctorMessageQueues]')
+                        AND [name] = N'IX_DoctorMessageQueues_CampaignId_DoctorId'
+                )
+                BEGIN
+                    CREATE UNIQUE INDEX [IX_DoctorMessageQueues_CampaignId_DoctorId]
+                    ON [DoctorMessageQueues] ([CampaignId], [DoctorId]);
+                END;
+                """);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CampaignSubmissionRequests_CampaignId",
@@ -69,14 +89,40 @@ namespace MediBridge.Repository.Migrations
             migrationBuilder.DropTable(
                 name: "CampaignSubmissionRequests");
 
-            migrationBuilder.DropIndex(
-                name: "IX_DoctorMessageQueues_CampaignId_DoctorId",
-                table: "DoctorMessageQueues");
+            migrationBuilder.Sql(
+                """
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM [__EFMigrationsHistory]
+                    WHERE [MigrationId] = N'20260621200235_HardenCampaignReviewWorkflow'
+                )
+                BEGIN
+                    IF EXISTS
+                    (
+                        SELECT 1
+                        FROM sys.indexes
+                        WHERE [object_id] = OBJECT_ID(N'[dbo].[DoctorMessageQueues]')
+                            AND [name] = N'IX_DoctorMessageQueues_CampaignId_DoctorId'
+                    )
+                    BEGIN
+                        DROP INDEX [IX_DoctorMessageQueues_CampaignId_DoctorId]
+                        ON [DoctorMessageQueues];
+                    END;
 
-            migrationBuilder.CreateIndex(
-                name: "IX_DoctorMessageQueues_CampaignId",
-                table: "DoctorMessageQueues",
-                column: "CampaignId");
+                    IF NOT EXISTS
+                    (
+                        SELECT 1
+                        FROM sys.indexes
+                        WHERE [object_id] = OBJECT_ID(N'[dbo].[DoctorMessageQueues]')
+                            AND [name] = N'IX_DoctorMessageQueues_CampaignId'
+                    )
+                    BEGIN
+                        CREATE INDEX [IX_DoctorMessageQueues_CampaignId]
+                        ON [DoctorMessageQueues] ([CampaignId]);
+                    END;
+                END;
+                """);
         }
     }
 }

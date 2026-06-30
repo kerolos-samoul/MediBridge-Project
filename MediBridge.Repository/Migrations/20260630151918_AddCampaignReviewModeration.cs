@@ -21,12 +21,14 @@ namespace MediBridge.Repository.Migrations
                 type: "datetime2",
                 nullable: true);
 
-            migrationBuilder.AddColumn<string>(
-                name: "IdempotencyKey",
-                table: "CampaignReviewHistories",
-                type: "nvarchar(128)",
-                maxLength: 128,
-                nullable: true);
+            migrationBuilder.Sql(
+                """
+                IF COL_LENGTH('dbo.CampaignReviewHistories', 'IdempotencyKey') IS NULL
+                BEGIN
+                    ALTER TABLE [CampaignReviewHistories]
+                    ADD [IdempotencyKey] nvarchar(128) NULL;
+                END;
+                """);
 
             migrationBuilder.AddColumn<int>(
                 name: "PriorStatus",
@@ -129,12 +131,21 @@ namespace MediBridge.Repository.Migrations
                 table: "Campaigns",
                 columns: new[] { "Status", "SubmittedAtUtc", "Id" });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_CampaignReviewHistories_CampaignId_IdempotencyKey",
-                table: "CampaignReviewHistories",
-                columns: new[] { "CampaignId", "IdempotencyKey" },
-                unique: true,
-                filter: "[IdempotencyKey] IS NOT NULL");
+            migrationBuilder.Sql(
+                """
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.indexes
+                    WHERE [object_id] = OBJECT_ID(N'[dbo].[CampaignReviewHistories]')
+                        AND [name] = N'IX_CampaignReviewHistories_CampaignId_IdempotencyKey'
+                )
+                BEGIN
+                    CREATE UNIQUE INDEX [IX_CampaignReviewHistories_CampaignId_IdempotencyKey]
+                    ON [CampaignReviewHistories] ([CampaignId], [IdempotencyKey])
+                    WHERE [IdempotencyKey] IS NOT NULL;
+                END;
+                """);
 
             migrationBuilder.CreateIndex(
                 name: "IX_CampaignSubmissionAttempts_CampaignId_IdempotencyKey",
@@ -162,17 +173,38 @@ namespace MediBridge.Repository.Migrations
                 name: "IX_Campaigns_Status_SubmittedAtUtc_Id",
                 table: "Campaigns");
 
-            migrationBuilder.DropIndex(
-                name: "IX_CampaignReviewHistories_CampaignId_IdempotencyKey",
-                table: "CampaignReviewHistories");
+            migrationBuilder.Sql(
+                """
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM [__EFMigrationsHistory]
+                    WHERE [MigrationId] = N'20260621200235_HardenCampaignReviewWorkflow'
+                )
+                BEGIN
+                    IF EXISTS
+                    (
+                        SELECT 1
+                        FROM sys.indexes
+                        WHERE [object_id] = OBJECT_ID(N'[dbo].[CampaignReviewHistories]')
+                            AND [name] = N'IX_CampaignReviewHistories_CampaignId_IdempotencyKey'
+                    )
+                    BEGIN
+                        DROP INDEX [IX_CampaignReviewHistories_CampaignId_IdempotencyKey]
+                        ON [CampaignReviewHistories];
+                    END;
+
+                    IF COL_LENGTH('dbo.CampaignReviewHistories', 'IdempotencyKey') IS NOT NULL
+                    BEGIN
+                        ALTER TABLE [CampaignReviewHistories]
+                        DROP COLUMN [IdempotencyKey];
+                    END;
+                END;
+                """);
 
             migrationBuilder.DropColumn(
                 name: "SubmittedAtUtc",
                 table: "Campaigns");
-
-            migrationBuilder.DropColumn(
-                name: "IdempotencyKey",
-                table: "CampaignReviewHistories");
 
             migrationBuilder.DropColumn(
                 name: "PriorStatus",
