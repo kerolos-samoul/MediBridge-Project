@@ -16,14 +16,15 @@ public enum CampaignStatus
     Active = 5,
     Paused = 6,
     Completed = 7,
-    Cancelled = 8
+    Cancelled = 8,
+    RevisionRequired = 9
 }
 
 public enum CampaignReviewDecision
 {
     Approved = 1,
     Rejected = 2,
-    ChangesRequested = 3
+    RevisionRequired = 3
 }
 
 public enum CampaignSubmissionRequestStatus

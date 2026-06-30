@@ -30,6 +30,7 @@ public sealed class MediBridgeDbContext : IdentityDbContext<MediBridgeIdentityUs
     public DbSet<Campaign> Campaigns => Set<Campaign>();
     public DbSet<CampaignTarget> CampaignTargets => Set<CampaignTarget>();
     public DbSet<CampaignSubmissionRequest> CampaignSubmissionRequests => Set<CampaignSubmissionRequest>();
+    public DbSet<CampaignSubmissionAttempt> CampaignSubmissionAttempts => Set<CampaignSubmissionAttempt>();
     public DbSet<CampaignReviewHistory> CampaignReviewHistories => Set<CampaignReviewHistory>();
     public DbSet<DoctorMessageQueue> DoctorMessageQueues => Set<DoctorMessageQueue>();
     public DbSet<DoctorAdDelivery> DoctorAdDeliveries => Set<DoctorAdDelivery>();
