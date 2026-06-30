@@ -13,7 +13,7 @@ public static class CampaignDtoMapper
             Title = campaign.Title,
             Status = campaign.Status,
             TargetCount = targetCount,
-            SubmittedAtUtc = campaign.CreatedAtUtc
+            SubmittedAtUtc = campaign.SubmittedAtUtc ?? campaign.CreatedAtUtc
         };
     }
 
@@ -25,7 +25,7 @@ public static class CampaignDtoMapper
             Title = campaign.Title,
             Status = campaign.Status,
             TargetCount = targets.Count,
-            SubmittedAtUtc = campaign.CreatedAtUtc,
+            SubmittedAtUtc = campaign.SubmittedAtUtc ?? campaign.CreatedAtUtc,
             Description = campaign.Description,
             ClinicalResearchInfo = campaign.ClinicalResearchInfo ?? string.Empty,
             Assets = assets.Select(ToAsset).ToArray(),

@@ -6,7 +6,7 @@ public sealed class CreateCampaignRequestDto
 {
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public string ClinicalResearchInfo { get; set; } = string.Empty;
+    public string? ClinicalResearchInfo { get; set; }
     public IReadOnlyList<string> AssetIds { get; set; } = Array.Empty<string>();
     public IReadOnlyList<string> TargetDoctorIds { get; set; } = Array.Empty<string>();
 }

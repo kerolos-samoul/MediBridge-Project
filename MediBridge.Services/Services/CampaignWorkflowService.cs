@@ -19,15 +19,222 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
     private readonly IDomainUnitOfWork domainUnitOfWork;
     private readonly IIdentityUnitOfWork identityUnitOfWork;
     private readonly IValidator<CreateCampaignRequestDto> createCampaignValidator;
+    private readonly IValidator<UpdateCampaignRequestDto> updateCampaignValidator;
 
     public CampaignWorkflowService(
         IDomainUnitOfWork domainUnitOfWork,
         IIdentityUnitOfWork identityUnitOfWork,
-        IValidator<CreateCampaignRequestDto> createCampaignValidator)
+        IValidator<CreateCampaignRequestDto> createCampaignValidator,
+        IValidator<UpdateCampaignRequestDto> updateCampaignValidator)
     {
         this.domainUnitOfWork = domainUnitOfWork;
         this.identityUnitOfWork = identityUnitOfWork;
         this.createCampaignValidator = createCampaignValidator;
+        this.updateCampaignValidator = updateCampaignValidator;
+    }
+
+    public Task<CampaignDraftDto> UpdateCampaignAsync(
+        string actorUserId,
+        string campaignId,
+        UpdateCampaignRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            throw new Phase5ValidationException("Validation failed.", ["Campaign request body is required."]);
+        }
+
+        return UpdateCampaignCoreAsync(actorUserId, campaignId, request, cancellationToken);
+    }
+
+    public Task<CampaignSubmissionDto> SubmitCampaignAsync(
+        string actorUserId,
+        string campaignId,
+        string idempotencyKey,
+        CancellationToken cancellationToken = default)
+    {
+        var key = NormalizeIdempotencyKey(idempotencyKey);
+        return domainUnitOfWork.ExecuteInTransactionAsync(
+            transactionCancellationToken => SubmitExistingCampaignAsync(
+                actorUserId,
+                campaignId,
+                key,
+                transactionCancellationToken),
+            cancellationToken);
+    }
+
+    public Task<CompanyReviewOutcomeDto> GetReviewOutcomeAsync(
+        string actorUserId,
+        string campaignId,
+        CancellationToken cancellationToken = default)
+        => GetReviewOutcomeCoreAsync(actorUserId, campaignId, cancellationToken);
+
+    private async Task<CampaignDraftDto> UpdateCampaignCoreAsync(
+        string actorUserId,
+        string campaignId,
+        UpdateCampaignRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var validation = await updateCampaignValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+        {
+            throw new Phase5ValidationException(
+                "Validation failed.",
+                validation.Errors.Select(error => error.ErrorMessage).ToArray());
+        }
+
+        return await domainUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+        {
+            var company = await ResolveApprovedCompanyActorForUpdateAsync(actorUserId, transactionCancellationToken);
+            var campaign = await FindOwnedCampaignForUpdateAsync(company.CompanyId, campaignId, transactionCancellationToken);
+            EnsureCompanyEditableCampaign(campaign);
+
+            campaign.Title = request.Title.Trim();
+            campaign.Description = request.Description.Trim();
+            campaign.ClinicalResearchInfo = NormalizeOptionalText(request.ClinicalResearchInfo);
+            campaign.UpdatedAtUtc = DateTime.UtcNow;
+            return ToCampaignDraftDto(campaign);
+        }, cancellationToken);
+    }
+
+    private async Task<CampaignSubmissionDto> SubmitExistingCampaignAsync(
+        string actorUserId,
+        string campaignId,
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        var company = await ResolveApprovedCompanyActorForUpdateAsync(actorUserId, cancellationToken);
+        var campaign = await FindOwnedCampaignForUpdateAsync(company.CompanyId, campaignId, cancellationToken);
+        var keyedAttempt = await domainUnitOfWork.Campaigns.FindCampaignSubmissionAttemptByKeyAsync(
+            campaign.Id,
+            idempotencyKey,
+            cancellationToken);
+        var currentAttempt = await domainUnitOfWork.Campaigns.FindCurrentCampaignSubmissionAttemptAsync(
+            campaign.Id,
+            cancellationToken);
+
+        if (campaign.Status == CampaignStatus.PendingReview
+            && keyedAttempt is not null
+            && currentAttempt is not null
+            && string.Equals(keyedAttempt.Id, currentAttempt.Id, StringComparison.Ordinal))
+        {
+            return ToCampaignSubmissionDto(keyedAttempt);
+        }
+
+        if (campaign.Status == CampaignStatus.PendingReview || keyedAttempt is not null)
+        {
+            throw new Phase5ConflictException("Idempotency conflict.");
+        }
+
+        EnsureCompanyEditableCampaign(campaign);
+        if (string.IsNullOrWhiteSpace(campaign.Title) || string.IsNullOrWhiteSpace(campaign.Description))
+        {
+            throw new Phase5ValidationException("Campaign text is required before submission.");
+        }
+
+        var reviewableMedia = await domainUnitOfWork.StoredFiles.ListActiveReviewableCampaignFilesAsync(
+            campaign.Id,
+            cancellationToken);
+        if (reviewableMedia.Count == 0)
+        {
+            throw new Phase5ValidationException("At least one active pending or approved campaign media asset is required before submission.");
+        }
+
+        var criteria = new EligibleDoctorSearchCriteria(null, null, null, null, null, null, null);
+        var eligibleCount = await identityUnitOfWork.Profiles.CountEligibleDoctorsAsync(criteria, cancellationToken);
+        if (eligibleCount == 0)
+        {
+            throw new Phase5ValidationException("At least one eligible priced doctor is required before submission.");
+        }
+
+        var doctors = await identityUnitOfWork.Profiles.SearchEligibleDoctorsAsync(
+            criteria,
+            0,
+            eligibleCount,
+            cancellationToken);
+        var submittedAtUtc = DateTime.UtcNow;
+        var targets = doctors.Select(doctor => new CampaignTarget
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            CampaignId = campaign.Id,
+            DoctorId = doctor.Id,
+            SpecializationSnapshot = doctor.Specialization,
+            ExperienceYearsSnapshot = doctor.ExperienceYears,
+            LocationSnapshot = doctor.Location,
+            ActivityScoreSnapshot = doctor.ActivityScore,
+            PricePerMessageSnapshot = doctor.PricePerMessage ?? 0m,
+            CreatedAtUtc = submittedAtUtc
+        }).ToArray();
+        var estimatedCost = targets.Sum(target => target.PricePerMessageSnapshot);
+        var wallet = await domainUnitOfWork.Wallets.FindActiveWalletForUpdateByOwnerAsync(
+            WalletOwnerType.Company,
+            company.CompanyId,
+            cancellationToken);
+        if (wallet is null)
+        {
+            throw new Phase5ValidationException("The company wallet must be funded before submission.");
+        }
+
+        if (wallet.AvailableBalance < estimatedCost)
+        {
+            throw new Phase5ConflictException("Company wallet available balance is insufficient.");
+        }
+
+        await domainUnitOfWork.Campaigns.ReplaceCampaignTargetsAsync(campaign.Id, targets, cancellationToken);
+        campaign.Status = CampaignStatus.PendingReview;
+        campaign.SubmittedAtUtc = submittedAtUtc;
+        campaign.UpdatedAtUtc = submittedAtUtc;
+        var attempt = new CampaignSubmissionAttempt
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            CampaignId = campaign.Id,
+            IdempotencyKey = idempotencyKey,
+            SubmittedAtUtc = submittedAtUtc,
+            TargetCount = targets.Length,
+            EstimatedCost = estimatedCost,
+            Currency = "EGP",
+            CreatedAtUtc = submittedAtUtc
+        };
+        await domainUnitOfWork.Campaigns.AddCampaignSubmissionAttemptAsync(attempt, cancellationToken);
+        await AddAuditAsync(
+            "CampaignSubmitted",
+            actorUserId,
+            company.ActorRole,
+            AuditTargetType.Campaign,
+            campaign.Id,
+            AuditOutcome.Success,
+            "Campaign submitted after affordability validation.",
+            new { campaign.Id, attempt.TargetCount, attempt.EstimatedCost, attempt.Currency },
+            cancellationToken);
+        return ToCampaignSubmissionDto(attempt);
+    }
+
+    private async Task<CompanyReviewOutcomeDto> GetReviewOutcomeCoreAsync(
+        string actorUserId,
+        string campaignId,
+        CancellationToken cancellationToken)
+    {
+        var company = await ResolveApprovedCompanyActorAsync(actorUserId, cancellationToken);
+        var campaign = await domainUnitOfWork.Campaigns.FindCompanyCampaignAsync(
+                company.CompanyId,
+                campaignId,
+                cancellationToken)
+            ?? throw new Phase5NotFoundException("Campaign was not found.");
+        var latestReview = await domainUnitOfWork.Campaigns.FindLatestCampaignReviewHistoryAsync(
+            campaign.Id,
+            cancellationToken);
+        var queuedCount = await domainUnitOfWork.Campaigns.CountCampaignQueueItemsAsync(
+            campaign.Id,
+            cancellationToken);
+        var canEdit = CampaignReviewTransitionPolicy.IsCompanyEditableStatus(campaign.Status);
+        return new CompanyReviewOutcomeDto(
+            campaign.Id,
+            campaign.Status.ToString(),
+            latestReview?.Reason,
+            latestReview?.CreatedAtUtc,
+            canEdit,
+            campaign.Status == CampaignStatus.RevisionRequired,
+            queuedCount);
     }
 
     public async Task<CampaignSubmissionResultDto> SubmitCampaignAsync(string actorUserId, string? idempotencyKey, CreateCampaignRequestDto request, CancellationToken cancellationToken = default)
@@ -117,11 +324,13 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
             CompanyId = company.CompanyId,
             Title = NormalizeRequiredText(request.Title),
             Description = NormalizeRequiredText(request.Description),
-            ClinicalResearchInfo = NormalizeRequiredText(request.ClinicalResearchInfo),
+            ClinicalResearchInfo = NormalizeOptionalText(request.ClinicalResearchInfo),
             MediaFileId = assets.FirstOrDefault(asset => asset.Purpose == StoredFilePurpose.CampaignMedia)?.Id,
             VoiceNoteFileId = assets.FirstOrDefault(asset => asset.Purpose == StoredFilePurpose.VoiceNote)?.Id,
             Status = CampaignStatus.PendingReview,
-            CreatedAtUtc = now
+            CreatedAtUtc = now,
+            SubmittedAtUtc = now,
+            UpdatedAtUtc = now
         };
         var targetEntities = targets.Select(target => new CampaignTarget
         {
@@ -146,6 +355,17 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
             CreatedAtUtc = now,
             CompletedAtUtc = now
         };
+        var attempt = new CampaignSubmissionAttempt
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            CampaignId = campaignId,
+            IdempotencyKey = idempotencyKey,
+            SubmittedAtUtc = now,
+            TargetCount = targetEntities.Length,
+            EstimatedCost = CampaignDtoMapper.CalculateTargetPriceTotal(targets),
+            Currency = "EGP",
+            CreatedAtUtc = now
+        };
 
         foreach (var asset in assets)
         {
@@ -155,6 +375,7 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
         await domainUnitOfWork.Campaigns.AddCampaignAsync(campaign, cancellationToken);
         await domainUnitOfWork.Campaigns.AddCampaignTargetsAsync(targetEntities, cancellationToken);
         await domainUnitOfWork.Campaigns.AddSubmissionRequestAsync(submission, cancellationToken);
+        await domainUnitOfWork.Campaigns.AddCampaignSubmissionAttemptAsync(attempt, cancellationToken);
         await AddAuditAsync("Phase5CampaignSubmissionSucceeded", actorUserId, company.ActorRole, AuditTargetType.Campaign, campaignId, AuditOutcome.Success, "Campaign submitted for review.", new { CampaignId = campaignId, TargetCount = targetEntities.Length, AssetCount = assets.Count }, cancellationToken);
 
         var detail = CampaignDtoMapper.ToDetail(campaign, assets, targetEntities);
@@ -253,7 +474,7 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
                 CampaignId = normalizedCampaignId,
                 DoctorId = target.DoctorId,
                 QueuedAtUtc = queuedAtUtc,
-                CampaignSubmittedAtUtc = campaign.CreatedAtUtc,
+                CampaignSubmittedAtUtc = campaign.SubmittedAtUtc ?? campaign.CreatedAtUtc,
                 Status = QueueItemStatus.Queued,
                 CreatedAtUtc = DateTime.UtcNow
             }, cancellationToken);
@@ -296,9 +517,11 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
         foreach (var assetId in assetIds.Distinct(StringComparer.Ordinal))
         {
             var file = await domainUnitOfWork.StoredFiles.FindByIdAsync(assetId, cancellationToken);
-            var isAvailable = await domainUnitOfWork.StoredFiles.IsAvailableAsApprovedAssetAsync(assetId, cancellationToken);
             if (file is null ||
-                !isAvailable ||
+                file.UploadStatus != StoredFileUploadStatus.Stored ||
+                file.DeletedAtUtc is not null ||
+                file.ReplacedByFileId is not null ||
+                file.ReviewStatus is not (StoredFileReviewStatus.Pending or StoredFileReviewStatus.Approved) ||
                 file.OwnerType != StoredFileOwnerType.Company ||
                 file.OwnerId != company.CompanyId ||
                 file.Purpose is not (StoredFilePurpose.CampaignMedia or StoredFilePurpose.VoiceNote or StoredFilePurpose.ClinicalResearchAttachment) ||
@@ -306,15 +529,15 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
             {
                 await AddAuditAsync("Phase5CampaignAssetValidationFailed", actorUserId, company.ActorRole, AuditTargetType.StoredFile, assetId, AuditOutcome.Denied, "Campaign asset validation failed.", new { AssetId = assetId }, cancellationToken);
                 await domainUnitOfWork.SaveChangesAsync(cancellationToken);
-                throw new Phase5ValidationException("Validation failed.", ["Campaign assets must be approved, available, and owned by the company."]);
+                throw new Phase5ValidationException("Validation failed.", ["Campaign assets must be active, pending or approved, and owned by the company."]);
             }
 
             assets.Add(file);
         }
 
-        if (assets.Count == 0)
+        if (!assets.Any(asset => asset.Purpose == StoredFilePurpose.CampaignMedia))
         {
-            throw new Phase5ValidationException("Validation failed.", ["At least one approved campaign asset is required."]);
+            throw new Phase5ValidationException("Validation failed.", ["At least one active pending or approved campaign media asset is required."]);
         }
 
         return assets;
@@ -393,6 +616,103 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
         await domainUnitOfWork.SaveChangesAsync(cancellationToken);
         throw new Phase5ForbiddenException("Forbidden.");
     }
+
+    private async Task<CompanyActor> ResolveApprovedCompanyActorForUpdateAsync(
+        string actorUserId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(actorUserId))
+        {
+            throw new Phase5ForbiddenException("Forbidden.");
+        }
+
+        var user = await identityUnitOfWork.Users.FindByIdForUpdateAsync(actorUserId, cancellationToken);
+        var profileSnapshot = await identityUnitOfWork.Profiles.FindCompanyProfileByUserIdAsync(
+            actorUserId,
+            cancellationToken);
+        if (profileSnapshot is null)
+        {
+            throw new Phase5ForbiddenException("Forbidden.");
+        }
+
+        var profile = await identityUnitOfWork.Profiles.FindCompanyProfileByIdForUpdateAsync(
+            profileSnapshot.Id,
+            cancellationToken);
+        if (user is not { Role: UserRole.Company, AccountStatus: AccountStatus.Approved, IsDeleted: false }
+            || profile is not { IsDeleted: false }
+            || !string.Equals(profile.UserId, actorUserId, StringComparison.Ordinal))
+        {
+            throw new Phase5ForbiddenException("Forbidden.");
+        }
+
+        return new CompanyActor(profile.Id, user.Role.ToString());
+    }
+
+    private async Task<Campaign> FindOwnedCampaignForUpdateAsync(
+        string companyId,
+        string campaignId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(campaignId))
+        {
+            throw new Phase5NotFoundException("Campaign was not found.");
+        }
+
+        var campaign = await domainUnitOfWork.Campaigns.FindActiveCampaignForUpdateAsync(
+            campaignId.Trim(),
+            cancellationToken);
+        if (campaign is null || !string.Equals(campaign.CompanyId, companyId, StringComparison.Ordinal))
+        {
+            throw new Phase5NotFoundException("Campaign was not found.");
+        }
+
+        return campaign;
+    }
+
+    private static void EnsureCompanyEditableCampaign(Campaign campaign)
+    {
+        if (!CampaignReviewTransitionPolicy.IsCompanyEditableStatus(campaign.Status))
+        {
+            throw new Phase5ConflictException(
+                "Campaign content and assets can only be changed while the campaign is Draft or RevisionRequired.");
+        }
+    }
+
+    private static string NormalizeIdempotencyKey(string idempotencyKey)
+    {
+        var value = idempotencyKey?.Trim() ?? string.Empty;
+        if (value.Length is < 8 or > 128)
+        {
+            throw new Phase5ValidationException(
+                "Validation failed.",
+                ["Idempotency-Key length must be between 8 and 128 characters."]);
+        }
+
+        return value;
+    }
+
+    private static CampaignDraftDto ToCampaignDraftDto(Campaign campaign)
+        => new()
+        {
+            CampaignId = campaign.Id,
+            CompanyId = campaign.CompanyId,
+            Title = campaign.Title,
+            Description = campaign.Description,
+            ClinicalResearchInfo = campaign.ClinicalResearchInfo,
+            Status = campaign.Status
+        };
+
+    private static CampaignSubmissionDto ToCampaignSubmissionDto(CampaignSubmissionAttempt attempt)
+        => new(
+            attempt.CampaignId,
+            CampaignStatus.PendingReview.ToString(),
+            attempt.TargetCount,
+            attempt.EstimatedCost,
+            attempt.Currency,
+            attempt.SubmittedAtUtc);
+
+    private static string? NormalizeOptionalText(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static void ValidatePagination(int pageNumber, int pageSize)
     {
