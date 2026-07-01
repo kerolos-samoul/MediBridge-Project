@@ -3,6 +3,7 @@ using MediBridge.Core.Interfaces.Campaigns;
 using MediBridge.Core.Interfaces.Files;
 using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Core.Interfaces.Messaging;
+using MediBridge.Core.Interfaces.Payments;
 using MediBridge.Core.Interfaces.Policies;
 using MediBridge.Core.Interfaces.Wallets;
 using MediBridge.Repository.Data;
@@ -23,6 +24,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         IWalletRepository wallets,
         IWalletTransactionRepository walletTransactions,
         IWalletLedgerEntryRepository walletLedgerEntries,
+        IPaymentRepository payments,
         IStoredFileRepository storedFiles,
         IFileReviewRepository fileReviews,
         IFileAccessGrantAuditRepository fileAccessGrantAudits,
@@ -37,6 +39,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         Wallets = wallets;
         WalletTransactions = walletTransactions;
         WalletLedgerEntries = walletLedgerEntries;
+        Payments = payments;
         StoredFiles = storedFiles;
         FileReviews = fileReviews;
         FileAccessGrantAudits = fileAccessGrantAudits;
@@ -51,6 +54,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     public IWalletRepository Wallets { get; }
     public IWalletTransactionRepository WalletTransactions { get; }
     public IWalletLedgerEntryRepository WalletLedgerEntries { get; }
+    public IPaymentRepository Payments { get; }
     public IStoredFileRepository StoredFiles { get; }
     public IFileReviewRepository FileReviews { get; }
     public IFileAccessGrantAuditRepository FileAccessGrantAudits { get; }

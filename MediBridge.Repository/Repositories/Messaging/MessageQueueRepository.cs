@@ -86,6 +86,20 @@ public sealed class MessageQueueRepository : IMessageQueueRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<QueueItemStatus, int>> CountQueueItemsByCampaignAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        var counts = await context.DoctorMessageQueues
+            .AsNoTracking()
+            .Where(queue => queue.CampaignId == campaignId)
+            .GroupBy(queue => queue.Status)
+            .Select(group => new { Status = group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+
+        return counts.ToDictionary(item => item.Status, item => item.Count);
+    }
+
     public async Task UpdateQueueItemStatusAsync(string queueItemId, QueueItemStatus status, DateTime updatedAtUtc, CancellationToken cancellationToken = default)
     {
         var queueItem = await context.DoctorMessageQueues.FirstOrDefaultAsync(queue => queue.Id == queueItemId, cancellationToken)

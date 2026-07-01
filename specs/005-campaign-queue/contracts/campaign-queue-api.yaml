@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: MediBridge Campaign & Queue API
-  version: 0.1.0
-  description: Phase 5 company doctor search, campaign submission, approved-campaign queue creation, and company wallet workflows.
+  version: 0.2.0
+  description: Phase 5 company doctor search, campaign preview and submission, approved-campaign queue reporting, doctor pricing, and company wallet workflows.
 servers:
   - url: /api
 security:
@@ -117,6 +117,44 @@ paths:
         '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
         '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
         '404': { $ref: '#/components/responses/NotFoundEnvelope' }
+  /company/campaigns/{campaignId}/target-preview:
+    get:
+      summary: Preview the current eligible doctor count and estimated campaign cost
+      tags: [Company Campaigns]
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Current target universe and estimated total returned without mutating the campaign or wallet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TargetPreviewEnvelope'
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '404': { $ref: '#/components/responses/NotFoundEnvelope' }
+  /company/campaigns/{campaignId}/queue-summary:
+    get:
+      summary: Get aggregate queue status counts for an owned campaign
+      tags: [Company Campaigns]
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Aggregate queue counts returned without doctor identifiers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueSummaryEnvelope'
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '404': { $ref: '#/components/responses/NotFoundEnvelope' }
   /company/wallet:
     get:
       summary: Get company wallet balance and transaction page
@@ -160,6 +198,59 @@ paths:
         '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
         '409': { $ref: '#/components/responses/ConflictEnvelope' }
         '429': { $ref: '#/components/responses/RateLimitEnvelope' }
+  /company/wallet/mock-checkout:
+    post:
+      summary: Complete a persisted idempotent mock checkout and credit the company wallet
+      tags: [Company Wallet]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MockCheckoutRequest'
+      responses:
+        '200':
+          description: Mock payment, wallet transaction, and available-balance ledger entry persisted atomically.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockCheckoutEnvelope'
+        '400': { $ref: '#/components/responses/ValidationEnvelope' }
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '409': { $ref: '#/components/responses/ConflictEnvelope' }
+        '429': { $ref: '#/components/responses/RateLimitEnvelope' }
+  /admin/doctors/{doctorId}/price:
+    put:
+      summary: Set an approved doctor's campaign message price
+      tags: [Admin Pricing]
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetDoctorPriceRequest'
+      responses:
+        '200':
+          description: Doctor price updated and append-only price history recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorPriceEnvelope'
+        '400': { $ref: '#/components/responses/ValidationEnvelope' }
+        '401': { $ref: '#/components/responses/UnauthorizedEnvelope' }
+        '403': { $ref: '#/components/responses/ForbiddenEnvelope' }
+        '404': { $ref: '#/components/responses/NotFoundEnvelope' }
 components:
   securitySchemes:
     bearerAuth:
@@ -368,3 +459,71 @@ components:
                 ReservedBalance: { type: number, format: decimal }
                 Currency: { type: string, enum: [EGP] }
                 IdempotencyStatus: { type: string, enum: [Created, Replayed] }
+    TargetPreviewEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [eligibleDoctorCount, estimatedTotalCost, currency]
+              properties:
+                eligibleDoctorCount: { type: integer, minimum: 0 }
+                estimatedTotalCost: { type: number, format: decimal, minimum: 0 }
+                currency: { type: string, enum: [EGP] }
+    QueueSummaryEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [campaignId, queuedCount, activatedCount, cancelledCount, expiredCount, generatedAtUtc]
+              properties:
+                campaignId: { type: string }
+                queuedCount: { type: integer, minimum: 0 }
+                activatedCount: { type: integer, minimum: 0 }
+                cancelledCount: { type: integer, minimum: 0 }
+                expiredCount: { type: integer, minimum: 0 }
+                generatedAtUtc: { type: string, format: date-time }
+    MockCheckoutRequest:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: number, format: decimal, minimum: 100 }
+        currency: { type: string, enum: [EGP] }
+    MockCheckoutEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [paymentId, companyId, amount, status, createdAtUtc, transactionReference, walletBalanceBefore, walletBalanceAfter]
+              properties:
+                paymentId: { type: string }
+                companyId: { type: string }
+                amount: { type: number, format: decimal }
+                status: { type: string, enum: [Succeeded] }
+                createdAtUtc: { type: string, format: date-time }
+                transactionReference: { type: string }
+                walletBalanceBefore: { type: number, format: decimal }
+                walletBalanceAfter: { type: number, format: decimal }
+    SetDoctorPriceRequest:
+      type: object
+      required: [PricePerMessage]
+      properties:
+        PricePerMessage: { type: number, format: decimal, exclusiveMinimum: true, minimum: 0 }
+        Reason: { type: string, nullable: true, maxLength: 500 }
+    DoctorPriceEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelope'
+        - type: object
+          properties:
+            Data:
+              type: object
+              required: [doctorId, pricePerMessage, currency]
+              properties:
+                doctorId: { type: string }
+                pricePerMessage: { type: number, format: decimal, minimum: 0 }
+                currency: { type: string, enum: [EGP] }

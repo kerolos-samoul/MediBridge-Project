@@ -17,15 +17,35 @@ public sealed class PolicyHistoryRepository : IPolicyHistoryRepository
 
     public async Task AddDoctorPriceHistoryAsync(string historyId, string doctorId, decimal? previousPricePerMessage, decimal? newPricePerMessage, string adminUserId, CancellationToken cancellationToken = default)
     {
-        await AddDoctorPriceHistoryAsync(historyId, doctorId, previousPricePerMessage, newPricePerMessage, adminUserId, correctsHistoryId: null, cancellationToken);
+        await AddDoctorPriceHistoryAsync(historyId, doctorId, previousPricePerMessage, newPricePerMessage, adminUserId, reason: null, correctsHistoryId: null, cancellationToken);
+    }
+
+    public async Task AddDoctorPriceHistoryAsync(
+        string historyId,
+        string doctorId,
+        decimal? previousPricePerMessage,
+        decimal? newPricePerMessage,
+        string adminUserId,
+        string? reason,
+        CancellationToken cancellationToken = default)
+    {
+        await AddDoctorPriceHistoryAsync(historyId, doctorId, previousPricePerMessage, newPricePerMessage, adminUserId, reason, correctsHistoryId: null, cancellationToken);
     }
 
     public async Task AddDoctorPriceHistoryCorrectionAsync(string historyId, string correctsHistoryId, string doctorId, decimal? previousPricePerMessage, decimal? newPricePerMessage, string adminUserId, CancellationToken cancellationToken = default)
     {
-        await AddDoctorPriceHistoryAsync(historyId, doctorId, previousPricePerMessage, newPricePerMessage, adminUserId, correctsHistoryId, cancellationToken);
+        await AddDoctorPriceHistoryAsync(historyId, doctorId, previousPricePerMessage, newPricePerMessage, adminUserId, reason: null, correctsHistoryId, cancellationToken);
     }
 
-    private async Task AddDoctorPriceHistoryAsync(string historyId, string doctorId, decimal? previousPricePerMessage, decimal? newPricePerMessage, string adminUserId, string? correctsHistoryId, CancellationToken cancellationToken)
+    private async Task AddDoctorPriceHistoryAsync(
+        string historyId,
+        string doctorId,
+        decimal? previousPricePerMessage,
+        decimal? newPricePerMessage,
+        string adminUserId,
+        string? reason,
+        string? correctsHistoryId,
+        CancellationToken cancellationToken)
     {
         await context.DoctorPriceHistories.AddAsync(new DoctorPriceHistory
         {
@@ -34,6 +54,7 @@ public sealed class PolicyHistoryRepository : IPolicyHistoryRepository
             PreviousPricePerMessage = previousPricePerMessage is null ? null : MoneyRules.EnsureValid(previousPricePerMessage.Value, nameof(previousPricePerMessage)),
             NewPricePerMessage = newPricePerMessage is null ? null : MoneyRules.EnsureValid(newPricePerMessage.Value, nameof(newPricePerMessage)),
             ChangedByAdminUserId = adminUserId,
+            Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
             CorrectsHistoryId = correctsHistoryId
         }, cancellationToken);
     }

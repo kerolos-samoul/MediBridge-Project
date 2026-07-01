@@ -2,6 +2,7 @@ using MediBridge.Core.Entities.Campaigns;
 using MediBridge.Core.Entities.Files;
 using MediBridge.Core.Entities.Identity;
 using MediBridge.Core.Entities.Messaging;
+using MediBridge.Core.Entities.Payments;
 using MediBridge.Core.Entities.Policies;
 using MediBridge.Core.Entities.Profiles;
 using MediBridge.Core.Entities.Wallets;
@@ -37,6 +38,7 @@ public sealed class MediBridgeDbContext : IdentityDbContext<MediBridgeIdentityUs
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();
+    public DbSet<MockPaymentTransaction> MockPaymentTransactions => Set<MockPaymentTransaction>();
     public DbSet<WithdrawalRequest> WithdrawalRequests => Set<WithdrawalRequest>();
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
     public DbSet<FileReview> FileReviews => Set<FileReview>();

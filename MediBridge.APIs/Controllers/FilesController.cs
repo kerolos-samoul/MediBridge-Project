@@ -78,6 +78,31 @@ public sealed class FilesController : ControllerBase
         }
     }
 
+    [HttpGet("{fileId}")]
+    public async Task<ActionResult<ApiEnvelope<FileAccessGrantDto>>> GetPrivateAccessGrant(
+        string fileId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActor(out var actorUserId, out var role, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        try
+        {
+            var result = await fileWorkflowService.CreatePrivateAccessGrantAsync(actorUserId, role, fileId, cancellationToken);
+            return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status403Forbidden, "Forbidden.", null));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status404NotFound, "Not found.", null));
+        }
+    }
+
     [HttpDelete("{fileId}")]
     public async Task<ActionResult<ApiEnvelope<DeleteFileResultDto>>> DeleteFile(string fileId, CancellationToken cancellationToken)
     {
@@ -163,6 +188,124 @@ public sealed class FilesController : ControllerBase
         catch (ValidationException)
         {
             return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status403Forbidden, "Forbidden.", null));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status404NotFound, "Not found.", null));
+        }
+    }
+
+    [HttpPost("~/api/company/campaigns/{campaignId}/assets")]
+    [Authorize(Policy = AuthorizationPolicies.CompanyCampaignFileUpload)]
+    [EnableRateLimiting(RateLimitPolicyNames.FileUpload)]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<ApiEnvelope<FileDto>>> UploadCampaignAsset(
+        string campaignId,
+        IFormFile? file,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActor(out var actorUserId, out _, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        if (file is null)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var upload = new FileWorkflowUpload(file.FileName, file.ContentType, file.Length, stream);
+            var result = await fileWorkflowService.UploadCampaignFileAsync(
+                actorUserId,
+                campaignId,
+                StoredFilePurpose.CampaignMedia,
+                upload,
+                cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, ApiEnvelopeFactory.Create(StatusCodes.Status201Created, "Success", result));
+        }
+        catch (ValidationException)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status403Forbidden, "Forbidden.", null));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status404NotFound, "Not found.", null));
+        }
+    }
+
+    [HttpPost("~/api/company/campaigns/{campaignId}/assets/{assetId}/replacement")]
+    [Authorize(Policy = AuthorizationPolicies.CompanyCampaignFileUpload)]
+    [EnableRateLimiting(RateLimitPolicyNames.FileUpload)]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<ApiEnvelope<FileDto>>> ReplaceCampaignAsset(
+        string campaignId,
+        string assetId,
+        IFormFile? file,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActor(out var actorUserId, out _, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        if (file is null)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var upload = new FileWorkflowUpload(file.FileName, file.ContentType, file.Length, stream);
+            var result = await fileWorkflowService.ReplaceCampaignFileAsync(
+                actorUserId,
+                campaignId,
+                assetId,
+                upload,
+                cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, ApiEnvelopeFactory.Create(StatusCodes.Status201Created, "Success", result));
+        }
+        catch (ValidationException)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status403Forbidden, "Forbidden.", null));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status404NotFound, "Not found.", null));
+        }
+    }
+
+    [HttpDelete("~/api/company/campaigns/{campaignId}/assets/{assetId}")]
+    [Authorize(Policy = AuthorizationPolicies.CompanyCampaignFileUpload)]
+    public async Task<IActionResult> DeleteCampaignAsset(
+        string campaignId,
+        string assetId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActor(out var actorUserId, out _, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        try
+        {
+            await fileWorkflowService.DeleteCampaignFileAsync(actorUserId, campaignId, assetId, cancellationToken);
+            return NoContent();
         }
         catch (UnauthorizedAccessException)
         {

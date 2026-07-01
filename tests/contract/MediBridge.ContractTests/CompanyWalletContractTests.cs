@@ -116,6 +116,33 @@ public sealed class CompanyWalletContractTests
         }
     }
 
+    [Fact]
+    public async Task PostCompanyWalletMockCheckout_ReturnsPersistedPaymentEnvelope()
+    {
+        using var factory = new ContractWebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var seed = await SeedCompanyWalletAsync(factory, availableBalance: 25m);
+        Phase5ContractTestHelpers.AuthorizeAsCompany(client, seed.CompanyUserId);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/company/wallet/mock-checkout")
+        {
+            Content = Phase5ContractTestHelpers.CreateJsonContent(new { Amount = 125.50m, Currency = "EGP" })
+        };
+        Phase5ContractTestHelpers.AddIdempotencyKey(request);
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var data = Phase5ContractTestHelpers.AssertDataEnvelope(document, 200);
+        Assert.True(data.TryGetProperty("paymentId", out _));
+        Assert.Equal(seed.CompanyId, data.GetProperty("companyId").GetString());
+        Assert.Equal(125.50m, data.GetProperty("amount").GetDecimal());
+        Assert.Equal("Succeeded", data.GetProperty("status").GetString());
+        Assert.Equal(25m, data.GetProperty("walletBalanceBefore").GetDecimal());
+        Assert.Equal(150.50m, data.GetProperty("walletBalanceAfter").GetDecimal());
+    }
+
     [Theory]
     [InlineData("missing-key")]
     [InlineData("below-minimum")]

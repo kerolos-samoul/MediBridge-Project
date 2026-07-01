@@ -74,7 +74,7 @@ public sealed class Phase4FileSecurityBoundaryTests
     {
         var options = new CloudinaryStorageOptions();
 
-        var errors = options.Validate(uploadEnabled: true, cloudinaryUrl: null);
+        var errors = options.Validate(uploadEnabled: true, cloudinaryUrl: string.Empty);
 
         errors.Should().ContainSingle(error =>
             error.Contains(CloudinaryStorageOptions.SecretEnvironmentVariableName, StringComparison.Ordinal) &&

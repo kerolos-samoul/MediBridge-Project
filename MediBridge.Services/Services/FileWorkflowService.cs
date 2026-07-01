@@ -279,6 +279,27 @@ public sealed class FileWorkflowService : IFileWorkflowService
         return CreatePrivateAccessGrantCoreAsync(actorUserId, role, storedFileId, cancellationToken);
     }
 
+    public async Task<FileDto> ReplaceCampaignFileAsync(
+        string actorUserId,
+        string campaignId,
+        string storedFileId,
+        FileWorkflowUpload upload,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureCampaignFileRouteMatchAsync(campaignId, storedFileId, cancellationToken);
+        return await ReplaceFileAsync(actorUserId, UserRole.Company, storedFileId, upload, cancellationToken);
+    }
+
+    public async Task<DeleteFileResultDto> DeleteCampaignFileAsync(
+        string actorUserId,
+        string campaignId,
+        string storedFileId,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureCampaignFileRouteMatchAsync(campaignId, storedFileId, cancellationToken);
+        return await DeleteFileAsync(actorUserId, UserRole.Company, storedFileId, cancellationToken);
+    }
+
     public Task<FileReviewDto> ReviewFileAsync(string adminUserId, string storedFileId, FileReviewRequestDto request, CancellationToken cancellationToken = default)
     {
         return ReviewFileCoreAsync(adminUserId, storedFileId, request, cancellationToken);
@@ -561,6 +582,19 @@ public sealed class FileWorkflowService : IFileWorkflowService
             || !string.Equals(file.OwnerId, companyId, StringComparison.Ordinal))
         {
             throw new UnauthorizedAccessException("Campaign file changes require ownership.");
+        }
+    }
+
+    private async Task EnsureCampaignFileRouteMatchAsync(
+        string campaignId,
+        string storedFileId,
+        CancellationToken cancellationToken)
+    {
+        var file = await domainUnitOfWork.StoredFiles.FindByIdAsync(storedFileId, cancellationToken)
+            ?? throw new KeyNotFoundException("Stored file was not found.");
+        if (!string.Equals(file.RelatedCampaignId, campaignId, StringComparison.Ordinal))
+        {
+            throw new KeyNotFoundException("Stored file was not found.");
         }
     }
 

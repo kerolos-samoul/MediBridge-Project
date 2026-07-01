@@ -45,5 +45,14 @@ public class SwaggerEnvironmentPolicyTests
         Assert.True(paths.GetProperty("/api/company/campaigns/drafts").TryGetProperty("post", out _));
         Assert.True(paths.GetProperty("/api/campaigns/{campaignId}/files").TryGetProperty("post", out _));
         Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/submit").TryGetProperty("post", out _));
+        Assert.True(paths.GetProperty("/api/company/wallet/mock-checkout").TryGetProperty("post", out _));
+        Assert.True(paths.GetProperty("/api/admin/doctors/{doctorId}/price").TryGetProperty("put", out _));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/target-preview").TryGetProperty("get", out _));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/queue-summary").TryGetProperty("get", out _));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/assets").TryGetProperty("post", out _));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/assets/{assetId}/replacement").TryGetProperty("post", out _));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/assets/{assetId}").TryGetProperty("delete", out _));
+        Assert.True(paths.GetProperty("/api/files/{fileId}").TryGetProperty("get", out _));
+        Assert.True(paths.GetProperty("/api/admin/campaign-assets/{assetId}/review").TryGetProperty("post", out _));
     }
 }

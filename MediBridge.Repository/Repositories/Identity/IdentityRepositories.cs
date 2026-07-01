@@ -180,6 +180,20 @@ public sealed class ProfileRepository : IProfileRepository
         return context.DoctorProfiles.FirstOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
     }
 
+    public Task<DoctorProfile?> FindDoctorProfileByIdForUpdateAsync(
+        string doctorId,
+        CancellationToken cancellationToken = default)
+    {
+        return context.DoctorProfiles
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [DoctorProfiles] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [Id] = {doctorId}
+                    AND [IsDeleted] = CAST(0 AS bit)
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public Task<CompanyProfile?> FindCompanyProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         return context.CompanyProfiles.FirstOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);

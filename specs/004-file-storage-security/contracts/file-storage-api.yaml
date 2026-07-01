@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: MediBridge Phase 4 File Storage API
-  version: 0.1.0
-  description: API contract for private file upload, review, and time-limited access grants.
+  version: 0.2.0
+  description: API contract for private file upload, campaign asset compatibility routes, review, and time-limited access grants.
 paths:
   /api/files/verification-documents:
     post:
@@ -209,6 +209,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/EmptyEnvelope"
   /api/files/{fileId}:
+    get:
+      summary: Compatibility alias for creating a private file access grant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Time-limited access grant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessGrantEnvelope"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
+        "404":
+          description: File not found or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmptyEnvelope"
     delete:
       summary: Delete a file metadata record and provider asset when allowed
       security:
@@ -244,6 +279,94 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmptyEnvelope"
+  /api/company/campaigns/{campaignId}/assets:
+    post:
+      summary: Compatibility alias for uploading owned campaign media
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Campaign media metadata created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileEnvelope"
+        "400": { description: Invalid upload, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "403": { description: Campaign ownership or state denied, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "404": { description: Campaign not found, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+  /api/company/campaigns/{campaignId}/assets/{assetId}/replacement:
+    post:
+      summary: Compatibility alias for replacing owned campaign media
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Replacement campaign media metadata created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileEnvelope"
+        "400": { description: Invalid upload, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "403": { description: Campaign ownership or state denied, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "404": { description: Campaign asset not found, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+  /api/company/campaigns/{campaignId}/assets/{assetId}:
+    delete:
+      summary: Compatibility alias for deleting owned campaign media
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Campaign asset deleted
+        "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "403": { description: Campaign ownership or state denied, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "404": { description: Campaign asset not found, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
   /api/admin/files/pending:
     get:
       summary: List files pending admin review
@@ -330,6 +453,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmptyEnvelope"
+  /api/admin/campaign-assets/{assetId}/review:
+    post:
+      summary: Compatibility alias for recording a campaign asset review decision
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileReviewRequest"
+      responses:
+        "200":
+          description: Review decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileReviewEnvelope"
+        "400": { description: Invalid review decision, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "401": { description: Authentication required, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "403": { description: Admin role required, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
+        "404": { description: Campaign asset not found, content: { application/json: { schema: { $ref: "#/components/schemas/EmptyEnvelope" } } } }
 components:
   securitySchemes:
     bearerAuth:

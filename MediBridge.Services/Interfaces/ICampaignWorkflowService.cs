@@ -17,5 +17,9 @@ public interface ICampaignWorkflowService
 
     Task<CampaignDetailDto> GetCompanyCampaignDetailAsync(string actorUserId, string campaignId, CancellationToken cancellationToken = default);
 
+    Task<TargetPreviewDto> PreviewTargetsAsync(string actorUserId, string campaignId, CancellationToken cancellationToken = default);
+
+    Task<QueueSummaryDto> GetQueueSummaryAsync(string actorUserId, string campaignId, CancellationToken cancellationToken = default);
+
     Task<CampaignQueueCreationResultDto> CreateQueueForApprovedCampaignAsync(string campaignId, DateTime queuedAtUtc, string? actorUserId = null, CancellationToken cancellationToken = default);
 }
