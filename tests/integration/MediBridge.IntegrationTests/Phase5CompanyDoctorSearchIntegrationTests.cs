@@ -96,22 +96,6 @@ public sealed class Phase5CompanyDoctorSearchIntegrationTests : IClassFixture<We
     }
 
     [Fact]
-    public async Task GetCompanyDoctors_WithEmptyBodyForCampaignSubmission_Returns400Envelope()
-    {
-        await factory.InitializeDatabaseAsync();
-        using var client = await CreateAuthorizedCompanyClientAsync();
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/company/campaigns")
-        {
-            Content = new StringContent("", System.Text.Encoding.UTF8, "application/json")
-        };
-        request.Headers.Add("Idempotency-Key", $"idem-{Guid.NewGuid():N}");
-
-        var response = await client.SendAsync(request);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
     public async Task Search_UsesDefaultPageSizeMaximumPageSizeEmptyPageAndRejectsInvalidBounds()
     {
         await factory.InitializeDatabaseAsync();

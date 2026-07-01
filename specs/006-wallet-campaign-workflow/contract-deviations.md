@@ -2,13 +2,14 @@
 
 ## Campaign creation routes
 
-The original 006 API specification assigned `POST /api/company/campaigns` to draft creation. Current development already assigns that route to complete campaign creation and submission, including asset, target, wallet, and idempotency validation.
+The original 006 API specification assigned `POST /api/company/campaigns` to draft creation. A later legacy implementation reassigned that route to complete campaign creation and submission, but its required unbound `assetIds` could not be produced by any public upload workflow. That direct-submission operation is removed from the public API.
 
-To preserve backward compatibility, 006 draft creation is exposed additively:
+The supported campaign workflow is explicit:
 
 | Route | Behavior |
 | --- | --- |
-| `POST /api/company/campaigns` | Creates and submits a complete campaign with `PendingReview` status. |
 | `POST /api/company/campaigns/drafts` | Creates an owned campaign with `Draft` status. |
+| `POST /api/campaigns/{campaignId}/files` | Uploads and binds campaign media to the owned draft. |
+| `POST /api/company/campaigns/{campaignId}/submit` | Submits the populated draft for review. |
 
-Both routes remain company-authorized and return the standard API envelope. Each route retains validation appropriate to its distinct request contract.
+`POST /api/company/campaigns` is no longer registered and is absent from generated OpenAPI. Clients must use the three-step workflow above.

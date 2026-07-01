@@ -66,7 +66,7 @@ Content-Type: application/pdf
 < ./samples/verification.pdf
 --verificationBoundary--
 
-### Upload an owned campaign file
+### Upload a file to an owned draft campaign (after creating the draft below)
 POST {{MediBridge.APIs_HostAddress}}/api/campaigns/{{CampaignId}}/files
 Authorization: Bearer {{CompanyToken}}
 Content-Type: multipart/form-data; boundary=campaignFileBoundary
@@ -154,20 +154,23 @@ Accept: application/json
 #   }
 # }
 
-### Submit a company campaign for review
-POST {{MediBridge.APIs_HostAddress}}/api/company/campaigns
+### Create a company campaign draft
+POST {{MediBridge.APIs_HostAddress}}/api/company/campaigns/drafts
 Authorization: Bearer {{CompanyToken}}
-Idempotency-Key: {{CampaignIdempotencyKey}}
 Content-Type: application/json
 Accept: application/json
 
 {
   "Title": "Cardiology awareness campaign",
   "Description": "Evidence-backed product information for selected cardiologists.",
-  "ClinicalResearchInfo": "Summarized approved clinical research reference for review.",
-  "AssetIds": ["{{AssetId}}"],
-  "TargetDoctorIds": ["{{DoctorId}}"]
+  "ClinicalResearchInfo": "Summarized approved clinical research reference for review."
 }
+
+### Submit the populated draft campaign for review
+POST {{MediBridge.APIs_HostAddress}}/api/company/campaigns/{{CampaignId}}/submit
+Authorization: Bearer {{CompanyToken}}
+Idempotency-Key: {{CampaignIdempotencyKey}}
+Accept: application/json
 
 ### List company-owned campaigns
 GET {{MediBridge.APIs_HostAddress}}/api/company/campaigns?PageNumber=1&PageSize=20&status=PendingReview

@@ -10,6 +10,31 @@ info:
 servers:
   - url: https://api.medibridge.local
 paths:
+  /api/company/campaigns/drafts:
+    post:
+      summary: Create an owned draft campaign
+      operationId: createCompanyCampaignDraft
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignDraftRequest'
+      responses:
+        '201':
+          description: Draft created; upload campaign media to this campaign before submitting it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCampaign'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/company/campaigns/{campaignId}:
     put:
       summary: Update an owned draft or revision-required campaign
@@ -260,6 +285,22 @@ components:
           schema:
             $ref: '#/components/schemas/EnvelopeEmpty'
   schemas:
+    CreateCampaignDraftRequest:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        clinicalResearchInfo:
+          type: string
+          nullable: true
+          maxLength: 4000
     EnvelopeEmpty:
       type: object
       required: [Code, Message, Data]

@@ -23,31 +23,6 @@ public sealed class CompanyCampaignsController : ControllerBase
         this.campaignWorkflowService = campaignWorkflowService;
     }
 
-    [HttpPost]
-    [EnableRateLimiting(RateLimitPolicyNames.Phase5CampaignSubmission)]
-    public async Task<ActionResult<ApiEnvelope<CampaignDetailDto>>> SubmitCampaign([FromBody] CreateCampaignRequestDto? request, CancellationToken cancellationToken)
-    {
-        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
-        {
-            return unauthorizedResult;
-        }
-
-        var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(idempotencyKey))
-        {
-            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
-        }
-
-        if (request is null)
-        {
-            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
-        }
-
-        var result = await campaignWorkflowService.SubmitCampaignAsync(actorUserId, idempotencyKey, request, cancellationToken);
-        var statusCode = result.IsIdempotentReplay ? StatusCodes.Status200OK : StatusCodes.Status201Created;
-        return StatusCode(statusCode, ApiEnvelopeFactory.Create(statusCode, "Success", result.Campaign));
-    }
-
     [HttpGet]
     [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
     public async Task<ActionResult<ApiEnvelope<CampaignPageDto>>> GetCampaigns([FromQuery] CampaignStatus? status, [FromQuery] int PageNumber = 1, [FromQuery] int PageSize = 20, CancellationToken cancellationToken = default)

@@ -12,8 +12,11 @@
 
 ## Implemented Endpoints
 
+- `POST /api/company/campaigns/drafts` creates the owned draft that starts the supported campaign workflow.
+- `POST /api/campaigns/{campaignId}/files` uploads campaign media directly to that owned draft.
 - `PUT /api/company/campaigns/{campaignId}` returns the updated `Campaign` for an owned `Draft` or `RevisionRequired` campaign.
 - `POST /api/company/campaigns/{campaignId}/submit` validates affordability without reserving funds and returns `CampaignSubmission` with `estimatedCost`, `currency`, and `submittedAtUtc`.
+- `POST /api/company/campaigns` is not a supported operation; clients use create draft, upload to draft, then submit draft.
 - `GET /api/admin/campaigns/pending-review` returns a bounded `PendingCampaignPage` ordered by `submittedAtUtc`, then campaign identifier.
 - `GET /api/admin/campaigns/{campaignId}/review-detail` returns `CampaignReviewDetail` with short-lived signed file access and a storage-unavailable `503` response.
 - `POST /api/admin/campaigns/{campaignId}/review` records an idempotent canonical `Approved`, `Rejected`, or `RevisionRequired` decision.
