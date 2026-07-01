@@ -1,0 +1,2270 @@
+{
+  "RunId": "20260620-232744-7c38ac86",
+  "StartedAtUtc": "2026-06-20T20:27:44.1394021Z",
+  "CompletedAtUtc": "2026-06-20T20:28:11.2369947Z",
+  "Environment": {
+    "ApiUrl": "http://localhost:5246",
+    "SwaggerUrl": "http://localhost:5246/swagger/index.html",
+    "DatabaseServer": "db54839.public.databaseasp.net",
+    "DatabaseName": "db54839",
+    "UploadsEnabledInConfiguration": true,
+    "CloudinaryConfigured": true,
+    "ActualCampaignUploadImplementation": "MetadataOnly_NoCloudinaryClientOrByteUpload"
+  },
+  "Accounts": {
+    "Doctor": {
+      "Email": "e2e.doctor.20260620-232744-7c38ac86@example.com",
+      "Password": "E2e!Pass123",
+      "UserId": "33c0ce15dc6b4def86263d11c6317592",
+      "AccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzM2MwY2UxNWRjNmI0ZGVmODYyNjNkMTFjNjMxNzU5MiIsImVtYWlsIjoiZTJlLmRvY3Rvci4yMDI2MDYyMC0yMzI3NDQtN2MzOGFjODZAZXhhbXBsZS5jb20iLCJuYW1lIjoiZTJlLmRvY3Rvci4yMDI2MDYyMC0yMzI3NDQtN2MzOGFjODZAZXhhbXBsZS5jb20iLCJyb2xlIjoiRG9jdG9yIiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MTk4NzI4NSwibmJmIjoxNzgxOTg3Mjg1LCJleHAiOjE3ODE5OTA4ODUsImp0aSI6IjViNThhMWJlNzBkODQ0MmU4ZDJkNjVhOGM2NGI4MWIwIn0.5TI_B22EoNWV0Y3Vj2anlg2CcW3x4V7cxhJqwULd6oo",
+      "RefreshToken": "xfPXPXkRSe2uI52LfG_hIGByXdmCC4j_ky1TB7Rpdd-O86aHIjHWJ-cdpinI1IoVVjHKTRbJjRgcYoadQsmw2g"
+    },
+    "Company": {
+      "Email": "e2e.company.20260620-232744-7c38ac86@example.com",
+      "Password": "E2e!Pass123",
+      "UserId": "be32710d3a9a4f45b5ca36468b2e02d9",
+      "CompanyId": "e874f1238d284ba782bba0e968383a0d",
+      "AccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZTMyNzEwZDNhOWE0ZjQ1YjVjYTM2NDY4YjJlMDJkOSIsImVtYWlsIjoiZTJlLmNvbXBhbnkuMjAyNjA2MjAtMjMyNzQ0LTdjMzhhYzg2QGV4YW1wbGUuY29tIiwibmFtZSI6ImUyZS5jb21wYW55LjIwMjYwNjIwLTIzMjc0NC03YzM4YWM4NkBleGFtcGxlLmNvbSIsInJvbGUiOiJDb21wYW55IiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MTk4NzI4NiwibmJmIjoxNzgxOTg3Mjg2LCJleHAiOjE3ODE5OTA4ODYsImp0aSI6IjZlMzZiM2ZmZTlmMzRjNWM5ZTg5YzIzZmM0N2Q3MmNkIn0.alTH0-U2OExVL2mA7HkpWuaKRDOCzAWcdpNRQS4lQjc",
+      "RefreshToken": "0UNLrquDszDMe2Z65AmZPRgjBWAc2M7B8OpQb4b-C-2CdVJN2GgNKBmF2mBSvU3lNleTikYOqZRXRXHjmzy1lg"
+    },
+    "RejectionResubmissionDoctor": {
+      "Email": "e2e.resubmit.20260620-232744-7c38ac86@example.com",
+      "Password": "E2e!Pass123",
+      "UserId": "9bc8c81180e14ed5b14707eee65b9a98",
+      "ResubmissionToken": "La3PfFD-LFUIB6chNlcaTWFDb9ZEm1L3FYL-coA309rQw_VdxNCRxdm8pln_Gy0rwQaHXQlflAFE2eiMDWAI5A",
+      "RefreshTokenRevokedByLogout": true
+    },
+    "AdminSession": {
+      "Username": "admin@medibridge.local",
+      "AccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OWI1ZWI2MC1iMzY4LTQ1ZjUtYTUzMi1mYTk2ZjIzYjZmYTIiLCJlbWFpbCI6ImFkbWluQG1lZGlicmlkZ2UubG9jYWwiLCJuYW1lIjoiYWRtaW5AbWVkaWJyaWRnZS5sb2NhbCIsInJvbGUiOiJBZG1pbiIsImlzcyI6Ik1lZGlCcmlkZ2UiLCJhdWQiOiJNZWRpQnJpZGdlLkFwaUNsaWVudHMiLCJpYXQiOjE3ODE5ODcyNjUsIm5iZiI6MTc4MTk4NzI2NSwiZXhwIjoxNzgxOTkwODY1LCJqdGkiOiIwOGEzODY4OGQ1ZmE0NGFkOTMyYTVhZjY5N2ZiZTM1MCJ9.oBL5EapYouLG3k7N_e-na-EwLLSFry3f-kq_5BiMIwQ",
+      "RefreshToken": "0IJ4GYP4QvlbYZBYjdiuKsMfW30h0GXEen4_16ez-sUoiafw5ubIOEvHJENfhIpCwOh2KlEA2V-PVJj2rwYe9A",
+      "SessionLeftActiveForFollowUp": true
+    }
+  },
+  "Wallet": {
+    "WalletId": "f7c9566d6de0498aa9ca73e6b72ee6f5",
+    "BalanceBefore": 0.0,
+    "BalanceAfter": 0.0,
+    "IdempotencyKey": "topup-20260620-232744-7c38ac86",
+    "PaymentId": null,
+    "TransactionReference": null,
+    "ReplayPaymentId": null
+  },
+  "Campaign": {
+    "CampaignId": "b43e9d2755be4dbbb4586fb23f1c1352",
+    "SubmissionIdempotencyKey": "submit-20260620-232744-7c38ac86",
+    "AssetId": "4808fadac1944e7e8e81859bcaafa12b",
+    "LocalTestFile": "D:\\My Project\\MediBridge Project\\MediBridge\\.build\\e2e-valid-20260620-232744-7c38ac86.png",
+    "StorageKey": "campaigns/b43e9d2755be4dbbb4586fb23f1c1352/dace402787e1466f84a78f03854f081b/e2e-valid-20260620-232744-7c38ac86.png",
+    "CloudinaryPublicId": null,
+    "CloudinaryUploadVerified": false,
+    "AssetKept": true,
+    "AssetIds": [
+      "11b365d2ac034778b7226905e139013a",
+      "4808fadac1944e7e8e81859bcaafa12b"
+    ]
+  },
+  "Otp": {
+    "AccountsRequiringDeliveredOtp": [],
+    "VerificationSucceeded": false,
+    "Blocker": "No public issuance/send path creates ContactVerificationFlow tokens; invalid-token behavior was tested."
+  },
+  "DatabaseEvidence": {
+    "ConnectionOpened": true,
+    "Server": "db54839.public.databaseasp.net",
+    "Database": "db54839",
+    "AppliedMigrations": [
+      "20260531185506_Phase2IdentityApproval",
+      "20260602022951_Phase3DatabaseCoreModels",
+      "20260602025256_Phase3US2IntegrityConstraints",
+      "20260604054249_EmailOtpVerificationMetadata",
+      "20260608032307_Phase4FileStorageSecurity",
+      "20260609152557_AddMaxAttemptsReachedColumn"
+    ],
+    "PendingCurrentBranchMigration": "20260619132753_AddMockPaymentTransactions",
+    "MockPaymentTableExists": false,
+    "StoredFile": {
+      "Id": "4808fadac1944e7e8e81859bcaafa12b",
+      "OwnerId": "b43e9d2755be4dbbb4586fb23f1c1352",
+      "OriginalFileName": "e2e-valid-20260620-232744-7c38ac86.png",
+      "ContentType": "image/png",
+      "SizeBytes": 68,
+      "StorageKey": "campaigns/b43e9d2755be4dbbb4586fb23f1c1352/dace402787e1466f84a78f03854f081b/e2e-valid-20260620-232744-7c38ac86.png",
+      "ReviewStatus": 1
+    },
+    "Wallet": {
+      "Id": "f7c9566d6de0498aa9ca73e6b72ee6f5",
+      "OwnerId": "e874f1238d284ba782bba0e968383a0d",
+      "AvailableBalance": 0.0,
+      "ReservedBalance": 0.0,
+      "Currency": "EGP",
+      "IsDeleted": false
+    },
+    "Payment": null,
+    "Error": null
+  },
+  "Scenarios": [
+    {
+      "Name": "Swagger UI reachable",
+      "Endpoint": "/swagger/index.html",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "Load Swagger UI",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": null,
+      "DatabaseEffect": "None."
+    },
+    {
+      "Name": "OpenAPI document reachable",
+      "Endpoint": "/swagger/v1/swagger.json",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "Load live endpoint contract",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": null,
+      "DatabaseEffect": "None."
+    },
+    {
+      "Name": "Weather forecast success",
+      "Endpoint": "/WeatherForecast?count=2",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "Request two forecasts",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": null,
+      "DatabaseEffect": "None."
+    },
+    {
+      "Name": "Weather forecast validation",
+      "Endpoint": "/WeatherForecast?count=0",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "Out-of-range count",
+      "ExpectedStatus": 400,
+      "HttpStatus": 400,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": null,
+      "DatabaseEffect": "None."
+    },
+    {
+      "Name": "Anonymous wallet denied",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "No bearer token",
+      "ExpectedStatus": 401,
+      "HttpStatus": 401,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": null,
+      "DatabaseEffect": "None."
+    },
+    {
+      "Name": "Anonymous admin denied",
+      "Endpoint": "/api/admin/pending-accounts",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "No bearer token",
+      "ExpectedStatus": 401,
+      "HttpStatus": 401,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": null,
+      "DatabaseEffect": "None."
+    },
+    {
+      "Name": "Anonymous campaign denied",
+      "Endpoint": "/api/company/campaigns",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "No bearer token",
+      "ExpectedStatus": 401,
+      "HttpStatus": 401,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": null,
+      "DatabaseEffect": "None."
+    },
+    {
+      "Name": "Admin login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Configured admin credentials",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "bbf94c4deefe41ea8b282f8665ccbf5c",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "AccessToken": "***MASKED***",
+          "RefreshToken": "***MASKED***",
+          "Role": "Admin",
+          "ExpiresAtUtc": "2026-06-20T21:27:44.2630789Z"
+        }
+      },
+      "DatabaseEffect": "Refresh credential added after successful login."
+    },
+    {
+      "Name": "Invalid refresh denied",
+      "Endpoint": "/api/auth/refresh",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Random invalid refresh token",
+      "ExpectedStatus": 401,
+      "HttpStatus": 401,
+      "Result": "Pass",
+      "CorrelationId": "cfba62afb0a7415285d73404dd4ad42c",
+      "Response": {
+        "Code": 401,
+        "Message": "Authentication denied.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Admin refresh rotation",
+      "Endpoint": "/api/auth/refresh",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Valid admin refresh token",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "90d1fd5566da4acf804f3c34b60ae045",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "AccessToken": "***MASKED***",
+          "RefreshToken": "***MASKED***",
+          "Role": "Admin",
+          "ExpiresAtUtc": "2026-06-20T21:27:45.5062894Z"
+        }
+      },
+      "DatabaseEffect": "Original refresh credential revoked and replacement credential added."
+    },
+    {
+      "Name": "Admin cannot use company wallet",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Admin",
+      "RequestSummary": "Admin bearer token",
+      "ExpectedStatus": 403,
+      "HttpStatus": 403,
+      "Result": "Pass",
+      "CorrelationId": "0f7bfd1f729844139f47cc1984d19192",
+      "Response": {
+        "Code": 403,
+        "Message": "Forbidden.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Register doctor",
+      "Endpoint": "/api/auth/register-doctor",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Unique doctor and verification metadata",
+      "ExpectedStatus": 201,
+      "HttpStatus": 201,
+      "Result": "Pass",
+      "CorrelationId": "dc8cedb90ceb4fcabb264b1dedb44e5c",
+      "Response": {
+        "Code": 201,
+        "Message": "Success",
+        "Data": {
+          "UserId": "33c0ce15dc6b4def86263d11c6317592",
+          "Role": "Doctor",
+          "AccountStatus": "Pending"
+        }
+      },
+      "DatabaseEffect": "Pending user, doctor profile, and registration audit event created."
+    },
+    {
+      "Name": "Duplicate doctor rejected",
+      "Endpoint": "/api/auth/register-doctor",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Repeat same doctor email/phone",
+      "ExpectedStatus": 409,
+      "HttpStatus": 409,
+      "Result": "Pass",
+      "CorrelationId": "264e51c3129541de9bc6d6acfb4f91fd",
+      "Response": {
+        "Code": 409,
+        "Message": "Duplicate email, phone, or license.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Register company",
+      "Endpoint": "/api/auth/register-company",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Unique company, license, and verification metadata",
+      "ExpectedStatus": 201,
+      "HttpStatus": 201,
+      "Result": "Pass",
+      "CorrelationId": "a0e8b4fa61324165b4a5dcf7d8bbdca0",
+      "Response": {
+        "Code": 201,
+        "Message": "Success",
+        "Data": {
+          "UserId": "be32710d3a9a4f45b5ca36468b2e02d9",
+          "Role": "Company",
+          "AccountStatus": "Pending"
+        }
+      },
+      "DatabaseEffect": "Pending user, company profile, and registration audit event created."
+    },
+    {
+      "Name": "Register rejection candidate",
+      "Endpoint": "/api/auth/register-doctor",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Unique doctor used for rejection/resubmission",
+      "ExpectedStatus": 201,
+      "HttpStatus": 201,
+      "Result": "Pass",
+      "CorrelationId": "dfe07c4ee0df4203b6d1eb20b3a1c5c8",
+      "Response": {
+        "Code": 201,
+        "Message": "Success",
+        "Data": {
+          "UserId": "9bc8c81180e14ed5b14707eee65b9a98",
+          "Role": "Doctor",
+          "AccountStatus": "Pending"
+        }
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Pending login denied",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "New pending company credentials",
+      "ExpectedStatus": 403,
+      "HttpStatus": 403,
+      "Result": "Pass",
+      "CorrelationId": "7cb173ec78434480847f2a5327595504",
+      "Response": {
+        "Code": 403,
+        "Message": "Account status denied.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Forgot password accepted",
+      "Endpoint": "/api/auth/forgot-password",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Registered company email",
+      "ExpectedStatus": 202,
+      "HttpStatus": 202,
+      "Result": "Pass",
+      "CorrelationId": "9a4a25b8923e41b78763e26487632c05",
+      "Response": {
+        "Code": 202,
+        "Message": "Accepted",
+        "Data": null
+      },
+      "DatabaseEffect": "Password reset flow row created, but plaintext token is not delivered by the application."
+    },
+    {
+      "Name": "Invalid reset token denied",
+      "Endpoint": "/api/auth/reset-password",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Random reset token",
+      "ExpectedStatus": 401,
+      "HttpStatus": 401,
+      "Result": "Pass",
+      "CorrelationId": "67c786a8a5504cbab410c8f0756b5cfb",
+      "Response": {
+        "Code": 401,
+        "Message": "Authentication denied.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Invalid contact verification denied",
+      "Endpoint": "/api/auth/verify-contact",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Email channel with random token; no issuance endpoint exists",
+      "ExpectedStatus": 400,
+      "HttpStatus": 400,
+      "Result": "Pass",
+      "CorrelationId": "acb1613616d1417e8d4d50807a3fb403",
+      "Response": {
+        "Code": 400,
+        "Message": "Validation failed.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "List pending accounts",
+      "Endpoint": "/api/admin/pending-accounts?pageNumber=1&pageSize=100",
+      "Method": "GET",
+      "Role": "Admin",
+      "RequestSummary": "First 100 pending accounts",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "e3f1fe499e0641c79df7649d396609df",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "Items": [
+            {
+              "UserId": "9bc8c81180e14ed5b14707eee65b9a98",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-20T20:27:48.3966473",
+              "VerificationMetadata": {
+                "DocumentType": "ProfessionalLicense",
+                "OriginalFileName": "resubmit-license.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 128,
+                "Reference": "e2e://verification/20260620-232744-7c38ac86/resubmit"
+              }
+            },
+            {
+              "UserId": "be32710d3a9a4f45b5ca36468b2e02d9",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-20T20:27:47.5621343",
+              "VerificationMetadata": {
+                "DocumentType": "ProfessionalLicense",
+                "OriginalFileName": "company-license.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 128,
+                "Reference": "e2e://verification/20260620-232744-7c38ac86/company"
+              }
+            },
+            {
+              "UserId": "33c0ce15dc6b4def86263d11c6317592",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-20T20:27:46.4595504",
+              "VerificationMetadata": {
+                "DocumentType": "ProfessionalLicense",
+                "OriginalFileName": "doctor-license.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 128,
+                "Reference": "e2e://verification/20260620-232744-7c38ac86/doctor"
+              }
+            },
+            {
+              "UserId": "b0bf13532edf4435bf4dbdf6f33dd6aa",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-12T08:13:57.4022236",
+              "VerificationMetadata": {
+                "DocumentType": "MedicalLicense",
+                "OriginalFileName": "resubmitted-license.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 1600,
+                "Reference": "manual-smoke-resubmitted-license"
+              }
+            },
+            {
+              "UserId": "041c177e9ed149d98b4059f21b3d01ce",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-12T07:54:20.9217858",
+              "VerificationMetadata": {
+                "DocumentType": "MedicalLicense",
+                "OriginalFileName": "Mona_Pediatrics_License.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 510000,
+                "Reference": "DOC-GIZA-001"
+              }
+            },
+            {
+              "UserId": "5eb4c1f0ae964f049c3ee0270008399c",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-12T06:45:35.3996539",
+              "VerificationMetadata": {
+                "DocumentType": "MedicalLicense",
+                "OriginalFileName": "Ahmed_Cardiology_License.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 520000,
+                "Reference": "DOC-CAIRO-001"
+              }
+            },
+            {
+              "UserId": "dc4a0a88f1844d3598026201a65a44c0",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-09T15:28:25.790258",
+              "VerificationMetadata": {
+                "DocumentType": "MedicalLicense",
+                "OriginalFileName": "Omar_Cardiology_License.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 520000,
+                "Reference": "DOC-CAIRO-001"
+              }
+            },
+            {
+              "UserId": "166e536e74314dfa9a863704683213dc",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:39:58.6242361",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550227.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550227.pdf"
+              }
+            },
+            {
+              "UserId": "51459d068378450285c6434b77453fdd",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:39:56.5844523",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550225.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550225.pdf"
+              }
+            },
+            {
+              "UserId": "30de11d972654d919cff5985d56e733c",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:39:12.9826731",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550207.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550207.pdf"
+              }
+            },
+            {
+              "UserId": "9babb18c963c45ef898a08cfb1142f76",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:39:10.9344463",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550204.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550204.pdf"
+              }
+            },
+            {
+              "UserId": "a4bc0246e64c441d903177dd98a39a77",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:39:07.754039",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550200.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550200.pdf"
+              }
+            },
+            {
+              "UserId": "fe6c920350e14e099921c3fbecd64cad",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:52.2968724",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550196.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550196.pdf"
+              }
+            },
+            {
+              "UserId": "ec75d1f4af59475d84400f42e72e43ae",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:34.3855721",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550188.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550188.pdf"
+              }
+            },
+            {
+              "UserId": "285191f66b6f4a08b7fe22930de5d64f",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:32.4031211",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550186.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550186.pdf"
+              }
+            },
+            {
+              "UserId": "3c4f3e9931d449ec85295ce1cfc2efaf",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:30.4745961",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550184.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550184.pdf"
+              }
+            },
+            {
+              "UserId": "24ac9be6a8274911bc16807e93e13c00",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:27.4717468",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550182.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550182.pdf"
+              }
+            },
+            {
+              "UserId": "5f6ac7a672084e959dcc6418a0cfbfac",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:13.1366392",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550180.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550180.pdf"
+              }
+            },
+            {
+              "UserId": "d195c84051c54710ac77130eecee81f7",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:11.2581731",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550178.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550178.pdf"
+              }
+            },
+            {
+              "UserId": "33631e5eb5f94f20abadc4d6d5091183",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:09.412818",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550176.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550176.pdf"
+              }
+            },
+            {
+              "UserId": "35a710a747474182a3f71766159531d9",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:38:06.5226168",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550174.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550174.pdf"
+              }
+            },
+            {
+              "UserId": "c02cf0090abf4c4d8fa3cdfaa89d4612",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:36:05.6146534",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550140.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550140.pdf"
+              }
+            },
+            {
+              "UserId": "027a360d253841059176f059e0984abc",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:36:03.6020175",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550139.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550139.pdf"
+              }
+            },
+            {
+              "UserId": "c1fede70e2584879ba75cef54de9d46f",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:36:02.5432248",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550138.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550138.pdf"
+              }
+            },
+            {
+              "UserId": "672404123ec84ee1b7ea4f65ab66c634",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:36:00.4058374",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550137.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550137.pdf"
+              }
+            },
+            {
+              "UserId": "c171afa119a540148d5bd5b34982856b",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:58.6420433",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550136.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550136.pdf"
+              }
+            },
+            {
+              "UserId": "09cba966f8d344faa1508ed2fa4c520d",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:44.4133519",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550135.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550135.pdf"
+              }
+            },
+            {
+              "UserId": "e8c8dea095424409847a9d5f6637d573",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:43.2414557",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550134.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550134.pdf"
+              }
+            },
+            {
+              "UserId": "1cb62d3e7b054ede9df354117b3d0bf7",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:42.0651503",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550133.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550133.pdf"
+              }
+            },
+            {
+              "UserId": "e5a54d9ebab94ea2ac9cb3c09cb5dd1d",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:40.1762301",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550130.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550130.pdf"
+              }
+            },
+            {
+              "UserId": "d821257f11204d779bc5a8e112741c75",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:37.7782676",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550125.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550125.pdf"
+              }
+            },
+            {
+              "UserId": "a42f0eb9a12048668d075f5a362af7aa",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:24.0973399",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550124.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550124.pdf"
+              }
+            },
+            {
+              "UserId": "943f70dffa4842c0818a39929e84c9d7",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:21.8742549",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550121.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550121.pdf"
+              }
+            },
+            {
+              "UserId": "146cad2e3651466e88bf4b9cad84185b",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:35:20.6170561",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550120.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550120.pdf"
+              }
+            },
+            {
+              "UserId": "7271651435e847aa8ec9ea83bf9c1113",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:31:49.8576145",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550090.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550090.pdf"
+              }
+            },
+            {
+              "UserId": "6a8cecf52cfc469cae57c3591c312246",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:31:26.9465008",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550084.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550084.pdf"
+              }
+            },
+            {
+              "UserId": "236851c400bd4fc3bb09aa2eb1c6075d",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:30:24.3849813",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550073.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550073.pdf"
+              }
+            },
+            {
+              "UserId": "5e6b0bed195a46449dd086ed32a20682",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:30:23.3591771",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550071.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550071.pdf"
+              }
+            },
+            {
+              "UserId": "d3bd9e4f0e6143d786875df5a18cfa68",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:30:22.1898841",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550069.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550069.pdf"
+              }
+            },
+            {
+              "UserId": "8a0e0b3a4ac5471cb2e84e913b3d80cc",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:30:09.1360592",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550067.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550067.pdf"
+              }
+            },
+            {
+              "UserId": "a255cf8f4b4646acb7c92f7a658073e0",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:30:08.0069026",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550060.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550060.pdf"
+              }
+            },
+            {
+              "UserId": "5c31529fe6184778896fe28850c779d4",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:55.1228619",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550059.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550059.pdf"
+              }
+            },
+            {
+              "UserId": "8dfe361e751543c291fead81472a3682",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:54.3261175",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550058.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550058.pdf"
+              }
+            },
+            {
+              "UserId": "bd1b4430355548239dc332100fe962b0",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:53.4036313",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550055.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550055.pdf"
+              }
+            },
+            {
+              "UserId": "94e03a7c32c84562abe3392849e1b230",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:52.3435297",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550053.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 1,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550053.pdf"
+              }
+            },
+            {
+              "UserId": "6e15e211d69042dba5987a0c1e29938a",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:39.3006894",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550051.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550051.pdf"
+              }
+            },
+            {
+              "UserId": "a43d1284a91c40a498bbc0df9b09d87b",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:38.5750057",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550049.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550049.pdf"
+              }
+            },
+            {
+              "UserId": "ad7c2731d52a481989031e0e19f6c69d",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:37.7394348",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550047.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550047.pdf"
+              }
+            },
+            {
+              "UserId": "c003dc34e6d24d469c4137e7f51d49b3",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:23.5025968",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550042.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550042.pdf"
+              }
+            },
+            {
+              "UserId": "5e8043c01d4445d99773e5bbaf42b928",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:22.6567788",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550040.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550040.pdf"
+              }
+            },
+            {
+              "UserId": "1cb0157b106c4d2c815e723acc3c1445",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:21.7517817",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550038.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550038.pdf"
+              }
+            },
+            {
+              "UserId": "bcbaaa90aa5d4f18a3985bc1bc0deb28",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:20.7099399",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550036.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550036.pdf"
+              }
+            },
+            {
+              "UserId": "cbe06ac673ac424b8d4ab387e94a0427",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:08.2876362",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550033.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550033.pdf"
+              }
+            },
+            {
+              "UserId": "e01ab8c8bcf44f9daed966e1c3a58fa8",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:07.5688697",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550032.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 1,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550032.pdf"
+              }
+            },
+            {
+              "UserId": "03612f7d2bcc4afe8fbcf561e4cb849f",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:06.8904628",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550031.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550031.pdf"
+              }
+            },
+            {
+              "UserId": "41517231b2604cf4bba6b69655a97605",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:06.1990869",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550030.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550030.pdf"
+              }
+            },
+            {
+              "UserId": "8a7c5d6f623e429b88d16f6d58b85f1b",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:29:05.2134132",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550027.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550027.pdf"
+              }
+            },
+            {
+              "UserId": "aa9febde7b6a4137be27b05a84aadc21",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:28:42.5105831",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550012.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550012.pdf"
+              }
+            },
+            {
+              "UserId": "dc88ef0c3a8b4a2e9951e09de5d8848e",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:28:26.8889517",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550006.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550006.pdf"
+              }
+            },
+            {
+              "UserId": "fe33863718d94d429820f83d2563f9b2",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:28:26.2060564",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550005.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550005.pdf"
+              }
+            },
+            {
+              "UserId": "aaa74f9e86074ba6a2f0b6ae20557ce2",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:28:25.5254626",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550004.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550004.pdf"
+              }
+            },
+            {
+              "UserId": "a8a6c742afa3438caa6e9b601e2b74ee",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:28:24.8548248",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550003.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550003.pdf"
+              }
+            },
+            {
+              "UserId": "b18fc8047c6e4e0caebe66113dc3d4cd",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:28:24.167974",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550002.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550002.pdf"
+              }
+            },
+            {
+              "UserId": "60dd4c3dd8ff4125843a79e50877c19c",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:28:23.3142259",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050228116550001.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605022811655/e2e202606050228116550001.pdf"
+              }
+            },
+            {
+              "UserId": "2c276ed691c3444bbbd7fb24e318b362",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:26:27.9419955",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830229.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830229.pdf"
+              }
+            },
+            {
+              "UserId": "4d6d097edf9f4b0fb73cf5bd1d0078e6",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:26:25.8285165",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830227.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830227.pdf"
+              }
+            },
+            {
+              "UserId": "ee4b2f1a6d7e4fac9cda09e195adbeef",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:42.6499408",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830209.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830209.pdf"
+              }
+            },
+            {
+              "UserId": "1e72422328ec4fdbac102ebea7ac1af6",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:41.8456869",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830207.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830207.pdf"
+              }
+            },
+            {
+              "UserId": "c27804a5ce6f4aeb87c5cc8e2cd24201",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:39.7274875",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830204.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830204.pdf"
+              }
+            },
+            {
+              "UserId": "1ab631d03dba4f41ae7457ea02dfccc6",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:36.4839169",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830200.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830200.pdf"
+              }
+            },
+            {
+              "UserId": "f31ec4e1824949b5a62ea1caa32162d3",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:21.0500993",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830196.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830196.pdf"
+              }
+            },
+            {
+              "UserId": "607f79c6d62e4a6d8dc0262344a10522",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:04.3465539",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830188.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830188.pdf"
+              }
+            },
+            {
+              "UserId": "ce2905ae9e7942ec98165ebf898a443c",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:02.3970683",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830186.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830186.pdf"
+              }
+            },
+            {
+              "UserId": "4dbb6f8e25a447f6bfa84f8211cc90c2",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:25:00.547107",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830184.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830184.pdf"
+              }
+            },
+            {
+              "UserId": "bb12c3515a8c46028e6a74f91ecc89c0",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:24:57.5894686",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830182.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830182.pdf"
+              }
+            },
+            {
+              "UserId": "8ab6d90726f349b7b7283555edf18b28",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:24:43.4662121",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830180.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830180.pdf"
+              }
+            },
+            {
+              "UserId": "8cf1369e5e454b7aa27dce2ece7d6c70",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:24:41.5249367",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830178.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830178.pdf"
+              }
+            },
+            {
+              "UserId": "7e810469e4a441e08727535fb64c7aa4",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:24:39.5071808",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830176.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830176.pdf"
+              }
+            },
+            {
+              "UserId": "361e27a169ba481095c550a29dedbe72",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:24:36.3644661",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830174.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830174.pdf"
+              }
+            },
+            {
+              "UserId": "cb00b42300a147749636eab65be213cd",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:36.0586881",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830140.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830140.pdf"
+              }
+            },
+            {
+              "UserId": "726d7c62a2bb46a0bdd5ce5b4772e561",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:33.902342",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830139.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830139.pdf"
+              }
+            },
+            {
+              "UserId": "b4f27bcc968a46bdae847369f98e12a0",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:32.7367277",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830138.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830138.pdf"
+              }
+            },
+            {
+              "UserId": "497caf15c00c4abea5eaf5e6dca04bbd",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:30.3960869",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830137.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830137.pdf"
+              }
+            },
+            {
+              "UserId": "9e796f56689449e88484e29a4e620a05",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:28.2206344",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830136.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830136.pdf"
+              }
+            },
+            {
+              "UserId": "e0b0b04a22b74c53be67901ac20b032d",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:14.2295751",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830135.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830135.pdf"
+              }
+            },
+            {
+              "UserId": "5d3b541a618b49c4a958b2c623c348a2",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:13.0451525",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830134.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830134.pdf"
+              }
+            },
+            {
+              "UserId": "ad7a3144d7814954a54c34126892aafd",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:11.8336109",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830133.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830133.pdf"
+              }
+            },
+            {
+              "UserId": "53882c5dcfdd47c4ba57ae36213eb491",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:09.7863304",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830130.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830130.pdf"
+              }
+            },
+            {
+              "UserId": "465d31409bb24de7b1a897e823338606",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:22:07.3394355",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830125.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830125.pdf"
+              }
+            },
+            {
+              "UserId": "7ad3bcd0b7a24b3c8b29f8937e046c1e",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:21:53.7492522",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830124.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830124.pdf"
+              }
+            },
+            {
+              "UserId": "4c322bab11a1429d9b1d4f19cda02465",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:21:51.5249211",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830121.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830121.pdf"
+              }
+            },
+            {
+              "UserId": "868b12035e3a4dcfb8c77077539501ea",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:21:50.2759873",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830120.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830120.pdf"
+              }
+            },
+            {
+              "UserId": "f0b2cc9a14a9459e9182a43ed2471774",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:18:19.8523565",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830090.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830090.pdf"
+              }
+            },
+            {
+              "UserId": "cf0d54430c04464fbe9ddf054c591392",
+              "Role": "Doctor",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:17:57.3181198",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830084.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830084.pdf"
+              }
+            },
+            {
+              "UserId": "3ab45ac35eb74c3baf888bfa66b3e82c",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:16:55.466203",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830073.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830073.pdf"
+              }
+            },
+            {
+              "UserId": "c03eebf5da6345a1ae9097c6bfa31300",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:16:54.4019163",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830071.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830071.pdf"
+              }
+            },
+            {
+              "UserId": "d97f7fb3c19541f1948bb804ca6a67a2",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:16:53.1688463",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830069.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830069.pdf"
+              }
+            },
+            {
+              "UserId": "5b848620eb85482a8a5565462ae588fc",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:16:39.9196055",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830067.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830067.pdf"
+              }
+            },
+            {
+              "UserId": "cabdd6e72e66406a9041dddedbf21e22",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:16:38.7842536",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830060.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830060.pdf"
+              }
+            },
+            {
+              "UserId": "ef00a04c865e43969afb9f1f9f49362c",
+              "Role": "Company",
+              "AccountStatus": "Pending",
+              "SubmittedAtUtc": "2026-06-05T02:16:25.9760079",
+              "VerificationMetadata": {
+                "DocumentType": "License",
+                "OriginalFileName": "e2e202606050214389830059.pdf",
+                "ContentType": "application/pdf",
+                "SizeBytes": 2048,
+                "Reference": "e2e/e2e20260605021438983/e2e202606050214389830059.pdf"
+              }
+            }
+          ],
+          "PageNumber": 1,
+          "PageSize": 100,
+          "TotalCount": 191
+        }
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Admin rejects account",
+      "Endpoint": "/api/admin/accounts/9bc8c81180e14ed5b14707eee65b9a98/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Reject with reason and notes",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "dec254f35d464843ac9c45181edb4cc2",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "UserId": "9bc8c81180e14ed5b14707eee65b9a98",
+          "ResultingAccountStatus": "Rejected",
+          "ResubmissionToken": "***MASKED***"
+        }
+      },
+      "DatabaseEffect": "Account status changed to Rejected; decision and resubmission token rows created."
+    },
+    {
+      "Name": "Rejected login denied",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Rejected doctor credentials",
+      "ExpectedStatus": 403,
+      "HttpStatus": 403,
+      "Result": "Pass",
+      "CorrelationId": "15e3b9f870d142f5af42f79f3d50349e",
+      "Response": {
+        "Code": 403,
+        "Message": "Account status denied.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Resubmit rejected registration",
+      "Endpoint": "/api/auth/resubmit-registration",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Valid returned resubmission token and updated profile",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "8cb947a141d649da87d789b7b358d2b2",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "UserId": "9bc8c81180e14ed5b14707eee65b9a98",
+          "Role": "Doctor",
+          "AccountStatus": "Pending"
+        }
+      },
+      "DatabaseEffect": "Rejected account moved back to Pending; profile and audit data updated."
+    },
+    {
+      "Name": "Approve resubmitted doctor",
+      "Endpoint": "/api/admin/accounts/9bc8c81180e14ed5b14707eee65b9a98/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Approve resubmitted account",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "d4f8d7a66c7c47748ce5243f13060207",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "UserId": "9bc8c81180e14ed5b14707eee65b9a98",
+          "ResultingAccountStatus": "Approved",
+          "ResubmissionToken": null
+        }
+      },
+      "DatabaseEffect": "Account status changed to Approved."
+    },
+    {
+      "Name": "Resubmitted doctor login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Approved resubmitted doctor credentials",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "7645962168804c9599902d7c9df459b1",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "AccessToken": "***MASKED***",
+          "RefreshToken": "***MASKED***",
+          "Role": "Doctor",
+          "ExpiresAtUtc": "2026-06-20T21:28:02.0645723Z"
+        }
+      },
+      "DatabaseEffect": "Refresh credential added."
+    },
+    {
+      "Name": "Doctor cannot use company wallet",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Doctor",
+      "RequestSummary": "Doctor bearer token",
+      "ExpectedStatus": 403,
+      "HttpStatus": 403,
+      "Result": "Pass",
+      "CorrelationId": "5c1d0011c7124b16bc9f54c1d6a0bb20",
+      "Response": {
+        "Code": 403,
+        "Message": "Forbidden.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Doctor logout",
+      "Endpoint": "/api/auth/logout",
+      "Method": "POST",
+      "Role": "Doctor",
+      "RequestSummary": "Valid doctor access and refresh tokens",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "94e999ff79794896a4708603e66ebeb0",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": null
+      },
+      "DatabaseEffect": "Refresh credential revoked."
+    },
+    {
+      "Name": "Logged-out refresh denied",
+      "Endpoint": "/api/auth/refresh",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Revoked doctor refresh token",
+      "ExpectedStatus": 409,
+      "HttpStatus": 409,
+      "Result": "Pass",
+      "CorrelationId": "7bb18fff7ee14269905d3e1e12235ef4",
+      "Response": {
+        "Code": 409,
+        "Message": "Refresh reuse detected.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Approve primary doctor",
+      "Endpoint": "/api/admin/accounts/33c0ce15dc6b4def86263d11c6317592/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Approve pending doctor",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "fb1e398287844478b315f245c4907cd4",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "UserId": "33c0ce15dc6b4def86263d11c6317592",
+          "ResultingAccountStatus": "Approved",
+          "ResubmissionToken": null
+        }
+      },
+      "DatabaseEffect": "Doctor account status changed to Approved."
+    },
+    {
+      "Name": "Approve primary company",
+      "Endpoint": "/api/admin/accounts/be32710d3a9a4f45b5ca36468b2e02d9/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Approve pending company",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "50b065239a90424dadfcbb6fa9ada39e",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "UserId": "be32710d3a9a4f45b5ca36468b2e02d9",
+          "ResultingAccountStatus": "Approved",
+          "ResubmissionToken": null
+        }
+      },
+      "DatabaseEffect": "Company account approved and active company wallet created."
+    },
+    {
+      "Name": "Approved doctor login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Approved primary doctor credentials",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "0fb4f866191c4c34a58940465f57c912",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "AccessToken": "***MASKED***",
+          "RefreshToken": "***MASKED***",
+          "Role": "Doctor",
+          "ExpiresAtUtc": "2026-06-20T21:28:05.2802357Z"
+        }
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Approved company login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Approved primary company credentials",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "e51a4f6429194143b38bf8f8c1768e76",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "AccessToken": "***MASKED***",
+          "RefreshToken": "***MASKED***",
+          "Role": "Company",
+          "ExpiresAtUtc": "2026-06-20T21:28:05.9021871Z"
+        }
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Company cannot list pending accounts",
+      "Endpoint": "/api/admin/pending-accounts",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Company bearer token",
+      "ExpectedStatus": 403,
+      "HttpStatus": 403,
+      "Result": "Pass",
+      "CorrelationId": "982812a3bc54411c963319a9e068b07b",
+      "Response": {
+        "Code": 403,
+        "Message": "Forbidden.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Query company wallet",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Approved company bearer token",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "96b43069d3404b059274bdf5b3513a15",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "walletId": "f7c9566d6de0498aa9ca73e6b72ee6f5",
+          "companyId": "e874f1238d284ba782bba0e968383a0d",
+          "availableBalance": 0.0,
+          "reservedBalance": 0.0,
+          "currency": "EGP"
+        }
+      },
+      "DatabaseEffect": "Existing/created wallet read from SQL Server."
+    },
+    {
+      "Name": "Top-up missing idempotency key",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "100.00 EGP without Idempotency-Key",
+      "ExpectedStatus": 400,
+      "HttpStatus": 400,
+      "Result": "Pass",
+      "CorrelationId": "f2542103fe794bc5b2f49f421f6f2f65",
+      "Response": {
+        "Code": 400,
+        "Message": "Validation failed.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Top-up precision rejected",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "1.234 EGP with unique idempotency key",
+      "ExpectedStatus": 400,
+      "HttpStatus": 400,
+      "Result": "Pass",
+      "CorrelationId": "f1385ca73f6d4961b2288860529a2a77",
+      "Response": {
+        "Code": 400,
+        "Message": "Validation failed.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Mock wallet top-up",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "250.00 EGP with unique idempotency key",
+      "ExpectedStatus": 200,
+      "HttpStatus": 500,
+      "Result": "Fail",
+      "CorrelationId": "7ae5b3e88a474739b37111d8fea0680f",
+      "Response": {
+        "Code": 500,
+        "Message": "An unexpected error occurred.",
+        "Data": null
+      },
+      "DatabaseEffect": "Mock payment, wallet transaction, ledger credit, balance update, and audit event committed."
+    },
+    {
+      "Name": "Top-up idempotent replay",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Same key, amount, and currency",
+      "ExpectedStatus": 200,
+      "HttpStatus": 500,
+      "Result": "Fail",
+      "CorrelationId": "1faeee1588734b4f92c7afa9dbe40451",
+      "Response": {
+        "Code": 500,
+        "Message": "An unexpected error occurred.",
+        "Data": null
+      },
+      "DatabaseEffect": "Original payment returned; no second wallet credit."
+    },
+    {
+      "Name": "Top-up idempotency conflict",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Same key with 251.00 EGP",
+      "ExpectedStatus": 409,
+      "HttpStatus": 500,
+      "Result": "Fail",
+      "CorrelationId": "c9acb2f7bf1945bfbb791e0354c334d1",
+      "Response": {
+        "Code": 500,
+        "Message": "An unexpected error occurred.",
+        "Data": null
+      },
+      "DatabaseEffect": "No wallet change."
+    },
+    {
+      "Name": "Query wallet after top-up",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Verify balance changed once",
+      "ExpectedStatus": 200,
+      "HttpStatus": 200,
+      "Result": "Pass",
+      "CorrelationId": "5073a71541454d24a2678117bb5b683e",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "walletId": "f7c9566d6de0498aa9ca73e6b72ee6f5",
+          "companyId": "e874f1238d284ba782bba0e968383a0d",
+          "availableBalance": 0.0,
+          "reservedBalance": 0.0,
+          "currency": "EGP"
+        }
+      },
+      "DatabaseEffect": "Available balance reflects one 250.00 EGP credit."
+    },
+    {
+      "Name": "Invalid campaign draft rejected",
+      "Endpoint": "/api/company/campaigns",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Empty title/description",
+      "ExpectedStatus": 400,
+      "HttpStatus": 400,
+      "Result": "Pass",
+      "CorrelationId": "eb0df6b5c73749f98a1e5063c216a1b4",
+      "Response": {
+        "Code": 400,
+        "Message": "Validation failed.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Create campaign draft",
+      "Endpoint": "/api/company/campaigns",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid owned draft campaign",
+      "ExpectedStatus": 201,
+      "HttpStatus": 201,
+      "Result": "Pass",
+      "CorrelationId": "3f0aae65eb074022ada9edd1789f3ecd",
+      "Response": {
+        "Code": 201,
+        "Message": "Created",
+        "Data": {
+          "campaignId": "b43e9d2755be4dbbb4586fb23f1c1352",
+          "companyId": "e874f1238d284ba782bba0e968383a0d",
+          "title": "E2E Cardiology Campaign 20260620-232744-7c38ac86",
+          "description": "Real HTTP E2E campaign workflow validation.",
+          "status": "Draft"
+        }
+      },
+      "DatabaseEffect": "Draft campaign row created with company ownership."
+    },
+    {
+      "Name": "Upload to unknown campaign rejected",
+      "Endpoint": "/api/company/campaigns/00000000000000000000000000000000/assets",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid PNG to nonexistent campaign",
+      "ExpectedStatus": 404,
+      "HttpStatus": 404,
+      "Result": "Pass",
+      "CorrelationId": "b48cfc1d00d540f78fc032ad69a4c61b",
+      "Response": {
+        "Code": 404,
+        "Message": "Not found.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Upload campaign asset metadata",
+      "Endpoint": "/api/company/campaigns/b43e9d2755be4dbbb4586fb23f1c1352/assets",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid 1x1 PNG multipart upload",
+      "ExpectedStatus": 201,
+      "HttpStatus": 201,
+      "Result": "Pass",
+      "CorrelationId": "1fcca69980f845b1bae13acd827e0b6d",
+      "Response": {
+        "Code": 201,
+        "Message": "Created",
+        "Data": {
+          "assetId": "11b365d2ac034778b7226905e139013a",
+          "campaignId": "b43e9d2755be4dbbb4586fb23f1c1352",
+          "reviewStatus": "Pending",
+          "reviewReason": null
+        }
+      },
+      "DatabaseEffect": "StoredFile metadata row created as Pending; controller does not persist bytes to Cloudinary."
+    },
+    {
+      "Name": "Submit before asset approval rejected",
+      "Endpoint": "/api/company/campaigns/b43e9d2755be4dbbb4586fb23f1c1352/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Draft has Pending, not Approved, asset",
+      "ExpectedStatus": 400,
+      "HttpStatus": 400,
+      "Result": "Pass",
+      "CorrelationId": "43fea2cdfe4e49ca9359d3ad86d588f1",
+      "Response": {
+        "Code": 400,
+        "Message": "At least one campaign asset must be approved before submission.",
+        "Data": null
+      },
+      "DatabaseEffect": "No target snapshots or wallet reservation created."
+    },
+    {
+      "Name": "Submit missing idempotency key rejected",
+      "Endpoint": "/api/company/campaigns/b43e9d2755be4dbbb4586fb23f1c1352/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "No Idempotency-Key header",
+      "ExpectedStatus": 400,
+      "HttpStatus": 400,
+      "Result": "Pass",
+      "CorrelationId": "b96fa01f6e354dcaafd890cf862c0cbd",
+      "Response": {
+        "Code": 400,
+        "Message": "Validation failed.",
+        "Data": null
+      },
+      "DatabaseEffect": ""
+    },
+    {
+      "Name": "Upload campaign PNG with explicit media type",
+      "Endpoint": "/api/company/campaigns/b43e9d2755be4dbbb4586fb23f1c1352/assets",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid 1x1 PNG multipart upload with image/png media type",
+      "ExpectedStatus": 201,
+      "HttpStatus": 201,
+      "Result": "Pass",
+      "CorrelationId": null,
+      "Response": {
+        "Code": 201,
+        "Message": "Created",
+        "Data": {
+          "assetId": "4808fadac1944e7e8e81859bcaafa12b",
+          "campaignId": "b43e9d2755be4dbbb4586fb23f1c1352",
+          "reviewStatus": "Pending",
+          "reviewReason": null
+        }
+      },
+      "DatabaseEffect": "StoredFile metadata persisted with ContentType image/png; application still did not send bytes to Cloudinary."
+    }
+  ]
+}

@@ -1,7 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
+using MediBridge.Core.Entities.Identity;
 using MediBridge.IntegrationTests.TestHost;
 using MediBridge.Repository.Data;
+using MediBridge.Core.Enums;
+using MediBridge.Core.Interfaces.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -67,6 +70,38 @@ public sealed class CompanyRegistrationIntegrationTests
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
         Assert.Equal(1, await db.CompanyProfiles.CountAsync(profile => profile.LicenseNumber == licenseNumber));
+    }
+
+    [Fact]
+    public async Task IdentityRepository_DuplicateEmailConflict_DoesNotExposeInfrastructureException()
+    {
+        await using var factory = new WebAppFactory();
+        await factory.InitializeDatabaseAsync();
+
+        using var scope = factory.Services.CreateScope();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IIdentityUnitOfWork>();
+        var email = $"company-{Guid.NewGuid():N}@example.com";
+
+        await unitOfWork.ExecuteInTransactionAsync(
+            cancellationToken => unitOfWork.Users.AddAsync(CreateCompanyUser(email), "Password1!", cancellationToken));
+
+        var exception = await Record.ExceptionAsync(() => unitOfWork.ExecuteInTransactionAsync(
+            cancellationToken => unitOfWork.Users.AddAsync(CreateCompanyUser(email), "Password1!", cancellationToken)));
+
+        Assert.IsType<IdentityRecordConflictException>(exception);
+    }
+
+    private static ApplicationUser CreateCompanyUser(string email)
+    {
+        var now = DateTime.UtcNow;
+        return new ApplicationUser
+        {
+            Email = email,
+            Role = UserRole.Company,
+            AccountStatus = AccountStatus.Pending,
+            CreatedAtUtc = now,
+            LastStatusChangedAtUtc = now
+        };
     }
 
     private static object CreateCompanyRequest(string email, string phoneNumber, string licenseNumber)

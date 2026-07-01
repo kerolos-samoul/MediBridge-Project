@@ -18,4 +18,7 @@ public interface IStoredFileRepository
         StoredFilePurpose purpose,
         StoredFileReviewStatus reviewStatus,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StoredFile>> ListActiveReviewableCampaignFilesAsync(string campaignId, CancellationToken cancellationToken = default);
+    Task<bool> HasActiveApprovedCampaignMediaAsync(string campaignId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StoredFile>> ListActiveOptionalCampaignFilesAsync(string campaignId, CancellationToken cancellationToken = default);
 }

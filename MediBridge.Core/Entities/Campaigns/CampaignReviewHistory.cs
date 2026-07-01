@@ -8,8 +8,11 @@ public sealed class CampaignReviewHistory
     public string CampaignId { get; set; } = string.Empty;
     public string AdminUserId { get; set; } = string.Empty;
     public CampaignReviewDecision Decision { get; set; }
+    public string? IdempotencyKey { get; set; }
     public string? Reason { get; set; }
     public string? Notes { get; set; }
+    public CampaignStatus PriorStatus { get; set; }
+    public CampaignStatus ResultingStatus { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public string? CorrectsHistoryId { get; set; }
 }

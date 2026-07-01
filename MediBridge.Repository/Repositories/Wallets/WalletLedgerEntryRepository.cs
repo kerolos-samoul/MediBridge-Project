@@ -28,6 +28,12 @@ public sealed class WalletLedgerEntryRepository : IWalletLedgerEntryRepository
         }, cancellationToken);
     }
 
+    public async Task AddLedgerEntryAsync(WalletLedgerEntry ledgerEntry, CancellationToken cancellationToken = default)
+    {
+        ledgerEntry.Amount = MoneyRules.EnsurePositive(ledgerEntry.Amount, nameof(ledgerEntry.Amount));
+        await context.WalletLedgerEntries.AddAsync(ledgerEntry, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> ListLedgerEntryIdsByWalletAsync(string walletId, DateTime? createdFromUtc = null, DateTime? createdToUtc = null, CancellationToken cancellationToken = default)
     {
         var query = context.WalletLedgerEntries.Where(entry => entry.WalletId == walletId);

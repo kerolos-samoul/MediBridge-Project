@@ -1,5 +1,8 @@
+using MediBridge.Core.Entities.Profiles;
 using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Repository.Data;
+using MediBridge.Repository.Data.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace MediBridge.Repository.UnitOfWork;
@@ -44,7 +47,7 @@ public sealed class IdentityUnitOfWork : IIdentityUnitOfWork
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return context.SaveChangesAsync(cancellationToken);
+        return SaveChangesWithConflictMappingAsync(cancellationToken);
     }
 
     public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
@@ -53,8 +56,13 @@ public sealed class IdentityUnitOfWork : IIdentityUnitOfWork
         try
         {
             await operation(cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithConflictMappingAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception ex) when (IsIdentityUniquenessConflict(ex))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw new IdentityRecordConflictException("Duplicate email, phone, or license.", ex);
         }
         catch
         {
@@ -69,14 +77,51 @@ public sealed class IdentityUnitOfWork : IIdentityUnitOfWork
         try
         {
             var result = await operation(cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithConflictMappingAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return result;
+        }
+        catch (Exception ex) when (IsIdentityUniquenessConflict(ex))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw new IdentityRecordConflictException("Duplicate email, phone, or license.", ex);
         }
         catch
         {
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    private async Task<int> SaveChangesWithConflictMappingAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex) when (IsIdentityUniquenessConflict(ex))
+        {
+            throw new IdentityRecordConflictException("Duplicate email, phone, or license.", ex);
+        }
+    }
+
+    private static bool IsIdentityUniquenessConflict(Exception exception)
+    {
+        if (exception is IdentityRecordConflictException)
+        {
+            return false;
+        }
+
+        return exception is DbUpdateException dbUpdateException
+            && IsSqlUniqueConstraintViolation(dbUpdateException)
+            && dbUpdateException.Entries.Count != 0
+            && dbUpdateException.Entries.All(entry =>
+                entry.Entity is MediBridgeIdentityUser or DoctorProfile or CompanyProfile);
+    }
+
+    private static bool IsSqlUniqueConstraintViolation(DbUpdateException exception)
+    {
+        return exception.GetBaseException() is SqlException sqlException
+            && sqlException.Errors.Cast<SqlError>().Any(error => error.Number is 2601 or 2627);
     }
 }

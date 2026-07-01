@@ -1,5 +1,7 @@
+using FluentValidation.Validators;
 using MediBridge.Core.Enums;
 using MediBridge.Services.DTOs.Campaigns;
+using MediBridge.Services.Services;
 using MediBridge.Services.Validators.Campaigns;
 using Xunit;
 
@@ -33,20 +35,19 @@ public sealed class CampaignDraftValidationTests
             || property.Name.Contains("Scan", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Theory]
-    [InlineData(120, true)]
-    [InlineData(121, false)]
-    public void CampaignAsset_ContentTypeMatchesPersistenceLimit(int contentTypeLength, bool expectedValid)
+    [Fact]
+    public void CampaignAsset_ContentTypeRuleMatchesPersistenceLimit()
     {
         var validator = new CampaignAssetUploadRequestValidator();
-        var request = new CampaignAssetUploadRequestDto(
-            "campaign.bin",
-            new string('a', contentTypeLength),
-            1);
+        var validators = validator
+            .CreateDescriptor()
+            .GetValidatorsForMember(nameof(CampaignAssetUploadRequestDto.ContentType))
+            .Select(component => component.Validator)
+            .OfType<IMaximumLengthValidator>()
+            .ToArray();
 
-        var result = validator.Validate(request);
-
-        Assert.Equal(expectedValid, result.IsValid);
+        var maximumLengthValidator = Assert.Single(validators);
+        Assert.Equal(120, maximumLengthValidator.Max);
     }
 
     [Fact]
@@ -56,14 +57,32 @@ public sealed class CampaignDraftValidationTests
         Assert.Equal(StoredFileReviewStatus.Pending, (StoredFileReviewStatus)1);
     }
 
-    [Fact]
-    public void CampaignAssetUpload_IsAllowedOnlyWhileCampaignIsDraft()
+    [Theory]
+    [InlineData(CampaignStatus.Draft, true)]
+    [InlineData(CampaignStatus.RevisionRequired, true)]
+    [InlineData(CampaignStatus.PendingReview, false)]
+    [InlineData(CampaignStatus.Approved, false)]
+    [InlineData(CampaignStatus.Rejected, false)]
+    public void CampaignContentEdit_IsAllowedOnlyForDraftOrRevisionRequired(CampaignStatus status, bool expected)
     {
-        var allowedStatuses = new[] { CampaignStatus.Draft };
+        var actual = CampaignReviewTransitionPolicy.IsCompanyEditableStatus(status);
+        Assert.Equal(expected, actual);
+    }
 
-        Assert.Contains(CampaignStatus.Draft, allowedStatuses);
-        Assert.DoesNotContain(CampaignStatus.PendingReview, allowedStatuses);
-        Assert.DoesNotContain(CampaignStatus.Approved, allowedStatuses);
-        Assert.DoesNotContain(CampaignStatus.Rejected, allowedStatuses);
+    [Fact]
+    public void CampaignContentUpdate_ValidatorMatchesPersistenceLimits()
+    {
+        var validator = new UpdateCampaignRequestDtoValidator();
+        var request = new UpdateCampaignRequestDto(
+            new string('t', 201),
+            new string('d', 4001),
+            new string('c', 4001));
+
+        var result = validator.Validate(request);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.PropertyName == "Title");
+        Assert.Contains(result.Errors, error => error.PropertyName == "Description");
+        Assert.Contains(result.Errors, error => error.PropertyName == "ClinicalResearchInfo");
     }
 }

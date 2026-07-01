@@ -131,6 +131,7 @@ public sealed class CampaignAssetStorageOrchestrationTests
             new FakeIdentityUnitOfWork(),
             new FakeDomainUnitOfWork(storedFiles ?? new RecordingStoredFileRepository()),
             new CreateCampaignDraftRequestDtoValidator(),
+            new UpdateCampaignRequestDtoValidator(),
             new CampaignAssetUploadRequestValidator(),
             storage ?? new RecordingFileStorageProvider(),
             auditLogger ?? new RecordingAuditLogger(),
@@ -189,6 +190,9 @@ public sealed class CampaignAssetStorageOrchestrationTests
         public Task<IReadOnlyList<string>> ListActiveStoredFileIdsByOwnerAsync(StoredFileOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<string>> ListStoredFileReviewIdsAsync(StoredFileReviewStatus reviewStatus, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> HasStoredFileAsync(StoredFileOwnerType ownerType, string ownerId, StoredFilePurpose purpose, StoredFileReviewStatus reviewStatus, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<StoredFile>> ListActiveReviewableCampaignFilesAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<bool> HasActiveApprovedCampaignMediaAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<StoredFile>> ListActiveOptionalCampaignFilesAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private sealed class FakeIdentityUnitOfWork : IIdentityUnitOfWork
@@ -254,6 +258,10 @@ public sealed class CampaignAssetStorageOrchestrationTests
     {
         public Task<CompanyProfile?> FindCompanyProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default)
             => Task.FromResult<CompanyProfile?>(new CompanyProfile { Id = "company-1", UserId = userId });
+        public Task<CompanyProfile?> FindCompanyProfileByIdAsync(string companyId, CancellationToken cancellationToken = default)
+            => Task.FromResult<CompanyProfile?>(new CompanyProfile { Id = companyId, UserId = "company-user" });
+        public Task<CompanyProfile?> FindCompanyProfileByIdForUpdateAsync(string companyId, CancellationToken cancellationToken = default)
+            => FindCompanyProfileByIdAsync(companyId, cancellationToken);
 
         public Task AddDoctorProfileAsync(DoctorProfile profile, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AddCompanyProfileAsync(CompanyProfile profile, CancellationToken cancellationToken = default) => throw new NotImplementedException();
@@ -285,6 +293,14 @@ public sealed class CampaignAssetStorageOrchestrationTests
         public Task<CampaignReviewHistory?> FindCampaignReviewByIdempotencyKeyAsync(string campaignId, string idempotencyKey, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AddCampaignReviewHistoryCorrectionAsync(string reviewHistoryId, string correctsHistoryId, string campaignId, string adminUserId, CampaignReviewDecision decision, string reason, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<IReadOnlyList<string>> ListCampaignReviewHistoryIdsAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<PendingCampaignReviewPageReadModel> ListPendingReviewCampaignsAsync(int skip, int take, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<CampaignReviewDetailReadModel?> FindPendingReviewDetailAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<CampaignReviewHistory?> FindLatestCampaignReviewHistoryAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task AddCampaignSubmissionAttemptAsync(CampaignSubmissionAttempt attempt, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<CampaignSubmissionAttempt?> FindCampaignSubmissionAttemptByKeyAsync(string campaignId, string idempotencyKey, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<CampaignSubmissionAttempt?> FindCurrentCampaignSubmissionAttemptAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<int> CountCampaignQueueItemsAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<IReadOnlyList<CampaignQueueRowReadModel>> ListCampaignQueueRowsAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<string?> FindCampaignIdIncludingDeletedAsync(string campaignId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 

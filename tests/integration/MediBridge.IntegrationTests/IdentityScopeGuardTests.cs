@@ -42,11 +42,14 @@ public sealed class IdentityScopeGuardTests
     ];
 
     [Fact]
-    public void Phase2Controllers_Should_NotExposeLaterPhaseRoutes()
+    public void IdentityControllers_Should_NotExposeWorkflowRoutes()
     {
-        var routeTemplates = typeof(AuthController).Assembly
-            .GetTypes()
-            .Where(type => type.IsClass && type.Name.EndsWith("Controller", StringComparison.Ordinal))
+        var identityControllerTypes = new[]
+        {
+            typeof(AuthController),
+            typeof(AdminAccountsController)
+        };
+        var routeTemplates = identityControllerTypes
             .SelectMany(GetRouteTemplates)
             .ToArray();
 
@@ -57,16 +60,18 @@ public sealed class IdentityScopeGuardTests
     }
 
     [Fact]
-    public void Phase2ApplicationAssemblies_Should_NotDeclareLaterPhaseWorkflowTypes()
+    public void IdentityNamespaces_Should_NotDeclareWorkflowTypes()
     {
-        var productionAssemblies = new[]
+        var identityNamespaces = new[]
         {
-            typeof(MediBridge.Services.Services.AuthService).Assembly,
-            typeof(AuthController).Assembly
+            "MediBridge.Services.DTOs.Auth",
+            "MediBridge.Services.DTOs.Admin",
+            "MediBridge.Services.Validators.Auth",
+            "MediBridge.Services.Validators.Admin"
         };
-
-        var declaredTypeNames = productionAssemblies
-            .SelectMany(assembly => assembly.GetTypes())
+        var declaredTypeNames = typeof(MediBridge.Services.Services.AuthService).Assembly
+            .GetTypes()
+            .Where(type => identityNamespaces.Contains(type.Namespace, StringComparer.Ordinal))
             .Select(type => type.FullName ?? type.Name)
             .ToArray();
 

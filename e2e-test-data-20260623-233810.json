@@ -1,0 +1,1091 @@
+{
+  "RunId": "20260623-233810-a2116411",
+  "StartedAtUtc": "2026-06-23T20:38:10.343666Z",
+  "CompletedAtUtc": "2026-06-23T20:44:47.4823339Z",
+  "Environment": {
+    "ApiBaseUrl": "http://localhost:5246",
+    "SwaggerUrl": "http://localhost:5246/swagger/index.html",
+    "DatabaseServer": null,
+    "DatabaseName": null,
+    "UploadsEnabled": true,
+    "CloudinaryConfigurationPresent": true,
+    "CloudinaryRuntimeProviderRegistered": false,
+    "CloudinaryEvidence": "No Cloudinary package/service/provider is registered; upload endpoint stores metadata only and does not read/copy file bytes."
+  },
+  "ControllersAndEndpoints": [
+    {
+      "Controller": "AdminAccounts",
+      "Method": "GET",
+      "Path": "/api/admin/pending-accounts"
+    },
+    {
+      "Controller": "AdminAccounts",
+      "Method": "PUT",
+      "Path": "/api/admin/accounts/{id}/decision"
+    },
+    {
+      "Controller": "AdminCampaigns",
+      "Method": "POST",
+      "Path": "/api/admin/campaign-assets/{assetId}/review"
+    },
+    {
+      "Controller": "AdminCampaigns",
+      "Method": "POST",
+      "Path": "/api/admin/campaigns/{campaignId}/review"
+    },
+    {
+      "Controller": "AdminCampaigns",
+      "Method": "GET",
+      "Path": "/api/admin/campaigns/{campaignId}/queue"
+    },
+    {
+      "Controller": "AdminPricing",
+      "Method": "PUT",
+      "Path": "/api/admin/doctors/{doctorId}/price"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/register-doctor"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/register-company"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/login"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/refresh"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/logout"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/forgot-password"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/reset-password"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/verify-contact"
+    },
+    {
+      "Controller": "Auth",
+      "Method": "POST",
+      "Path": "/api/auth/resubmit-registration"
+    },
+    {
+      "Controller": "Campaigns",
+      "Method": "GET",
+      "Path": "/api/company/campaigns/{campaignId}/target-preview"
+    },
+    {
+      "Controller": "Campaigns",
+      "Method": "GET",
+      "Path": "/api/company/campaigns/{campaignId}/queue-summary"
+    },
+    {
+      "Controller": "Campaigns",
+      "Method": "POST",
+      "Path": "/api/company/campaigns"
+    },
+    {
+      "Controller": "Campaigns",
+      "Method": "POST",
+      "Path": "/api/company/campaigns/{campaignId}/assets"
+    },
+    {
+      "Controller": "Campaigns",
+      "Method": "POST",
+      "Path": "/api/company/campaigns/{campaignId}/submit"
+    },
+    {
+      "Controller": "CompanyWallet",
+      "Method": "GET",
+      "Path": "/api/company/wallet"
+    },
+    {
+      "Controller": "CompanyWallet",
+      "Method": "POST",
+      "Path": "/api/company/wallet/mock-checkout"
+    },
+    {
+      "Controller": "WeatherForecast",
+      "Method": "GET",
+      "Path": "/WeatherForecast"
+    }
+  ],
+  "Accounts": {
+    "Doctor": {
+      "Email": "e2e.doctor.20260623-233810-a2116411@example.com",
+      "Password": "E2e!9dd35e4d1407",
+      "UserId": "ab5105920a9c4b5982ad3f1929bb045d",
+      "DoctorId": "5b2f73f190774dbab4e83987b635f704"
+    },
+    "Company": {
+      "Email": "e2e.company.20260623-233810-a2116411@example.com",
+      "Password": "E2e!9dd35e4d1407",
+      "UserId": "84eaef951a1340e68f982dc443476acb",
+      "CompanyId": "daa221af2de0440daaa315f684562c80"
+    },
+    "RejectionResubmissionDoctor": {
+      "Email": "e2e.resubmit.20260623-233810-a2116411@example.com",
+      "Password": "E2e!9dd35e4d1407",
+      "UserId": "a59aeb7acfc9419598dbc7d77c6ded40"
+    },
+    "AdminSession": {
+      "Username": "admin@medibridge.local",
+      "AccessTokenMasked": "eyJhbG...miA4",
+      "RefreshTokenMasked": "P16LXq...0PdQ",
+      "TokensPersisted": false
+    }
+  },
+  "Wallet": {
+    "WalletId": "9cdd1f90c4094b6081947a18ba4658b0",
+    "PaymentId": null,
+    "TopUpIdempotencyKey": "topup-20260623-233810-a2116411"
+  },
+  "Campaign": {
+    "CampaignId": "1cbb8872aa684754b14ab8e703663489",
+    "FileId": "a78f330a82f441a4ba0b4b3d4eded08c",
+    "SubmitIdempotencyKey": "submit-20260623-233810-a2116411",
+    "ReviewIdempotencyKey": "review-20260623-233810-a2116411",
+    "PricedSubmitIdempotencyKey": "submit-20260623-233810-a2116411-priced",
+    "EligibleDoctorCountAfterPricing": 1,
+    "EstimatedTotalCostAfterPricing": 25.0,
+    "StorageKey": "campaigns/1cbb8872aa684754b14ab8e703663489/1fda390195bd4699b50aa3a5ba1e820f/e2e-valid-20260623-233810-a2116411.png"
+  },
+  "Otp": {
+    "AccountsRequiringDeliveredOtp": [],
+    "VerificationSucceeded": false,
+    "Paused": false,
+    "Explanation": "Registration and forgot-password generate no delivered contact OTP. No endpoint creates ContactVerificationFlow tokens; invalid-token behavior was exercised."
+  },
+  "Cloudinary": {
+    "UploadAttemptedWithValidPng": true,
+    "ReachedCloudinary": false,
+    "SignedAccessUrlAvailable": false,
+    "FileReplacementEndpointAvailable": false,
+    "FileDeleteEndpointAvailable": false,
+    "DisposableFileDeletedFromCloudinary": false,
+    "FileKeptInDatabase": true
+  },
+  "DatabaseEvidence": {
+    "ConnectionOpened": true,
+    "Error": null,
+    "Server": "db54839.public.databaseasp.net",
+    "Database": "db54839",
+    "AppliedMigrations": [
+      "20260531185506_Phase2IdentityApproval",
+      "20260602022951_Phase3DatabaseCoreModels",
+      "20260602025256_Phase3US2IntegrityConstraints",
+      "20260604054249_EmailOtpVerificationMetadata",
+      "20260608032307_Phase4FileStorageSecurity",
+      "20260609152557_AddMaxAttemptsReachedColumn"
+    ],
+    "PendingMigrations": [
+      "20260619132753_AddMockPaymentTransactions",
+      "20260621200235_HardenCampaignReviewWorkflow"
+    ],
+    "MockPaymentTableExists": false,
+    "CampaignReviewIdempotencyColumnExists": false,
+    "ExactDatabaseErrors": [
+      "Invalid object name 'MockPaymentTransactions'.",
+      "Invalid column name 'IdempotencyKey'."
+    ],
+    "DoctorProfile": {
+      "Id": "5b2f73f190774dbab4e83987b635f704",
+      "UserId": "ab5105920a9c4b5982ad3f1929bb045d",
+      "PricePerMessage": "25.00",
+      "Status": "1",
+      "IsDeleted": "0"
+    },
+    "CompanyProfile": {
+      "Id": "daa221af2de0440daaa315f684562c80",
+      "UserId": "84eaef951a1340e68f982dc443476acb",
+      "CompanyName": "E2E Pharma 20260623-233810-a2116411",
+      "IsDeleted": "0"
+    },
+    "Wallet": {
+      "Id": "9cdd1f90c4094b6081947a18ba4658b0",
+      "OwnerId": "daa221af2de0440daaa315f684562c80",
+      "AvailableBalance": "0.00",
+      "ReservedBalance": "0.00",
+      "Currency": "EGP",
+      "IsDeleted": "0"
+    },
+    "Campaign": {
+      "Id": "1cbb8872aa684754b14ab8e703663489",
+      "CompanyId": "daa221af2de0440daaa315f684562c80",
+      "MediaFileId": "NULL",
+      "Status": "1",
+      "IsDeleted": "0"
+    },
+    "StoredFile": {
+      "Id": "a78f330a82f441a4ba0b4b3d4eded08c",
+      "OwnerId": "1cbb8872aa684754b14ab8e703663489",
+      "OriginalFileName": "e2e-valid-20260623-233810-a2116411.png",
+      "ContentType": "application/octet-stream",
+      "SizeBytes": "68",
+      "StorageKey": "campaigns/1cbb8872aa684754b14ab8e703663489/1fda390195bd4699b50aa3a5ba1e820f/e2e-valid-20260623-233810-a2116411.png",
+      "ReviewStatus": "2"
+    },
+    "QueueRowCount": 0,
+    "ContactVerificationFlowsForCreatedUsers": 0
+  },
+  "Scenarios": [
+    {
+      "Name": "Swagger UI reachable",
+      "Endpoint": "/swagger/index.html",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "No body",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": null,
+      "CorrelationId": null,
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "OpenAPI document reachable",
+      "Endpoint": "/swagger/v1/swagger.json",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "No body",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": null,
+      "CorrelationId": null,
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Weather forecast success",
+      "Endpoint": "/WeatherForecast?count=2",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "count=2",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "e920e69c71d3400db2345ccc9f389956",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Weather forecast validation",
+      "Endpoint": "/WeatherForecast?count=0",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "count=0",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "d7c05b480cba4c96bebb6b2ffd4e3f46",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Anonymous wallet denied",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "No token",
+      "HttpStatus": 401,
+      "ExpectedStatus": "401",
+      "Result": "Pass",
+      "Message": "Unauthorized.",
+      "CorrelationId": "6b946840009b45cf94c9888b99004631",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Anonymous admin denied",
+      "Endpoint": "/api/admin/pending-accounts",
+      "Method": "GET",
+      "Role": "Anonymous",
+      "RequestSummary": "No token",
+      "HttpStatus": 401,
+      "ExpectedStatus": "401",
+      "Result": "Pass",
+      "Message": "Unauthorized.",
+      "CorrelationId": "67da45cc034a4ccbb1645477f2072e66",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Anonymous campaign denied",
+      "Endpoint": "/api/company/campaigns",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "No token",
+      "HttpStatus": 401,
+      "ExpectedStatus": "401",
+      "Result": "Pass",
+      "Message": "Unauthorized.",
+      "CorrelationId": "737afd52c92b42e9b81972ea1cdb7813",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Admin login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Development admin credentials",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "f73f1ddb89ac4ca595bf5ed67429c920",
+      "ImportantDatabaseEffect": "Refresh credential row created"
+    },
+    {
+      "Name": "Invalid refresh denied",
+      "Endpoint": "/api/auth/refresh",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Invalid refresh token",
+      "HttpStatus": 401,
+      "ExpectedStatus": "401",
+      "Result": "Pass",
+      "Message": "Authentication denied.",
+      "CorrelationId": "4fafd6d422a140d7973e1d07fef102d9",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Admin refresh rotation",
+      "Endpoint": "/api/auth/refresh",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Current admin refresh token",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "4cb270dff1904a4cb7c0e48deb044542",
+      "ImportantDatabaseEffect": "Old refresh credential revoked and replacement created"
+    },
+    {
+      "Name": "Admin cannot use company wallet",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Admin",
+      "RequestSummary": "Admin bearer token",
+      "HttpStatus": 403,
+      "ExpectedStatus": "403",
+      "Result": "Pass",
+      "Message": "Forbidden.",
+      "CorrelationId": "10d341b504934eafb92a0806c74be702",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Register doctor",
+      "Endpoint": "/api/auth/register-doctor",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Unique doctor e2e.doctor.20260623-233810-a2116411@example.com",
+      "HttpStatus": 201,
+      "ExpectedStatus": "201",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "213e94ecd55c41ee949b7958928c64db",
+      "ImportantDatabaseEffect": "Users and DoctorProfiles rows created"
+    },
+    {
+      "Name": "Duplicate doctor rejected",
+      "Endpoint": "/api/auth/register-doctor",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Same email/phone as prior registration",
+      "HttpStatus": 409,
+      "ExpectedStatus": "409",
+      "Result": "Pass",
+      "Message": "Duplicate email, phone, or license.",
+      "CorrelationId": "20def7195f6c4ccb8be0ea8342bd5e51",
+      "ImportantDatabaseEffect": "No duplicate rows"
+    },
+    {
+      "Name": "Register company",
+      "Endpoint": "/api/auth/register-company",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Unique company e2e.company.20260623-233810-a2116411@example.com",
+      "HttpStatus": 201,
+      "ExpectedStatus": "201",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "5a748d4417d84e028d5d04ce902ed0d9",
+      "ImportantDatabaseEffect": "Users and CompanyProfiles rows created"
+    },
+    {
+      "Name": "Register rejection candidate",
+      "Endpoint": "/api/auth/register-doctor",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Unique doctor e2e.resubmit.20260623-233810-a2116411@example.com",
+      "HttpStatus": 201,
+      "ExpectedStatus": "201",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "8a94cd94c4b9479d8878548a4e15b030",
+      "ImportantDatabaseEffect": "Users and DoctorProfiles rows created"
+    },
+    {
+      "Name": "Pending login denied",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Pending doctor credentials",
+      "HttpStatus": 403,
+      "ExpectedStatus": "403",
+      "Result": "Pass",
+      "Message": "Account status denied.",
+      "CorrelationId": "dd1a26355c054f9e88356c317fccf3cf",
+      "ImportantDatabaseEffect": "No refresh credential issued"
+    },
+    {
+      "Name": "Forgot password accepted",
+      "Endpoint": "/api/auth/forgot-password",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Registered doctor email",
+      "HttpStatus": 202,
+      "ExpectedStatus": "202",
+      "Result": "Pass",
+      "Message": "Accepted",
+      "CorrelationId": "5d4963da0c234bf19d4cad0258206d91",
+      "ImportantDatabaseEffect": "PasswordResetFlows row created; raw token is not returned or delivered"
+    },
+    {
+      "Name": "Invalid reset token denied",
+      "Endpoint": "/api/auth/reset-password",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Invalid reset token",
+      "HttpStatus": 401,
+      "ExpectedStatus": "401",
+      "Result": "Pass",
+      "Message": "Authentication denied.",
+      "CorrelationId": "aae852cdd3ac4e51980a10602a5e9f18",
+      "ImportantDatabaseEffect": "No password change"
+    },
+    {
+      "Name": "Invalid contact verification denied",
+      "Endpoint": "/api/auth/verify-contact",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "No issuance endpoint exists; invalid token probe",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "143effd555fc45fea41d29a816300270",
+      "ImportantDatabaseEffect": "No verification flag change"
+    },
+    {
+      "Name": "List pending accounts",
+      "Endpoint": "/api/admin/pending-accounts?pageNumber=1&pageSize=100",
+      "Method": "GET",
+      "Role": "Admin",
+      "RequestSummary": "Page 1, size 100",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "4c70a33f97a94320acbcea65ab09ee96",
+      "ImportantDatabaseEffect": "Read-only query"
+    },
+    {
+      "Name": "Admin rejects account",
+      "Endpoint": "/api/admin/accounts/a59aeb7acfc9419598dbc7d77c6ded40/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Reject pending doctor",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "172d1e1ac21c42b88ff83a76fa55f0ef",
+      "ImportantDatabaseEffect": "User status set to Rejected; resubmission flow created"
+    },
+    {
+      "Name": "Rejected login denied",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Rejected doctor credentials",
+      "HttpStatus": 403,
+      "ExpectedStatus": "403",
+      "Result": "Pass",
+      "Message": "Account status denied.",
+      "CorrelationId": "8b169894ea06411f990945fda17e11c6",
+      "ImportantDatabaseEffect": "No refresh credential issued"
+    },
+    {
+      "Name": "Resubmit rejected registration",
+      "Endpoint": "/api/auth/resubmit-registration",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Server-issued resubmission token and updated metadata",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "de03ea68b27a494e8caf4a354405cfa0",
+      "ImportantDatabaseEffect": "User status reset to Pending; profile metadata updated; token consumed"
+    },
+    {
+      "Name": "Approve resubmitted doctor",
+      "Endpoint": "/api/admin/accounts/a59aeb7acfc9419598dbc7d77c6ded40/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Approve pending resubmitted doctor",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "7fc7d659e7c1455c97708aa0fea3c92f",
+      "ImportantDatabaseEffect": "User status set to Approved"
+    },
+    {
+      "Name": "Resubmitted doctor login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Approved resubmitted doctor credentials",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "9bb91d37ba5b43de98249c165ddb75f2",
+      "ImportantDatabaseEffect": "Refresh credential issued"
+    },
+    {
+      "Name": "Doctor cannot use company wallet",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Doctor",
+      "RequestSummary": "Doctor bearer token",
+      "HttpStatus": 403,
+      "ExpectedStatus": "403",
+      "Result": "Pass",
+      "Message": "Forbidden.",
+      "CorrelationId": "47fcaeceee274cf4984ef791154df2f5",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Doctor logout",
+      "Endpoint": "/api/auth/logout",
+      "Method": "POST",
+      "Role": "Doctor",
+      "RequestSummary": "Current doctor refresh token",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "2b5742894fa14969ad92029bb2699cca",
+      "ImportantDatabaseEffect": "Refresh-token family revoked"
+    },
+    {
+      "Name": "Logged-out refresh denied",
+      "Endpoint": "/api/auth/refresh",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Revoked doctor refresh token",
+      "HttpStatus": 409,
+      "ExpectedStatus": "409",
+      "Result": "Pass",
+      "Message": "Refresh reuse detected.",
+      "CorrelationId": "8adef341e2a44caba5967c7ba51d4470",
+      "ImportantDatabaseEffect": "Reuse detected; family remains revoked"
+    },
+    {
+      "Name": "Approve primary doctor",
+      "Endpoint": "/api/admin/accounts/ab5105920a9c4b5982ad3f1929bb045d/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Approve pending doctor",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "ed6f1163e0d14990b437e60388aa292e",
+      "ImportantDatabaseEffect": "User status set to Approved"
+    },
+    {
+      "Name": "Approve primary company",
+      "Endpoint": "/api/admin/accounts/84eaef951a1340e68f982dc443476acb/decision",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Approve pending company",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "f8d2b2fd1318488598820adfadba393b",
+      "ImportantDatabaseEffect": "User status set to Approved; company wallet created"
+    },
+    {
+      "Name": "Approved doctor login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Approved doctor credentials",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "ced887c55770435ab2fa6f37cd08483a",
+      "ImportantDatabaseEffect": "Refresh credential issued"
+    },
+    {
+      "Name": "Approved company login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Approved company credentials",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "a91b04825c4043f4866a23d965aa364c",
+      "ImportantDatabaseEffect": "Refresh credential issued"
+    },
+    {
+      "Name": "Company cannot list pending accounts",
+      "Endpoint": "/api/admin/pending-accounts",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Company bearer token",
+      "HttpStatus": 403,
+      "ExpectedStatus": "403",
+      "Result": "Pass",
+      "Message": "Forbidden.",
+      "CorrelationId": "2ce78e8c859f407eb1c82da30683a7f7",
+      "ImportantDatabaseEffect": "None"
+    },
+    {
+      "Name": "Invalid doctor price rejected",
+      "Endpoint": "/api/admin/doctors//price",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Three-decimal price",
+      "HttpStatus": 404,
+      "ExpectedStatus": "400",
+      "Result": "Superseded",
+      "Message": "Superseded: the initial harness had not resolved DoctorProfile.Id, so the pricing-dependent request was invalid. See continuation scenarios.",
+      "CorrelationId": "8eb4c58cfc6d4d17b92e9a3361c747b5",
+      "ImportantDatabaseEffect": "No price update"
+    },
+    {
+      "Name": "Set approved doctor price",
+      "Endpoint": "/api/admin/doctors//price",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Set price to EGP 25.00",
+      "HttpStatus": 404,
+      "ExpectedStatus": "200",
+      "Result": "Superseded",
+      "Message": "Superseded: the initial harness had not resolved DoctorProfile.Id, so the pricing-dependent request was invalid. See continuation scenarios.",
+      "CorrelationId": "8890c8df225645b39c71c7746237c204",
+      "ImportantDatabaseEffect": "DoctorProfiles.PricePerMessage updated; policy history created"
+    },
+    {
+      "Name": "Query company wallet",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Approved company token",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "4b104faee7e946b18196db03578ad4c7",
+      "ImportantDatabaseEffect": "Wallet read"
+    },
+    {
+      "Name": "Top-up missing idempotency key",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid body, missing Idempotency-Key",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "d44e4833932f4a60bfec28279250d566",
+      "ImportantDatabaseEffect": "No payment or balance change"
+    },
+    {
+      "Name": "Top-up precision rejected",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Three-decimal amount",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "08adbd98a32d4155ad7ea542770cde67",
+      "ImportantDatabaseEffect": "No payment or balance change"
+    },
+    {
+      "Name": "Mock wallet top-up",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "EGP 500.00 with unique idempotency key",
+      "HttpStatus": 500,
+      "ExpectedStatus": "200",
+      "Result": "Fail",
+      "Message": "An unexpected error occurred.",
+      "CorrelationId": "f959bf2842ff4bc4a000e413666acb36",
+      "ImportantDatabaseEffect": "Payment, wallet transaction, ledger, audit rows; wallet +500"
+    },
+    {
+      "Name": "Top-up idempotent replay",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Same key and same request",
+      "HttpStatus": 500,
+      "ExpectedStatus": "200",
+      "Result": "Fail",
+      "Message": "An unexpected error occurred.",
+      "CorrelationId": "e3f69e61aaa749dbb6ac95b0db8ef90b",
+      "ImportantDatabaseEffect": "No duplicate payment or balance change"
+    },
+    {
+      "Name": "Top-up idempotency conflict",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Same key, different amount",
+      "HttpStatus": 500,
+      "ExpectedStatus": "409",
+      "Result": "Fail",
+      "Message": "An unexpected error occurred.",
+      "CorrelationId": "342a09b63a904071ad6396f3931fd9f0",
+      "ImportantDatabaseEffect": "No duplicate payment or balance change"
+    },
+    {
+      "Name": "Query wallet after top-up",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Approved company token",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "d799a03d68b34cfeb24eb97b1fd831ec",
+      "ImportantDatabaseEffect": "Wallet read after top-up"
+    },
+    {
+      "Name": "Invalid campaign draft rejected",
+      "Endpoint": "/api/company/campaigns",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Empty required fields",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "a5f55e799c79444690392c248158306e",
+      "ImportantDatabaseEffect": "No campaign row"
+    },
+    {
+      "Name": "Create campaign draft",
+      "Endpoint": "/api/company/campaigns",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid unique draft",
+      "HttpStatus": 201,
+      "ExpectedStatus": "201",
+      "Result": "Pass",
+      "Message": "Created",
+      "CorrelationId": "d5fc61768af34cd09481fe18428520d7",
+      "ImportantDatabaseEffect": "Campaign row created in Draft status"
+    },
+    {
+      "Name": "Preview campaign targets",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/target-preview",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Owned draft campaign",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "6aca57730d0b43ebbc555e2587dd3424",
+      "ImportantDatabaseEffect": "Read eligible approved priced doctors"
+    },
+    {
+      "Name": "Queue summary before submission",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/queue-summary",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Owned draft campaign",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "82c52ebc895d4bb0b0846c4866a65d2f",
+      "ImportantDatabaseEffect": "Read queue counts (expected zero)"
+    },
+    {
+      "Name": "Upload to unknown campaign rejected",
+      "Endpoint": "/api/company/campaigns/00000000000000000000000000000000/assets",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid PNG to nonexistent campaign",
+      "HttpStatus": 404,
+      "ExpectedStatus": "404",
+      "Result": "Pass",
+      "Message": "Not found.",
+      "CorrelationId": "5d0fd6b16aa44952af5d1d70b7b64ea8",
+      "ImportantDatabaseEffect": "No StoredFiles row"
+    },
+    {
+      "Name": "Upload campaign PNG",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/assets",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Valid 1x1 PNG multipart file",
+      "HttpStatus": 201,
+      "ExpectedStatus": "201",
+      "Result": "Pass",
+      "Message": "Created",
+      "CorrelationId": "a248b708c2c448e7a6436a1c37c6b421",
+      "ImportantDatabaseEffect": "StoredFiles metadata row created; implementation does not persist bytes"
+    },
+    {
+      "Name": "Submit before asset approval rejected",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Pending asset review",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "At least one campaign asset must be approved before submission.",
+      "CorrelationId": "9b71abf2614e4d808bba4e509f859e11",
+      "ImportantDatabaseEffect": "No reserve or campaign status change"
+    },
+    {
+      "Name": "Submit missing idempotency key rejected",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "No Idempotency-Key",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "7f338ec06de2459087896ca8b0b9b51d",
+      "ImportantDatabaseEffect": "No reserve or campaign status change"
+    },
+    {
+      "Name": "Admin approves campaign asset",
+      "Endpoint": "/api/admin/campaign-assets/a78f330a82f441a4ba0b4b3d4eded08c/review",
+      "Method": "POST",
+      "Role": "Admin",
+      "RequestSummary": "Approve pending campaign asset",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "c5909eaeef274c348cdc34457b34bb08",
+      "ImportantDatabaseEffect": "StoredFiles review status set Approved"
+    },
+    {
+      "Name": "Duplicate asset review rejected",
+      "Endpoint": "/api/admin/campaign-assets/a78f330a82f441a4ba0b4b3d4eded08c/review",
+      "Method": "POST",
+      "Role": "Admin",
+      "RequestSummary": "Review already-reviewed asset",
+      "HttpStatus": 409,
+      "ExpectedStatus": "409",
+      "Result": "Pass",
+      "Message": "Campaign asset has already been reviewed.",
+      "CorrelationId": "f76cdd6bcc994f199aafcc4a0bde57a5",
+      "ImportantDatabaseEffect": "No second review transition"
+    },
+    {
+      "Name": "Submit approved-asset campaign",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Approved asset, funded wallet, unique idempotency key",
+      "HttpStatus": 400,
+      "ExpectedStatus": "200",
+      "Result": "Superseded",
+      "Message": "Superseded: the initial harness had not resolved DoctorProfile.Id, so the pricing-dependent request was invalid. See continuation scenarios.",
+      "CorrelationId": "26394cf4b8154341aab7d6d3b8ae74eb",
+      "ImportantDatabaseEffect": "Campaign targets snapshotted; funds reserved; status PendingReview"
+    },
+    {
+      "Name": "Campaign submit idempotent replay",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Blocked because initial submit failed",
+      "HttpStatus": null,
+      "ExpectedStatus": "200",
+      "Result": "Blocked",
+      "Message": "Blocked: successful submit never occurred because the configured database lacks the mock-payment migration, leaving the wallet unfunded.",
+      "CorrelationId": null,
+      "ImportantDatabaseEffect": "Not executed"
+    },
+    {
+      "Name": "Admin campaign review missing idempotency key",
+      "Endpoint": "/api/admin/campaigns/1cbb8872aa684754b14ab8e703663489/review",
+      "Method": "POST",
+      "Role": "Admin",
+      "RequestSummary": "Approved decision without Idempotency-Key",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "87641f1bafa94bb9a82369340a85a8c9",
+      "ImportantDatabaseEffect": "No review history or queue rows"
+    },
+    {
+      "Name": "Admin review blocked draft campaign",
+      "Endpoint": "/api/admin/campaigns/1cbb8872aa684754b14ab8e703663489/review",
+      "Method": "POST",
+      "Role": "Admin",
+      "RequestSummary": "Campaign never reached PendingReview",
+      "HttpStatus": 500,
+      "ExpectedStatus": "409",
+      "Result": "Fail",
+      "Message": "An unexpected error occurred.",
+      "CorrelationId": "42750660fd224cb89d10b9aac418477d",
+      "ImportantDatabaseEffect": "No review history or queue rows"
+    },
+    {
+      "Name": "Admin reads campaign queue",
+      "Endpoint": "/api/admin/campaigns/1cbb8872aa684754b14ab8e703663489/queue",
+      "Method": "GET",
+      "Role": "Admin",
+      "RequestSummary": "Existing campaign id",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "d5d0554dd6be4d1baa8e94f078498842",
+      "ImportantDatabaseEffect": "Read-only queue query"
+    },
+    {
+      "Name": "Company reads queue summary",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/queue-summary",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Owned campaign id",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "70e5edb134154fa78ba085e8ad132b2e",
+      "ImportantDatabaseEffect": "Read-only queue summary"
+    },
+    {
+      "Name": "Continuation admin login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Re-establish admin session; token retained only in memory",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "1926e12e297e485bb1db0d458fef2ba9",
+      "ImportantDatabaseEffect": "Refresh credential created"
+    },
+    {
+      "Name": "Continuation company login",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Re-establish company session; token retained only in memory",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "8fb3c1875ba24aa19409b6eaa936a900",
+      "ImportantDatabaseEffect": "Refresh credential created"
+    },
+    {
+      "Name": "Invalid doctor price rejected (resolved profile id)",
+      "Endpoint": "/api/admin/doctors/5b2f73f190774dbab4e83987b635f704/price",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Three-decimal price using the database-resolved DoctorProfile.Id",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "Validation failed.",
+      "CorrelationId": "67afb3cd81fc4f038df401d8026e353e",
+      "ImportantDatabaseEffect": "No price update"
+    },
+    {
+      "Name": "Set approved doctor price (resolved profile id)",
+      "Endpoint": "/api/admin/doctors/5b2f73f190774dbab4e83987b635f704/price",
+      "Method": "PUT",
+      "Role": "Admin",
+      "RequestSummary": "Set EGP 25.00 using DoctorProfile.Id",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "6da4d764af254fc8a859a9b0ecee51b4",
+      "ImportantDatabaseEffect": "DoctorProfiles.PricePerMessage updated; policy history row created"
+    },
+    {
+      "Name": "Preview targets after doctor pricing",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/target-preview",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Owned campaign after pricing an approved doctor",
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Message": "Success",
+      "CorrelationId": "23953fef4a654ad2ace0c89e86e153f8",
+      "ImportantDatabaseEffect": "Read-only eligible target calculation"
+    },
+    {
+      "Name": "Submit priced campaign with unfunded wallet",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Approved asset and eligible doctor, but wallet remains unfunded because top-up endpoint failed",
+      "HttpStatus": 400,
+      "ExpectedStatus": "400",
+      "Result": "Pass",
+      "Message": "The company wallet has insufficient available funds.",
+      "CorrelationId": "c4ebd94ec8b648578adb45865f515436",
+      "ImportantDatabaseEffect": "No reserve; campaign remains Draft"
+    }
+  ],
+  "NotTested": [
+    "Successful contact OTP verification: no issuance/delivery path creates ContactVerificationFlow tokens.",
+    "Successful password reset: the raw one-time token is discarded and no delivery service is registered.",
+    "Successful top-up/idempotent replay/conflict: blocked by missing MockPaymentTransactions table.",
+    "Successful campaign submit/replay/admin approval/queue creation: blocked by unfunded wallet caused by top-up failure.",
+    "Signed file access, replacement, deletion, and Cloudinary verification: endpoints/provider are absent from this branch."
+  ]
+}

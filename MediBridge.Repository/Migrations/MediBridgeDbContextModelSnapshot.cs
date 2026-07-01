@@ -55,6 +55,9 @@ namespace MediBridge.Repository.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -73,6 +76,8 @@ namespace MediBridge.Repository.Migrations
                     b.HasIndex("VoiceNoteFileId");
 
                     b.HasIndex("CompanyId", "CreatedAtUtc");
+
+                    b.HasIndex("Status", "SubmittedAtUtc", "Id");
 
                     b.ToTable("Campaigns", (string)null);
                 });
@@ -107,9 +112,15 @@ namespace MediBridge.Repository.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int>("PriorStatus")
+                        .HasColumnType("int");
+
                     b.Property<string>("Reason")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("ResultingStatus")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -124,6 +135,48 @@ namespace MediBridge.Repository.Migrations
                         .HasFilter("[IdempotencyKey] IS NOT NULL");
 
                     b.ToTable("CampaignReviewHistories", (string)null);
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignSubmissionAttempt", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CampaignId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<decimal>("EstimatedCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TargetCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("CampaignId", "SubmittedAtUtc", "Id");
+
+                    b.ToTable("CampaignSubmissionAttempts", (string)null);
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignTarget", b =>
@@ -703,7 +756,7 @@ namespace MediBridge.Repository.Migrations
                         .IsUnique()
                         .HasFilter("[Status] IN (1, 2)");
 
-                    b.HasIndex("DoctorId", "Status", "QueuedAtUtc", "Id");
+                    b.HasIndex("DoctorId", "Status", "CampaignSubmittedAtUtc", "QueuedAtUtc", "Id");
 
                     b.ToTable("DoctorMessageQueues", (string)null);
                 });
@@ -1631,6 +1684,15 @@ namespace MediBridge.Repository.Migrations
                         .WithMany()
                         .HasForeignKey("CorrectsHistoryId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignSubmissionAttempt", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Campaigns.Campaign", null)
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Campaigns.CampaignTarget", b =>

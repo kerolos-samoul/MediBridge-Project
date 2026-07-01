@@ -1,0 +1,500 @@
+{
+  "RunId": "migration-retest-20260623-235313-3ab4d04b",
+  "StartedAtUtc": "2026-06-23T20:53:37.9582708Z",
+  "CompletedAtUtc": "2026-06-23T21:07:11.0560486Z",
+  "PreviousArtifact": "D:\\My Project\\MediBridge Project\\MediBridge\\e2e-test-data-20260623-233810.json",
+  "Scope": "Focused retest of failures previously blocked by database schema drift",
+  "Environment": {
+    "ApiBaseUrl": "http://localhost:5246",
+    "DatabaseServer": "db54839.public.databaseasp.net",
+    "DatabaseName": "db54839",
+    "ConfigurationMutated": false,
+    "ProductionCodeMutated": false
+  },
+  "AppliedMigrations": [
+    "20260619132753_AddMockPaymentTransactions",
+    "20260621200235_HardenCampaignReviewWorkflow"
+  ],
+  "ReusedAccounts": {
+    "Doctor": {
+      "Email": "e2e.doctor.20260623-233810-a2116411@example.com",
+      "Password": "E2e!9dd35e4d1407",
+      "UserId": "ab5105920a9c4b5982ad3f1929bb045d",
+      "DoctorId": "5b2f73f190774dbab4e83987b635f704"
+    },
+    "Company": {
+      "Email": "e2e.company.20260623-233810-a2116411@example.com",
+      "Password": "E2e!9dd35e4d1407",
+      "UserId": "84eaef951a1340e68f982dc443476acb",
+      "CompanyId": "daa221af2de0440daaa315f684562c80"
+    },
+    "AdminSession": {
+      "Username": "admin@medibridge.local",
+      "AccessTokenMasked": "eyJhbG...G49c",
+      "RefreshTokenMasked": "ypYbUl...y43Q",
+      "FullTokensPersisted": false
+    }
+  },
+  "Wallet": {
+    "WalletId": "9cdd1f90c4094b6081947a18ba4658b0",
+    "PaymentId": "e309d5fd2304473cbcab135108444ee6",
+    "TransactionReference": "MOCK-003c6b8f9f3b4efe9978bb9df8002d4c",
+    "WalletTransactionId": "7a4d6bfb473f4e188310139a931721c7",
+    "TopUpIdempotencyKey": "topup-retest-migration-retest-20260623-235313-3ab4d04b",
+    "StartAvailableBalance": "0.00",
+    "StartReservedBalance": "0.00",
+    "AfterTopUpAvailableBalance": 500.0,
+    "FinalAvailableBalance": "475.00",
+    "FinalReservedBalance": "25.00"
+  },
+  "Campaign": {
+    "CampaignId": "1cbb8872aa684754b14ab8e703663489",
+    "FileId": "a78f330a82f441a4ba0b4b3d4eded08c",
+    "SubmitIdempotencyKey": "submit-retest-migration-retest-20260623-235313-3ab4d04b",
+    "ReviewIdempotencyKey": "review-retest-migration-retest-20260623-235313-3ab4d04b",
+    "PriorStatus": "1",
+    "FinalStatus": "3",
+    "TargetCount": 1,
+    "ReviewHistoryCountForKey": 1,
+    "QueueRowCount": 1
+  },
+  "DatabaseEvidence": {
+    "Payment": {
+      "PaymentId": "e309d5fd2304473cbcab135108444ee6",
+      "CompanyId": "daa221af2de0440daaa315f684562c80",
+      "WalletId": "9cdd1f90c4094b6081947a18ba4658b0",
+      "Amount": "500.00",
+      "Currency": "EGP",
+      "Status": "1",
+      "TransactionReference": "MOCK-003c6b8f9f3b4efe9978bb9df8002d4c",
+      "IdempotencyKey": "topup-retest-migration-retest-20260623-235313-3ab4d04b",
+      "WalletBalanceBefore": "0.00",
+      "WalletBalanceAfter": "500.00",
+      "WalletTransactionId": "7a4d6bfb473f4e188310139a931721c7"
+    },
+    "PaymentRowsForIdempotencyKey": 1,
+    "WalletTransaction": {
+      "Id": "7a4d6bfb473f4e188310139a931721c7",
+      "WalletId": "9cdd1f90c4094b6081947a18ba4658b0",
+      "OperationType": "1",
+      "IdempotencyKey": "D3C3BD7F46519C436DE0B6E2910374FC7DDF88BA152BE9405667770D238510E8",
+      "Amount": "500.00"
+    },
+    "WalletTransactionCount": 1,
+    "TopUpLedgerEntryCount": 1,
+    "TopUpLedgerRows": [
+      "86c10ede06e24d7e91544e4f934cf5cc|7a4d6bfb473f4e188310139a931721c7|9cdd1f90c4094b6081947a18ba4658b0|2|1|500.00|EGP"
+    ],
+    "FinalWallet": {
+      "Id": "9cdd1f90c4094b6081947a18ba4658b0",
+      "OwnerId": "daa221af2de0440daaa315f684562c80",
+      "AvailableBalance": "475.00",
+      "ReservedBalance": "25.00",
+      "Currency": "EGP"
+    },
+    "Campaign": {
+      "Id": "1cbb8872aa684754b14ab8e703663489",
+      "CompanyId": "daa221af2de0440daaa315f684562c80",
+      "Status": "3",
+      "MediaFileId": "NULL"
+    },
+    "CampaignTargetCount": 1,
+    "CampaignReviewCountForIdempotencyKey": 1,
+    "QueueRows": [
+      "cb68c549878c4787b52bfcca9f19fe03|1cbb8872aa684754b14ab8e703663489|5b2f73f190774dbab4e83987b635f704|1|2026-06-23T20:53:24.9999758"
+    ]
+  },
+  "Comparison": {
+    "PreviousWalletTopUpP1": "Failed with HTTP 500 because MockPaymentTransactions table was missing.",
+    "CurrentWalletTopUpP1": "Resolved",
+    "PreviousCampaignReviewP1": "Failed with HTTP 500 because CampaignReviewHistories.IdempotencyKey was missing.",
+    "CurrentCampaignReviewP1": "Resolved"
+  },
+  "Scenarios": [
+    {
+      "Name": "Admin login for focused retest",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Re-establish admin session",
+      "RequestBody": {
+        "Username": "admin@medibridge.local",
+        "Password": "Admin123!"
+      },
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "Role": "Admin",
+          "ExpiresAtUtc": "2026-06-23T21:53:16.4653488Z",
+          "AccessTokenMasked": "eyJhbG...G49c",
+          "RefreshTokenMasked": "ypYbUl...y43Q"
+        }
+      },
+      "CorrelationId": "3772ce7b0bbb498b89a3bf4a41bed1f8",
+      "ImportantDatabaseEffect": "Refresh credential created"
+    },
+    {
+      "Name": "Company login for focused retest",
+      "Endpoint": "/api/auth/login",
+      "Method": "POST",
+      "Role": "Anonymous",
+      "RequestSummary": "Re-establish prior approved company session",
+      "RequestBody": {
+        "Username": "e2e.company.20260623-233810-a2116411@example.com",
+        "Password": "E2e!9dd35e4d1407"
+      },
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "Role": "Company",
+          "ExpiresAtUtc": "2026-06-23T21:53:19.6872681Z",
+          "AccessTokenMasked": "eyJhbG...4WPU",
+          "RefreshTokenMasked": "V4eT8b...b9jQ"
+        }
+      },
+      "CorrelationId": "9a8b976763514cb0ab60c2ad45fc223b",
+      "ImportantDatabaseEffect": "Refresh credential created"
+    },
+    {
+      "Name": "Wallet before migration retest top-up",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Read prior company wallet",
+      "RequestBody": null,
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "walletId": "9cdd1f90c4094b6081947a18ba4658b0",
+          "companyId": "daa221af2de0440daaa315f684562c80",
+          "availableBalance": 0.0,
+          "reservedBalance": 0.0,
+          "currency": "EGP"
+        }
+      },
+      "CorrelationId": "77ee1f69798846d9822557ce5453d5cd",
+      "ImportantDatabaseEffect": "No mutation"
+    },
+    {
+      "Name": "Valid top-up after migration",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "EGP 500.00 with new idempotency key",
+      "RequestBody": {
+        "amount": 500.0,
+        "currency": "EGP"
+      },
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "paymentId": "e309d5fd2304473cbcab135108444ee6",
+          "companyId": "daa221af2de0440daaa315f684562c80",
+          "amount": 500.0,
+          "status": "Succeeded",
+          "createdAtUtc": "2026-06-23T20:53:21.4840769Z",
+          "transactionReference": "MOCK-003c6b8f9f3b4efe9978bb9df8002d4c",
+          "walletBalanceBefore": 0.0,
+          "walletBalanceAfter": 500.0
+        }
+      },
+      "CorrelationId": "70a25ce83cd34436840efdd4197ddc38",
+      "ImportantDatabaseEffect": "Payment, wallet transaction, ledger and wallet balance mutation"
+    },
+    {
+      "Name": "Top-up idempotent replay after migration",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Same idempotency key and same body",
+      "RequestBody": {
+        "amount": 500.0,
+        "currency": "EGP"
+      },
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "paymentId": "e309d5fd2304473cbcab135108444ee6",
+          "companyId": "daa221af2de0440daaa315f684562c80",
+          "amount": 500.0,
+          "status": "Succeeded",
+          "createdAtUtc": "2026-06-23T20:53:21.4840769",
+          "transactionReference": "MOCK-003c6b8f9f3b4efe9978bb9df8002d4c",
+          "walletBalanceBefore": 0.0,
+          "walletBalanceAfter": 500.0
+        }
+      },
+      "CorrelationId": "08063c51ee864e63864d00d8983b2505",
+      "ImportantDatabaseEffect": "No duplicate payment, transaction, ledger or balance mutation"
+    },
+    {
+      "Name": "Top-up idempotency conflict after migration",
+      "Endpoint": "/api/company/wallet/mock-checkout",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Same idempotency key with a different amount",
+      "RequestBody": {
+        "amount": 501.0,
+        "currency": "EGP"
+      },
+      "HttpStatus": 409,
+      "ExpectedStatus": "409",
+      "Result": "Pass",
+      "Response": {
+        "Code": 409,
+        "Message": "Idempotency conflict.",
+        "Data": null
+      },
+      "CorrelationId": "4ef1490fbe054cbb811ab2954caf4b38",
+      "ImportantDatabaseEffect": "No state mutation"
+    },
+    {
+      "Name": "Wallet after top-up",
+      "Endpoint": "/api/company/wallet",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Read wallet after idempotency tests",
+      "RequestBody": null,
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "walletId": "9cdd1f90c4094b6081947a18ba4658b0",
+          "companyId": "daa221af2de0440daaa315f684562c80",
+          "availableBalance": 500.0,
+          "reservedBalance": 0.0,
+          "currency": "EGP"
+        }
+      },
+      "CorrelationId": "87c3b41be6d64756a0562b06f4326cef",
+      "ImportantDatabaseEffect": "No mutation"
+    },
+    {
+      "Name": "Target preview before resumed submit",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/target-preview",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Confirm prior approved priced doctor is eligible",
+      "RequestBody": null,
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "eligibleDoctorCount": 1,
+          "estimatedTotalCost": 25.0,
+          "currency": "EGP"
+        }
+      },
+      "CorrelationId": "cc126e610e374147ad842fb81d640032",
+      "ImportantDatabaseEffect": "No mutation"
+    },
+    {
+      "Name": "Submit funded campaign after migration",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Prior draft with approved asset, eligible doctor, funded wallet",
+      "RequestBody": null,
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "campaignId": "1cbb8872aa684754b14ab8e703663489",
+          "status": "PendingReview",
+          "targetCount": 1,
+          "reservedAmount": 25.0
+        }
+      },
+      "CorrelationId": "5b2ff2ee1b8045f7bd2e3263759425cd",
+      "ImportantDatabaseEffect": "Targets snapshotted, EGP funds reserved, campaign PendingReview"
+    },
+    {
+      "Name": "Campaign submit idempotent replay",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/submit",
+      "Method": "POST",
+      "Role": "Company",
+      "RequestSummary": "Same campaign and submit idempotency key",
+      "RequestBody": null,
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "campaignId": "1cbb8872aa684754b14ab8e703663489",
+          "status": "PendingReview",
+          "targetCount": 1,
+          "reservedAmount": 25.0
+        }
+      },
+      "CorrelationId": "ce1748164e724b4cbc5fb9b63a95aea0",
+      "ImportantDatabaseEffect": "No duplicate targets or reserve transaction"
+    },
+    {
+      "Name": "Approve submitted campaign after migration",
+      "Endpoint": "/api/admin/campaigns/1cbb8872aa684754b14ab8e703663489/review",
+      "Method": "POST",
+      "Role": "Admin",
+      "RequestSummary": "Approve PendingReview campaign with new key",
+      "RequestBody": {
+        "Decision": "Approved",
+        "Reason": ""
+      },
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "campaignId": "1cbb8872aa684754b14ab8e703663489",
+          "decision": "Approved",
+          "status": "Approved",
+          "queuedCount": 1
+        }
+      },
+      "CorrelationId": "ccccaad8d7e0423d9a69bde35ee26254",
+      "ImportantDatabaseEffect": "One review history and one queue row per target; campaign Approved"
+    },
+    {
+      "Name": "Campaign review idempotent replay",
+      "Endpoint": "/api/admin/campaigns/1cbb8872aa684754b14ab8e703663489/review",
+      "Method": "POST",
+      "Role": "Admin",
+      "RequestSummary": "Same review key and same decision",
+      "RequestBody": {
+        "Decision": "Approved",
+        "Reason": ""
+      },
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "campaignId": "1cbb8872aa684754b14ab8e703663489",
+          "decision": "Approved",
+          "status": "Approved",
+          "queuedCount": 1
+        }
+      },
+      "CorrelationId": "2dd4b3753a104fb98a7ba3a22093312d",
+      "ImportantDatabaseEffect": "No duplicate review history or queue rows"
+    },
+    {
+      "Name": "Campaign review idempotency conflict",
+      "Endpoint": "/api/admin/campaigns/1cbb8872aa684754b14ab8e703663489/review",
+      "Method": "POST",
+      "Role": "Admin",
+      "RequestSummary": "Same review key with different decision/body",
+      "RequestBody": {
+        "Decision": "Rejected",
+        "Reason": "Conflict probe"
+      },
+      "HttpStatus": 409,
+      "ExpectedStatus": "409",
+      "Result": "Pass",
+      "Response": {
+        "Code": 409,
+        "Message": "Idempotency conflict.",
+        "Data": null
+      },
+      "CorrelationId": "f0b7c4e7fe384b98865f176f43bb5447",
+      "ImportantDatabaseEffect": "No state mutation"
+    },
+    {
+      "Name": "Company queue summary after approval",
+      "Endpoint": "/api/company/campaigns/1cbb8872aa684754b14ab8e703663489/queue-summary",
+      "Method": "GET",
+      "Role": "Company",
+      "RequestSummary": "Read approved campaign queue summary",
+      "RequestBody": null,
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": {
+          "campaignId": "1cbb8872aa684754b14ab8e703663489",
+          "queuedCount": 1,
+          "activatedCount": 0,
+          "cancelledCount": 0,
+          "expiredCount": 0,
+          "generatedAtUtc": "2026-06-23T20:53:28.0279973Z"
+        }
+      },
+      "CorrelationId": "c4f5e231bf4d48e79e82b5c0d5244938",
+      "ImportantDatabaseEffect": "No mutation"
+    },
+    {
+      "Name": "Admin queue rows after approval",
+      "Endpoint": "/api/admin/campaigns/1cbb8872aa684754b14ab8e703663489/queue",
+      "Method": "GET",
+      "Role": "Admin",
+      "RequestSummary": "Read approved campaign queue rows",
+      "RequestBody": null,
+      "HttpStatus": 200,
+      "ExpectedStatus": "200",
+      "Result": "Pass",
+      "Response": {
+        "Code": 200,
+        "Message": "Success",
+        "Data": [
+          {
+            "queueId": "cb68c549878c4787b52bfcca9f19fe03",
+            "campaignId": "1cbb8872aa684754b14ab8e703663489",
+            "doctorId": "5b2f73f190774dbab4e83987b635f704",
+            "status": "Queued",
+            "queuedAtUtc": "2026-06-23T20:53:24.9999758"
+          }
+        ]
+      },
+      "CorrelationId": "74de9c24820b461abb72bd0e54994176",
+      "ImportantDatabaseEffect": "No mutation"
+    }
+  ],
+  "Summary": {
+    "Total": 15,
+    "Passed": 15,
+    "Failed": 0,
+    "Blocked": 0
+  },
+  "Harness": {
+    "ConsoleCounterIssue": "The initial console summary used a malformed Where-Object property expression and displayed 0/0.",
+    "Repair": "The filter was changed to script-block form; this artifact summary was recomputed from stored scenario Result fields.",
+    "ProductRequestsRepeated": false,
+    "ProductResultsAffected": false
+  }
+}

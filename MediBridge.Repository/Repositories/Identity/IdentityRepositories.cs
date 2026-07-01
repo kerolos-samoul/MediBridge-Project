@@ -209,6 +209,27 @@ public sealed class ProfileRepository : IProfileRepository
         return context.CompanyProfiles.FirstOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
     }
 
+    public Task<CompanyProfile?> FindCompanyProfileByIdAsync(string companyId, CancellationToken cancellationToken = default)
+    {
+        return context.CompanyProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(profile => profile.Id == companyId, cancellationToken);
+    }
+
+    public Task<CompanyProfile?> FindCompanyProfileByIdForUpdateAsync(
+        string companyId,
+        CancellationToken cancellationToken = default)
+    {
+        return context.CompanyProfiles
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [CompanyProfiles] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [Id] = {companyId}
+                    AND [IsDeleted] = CAST(0 AS bit)
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public Task<bool> CompanyLicenseExistsAsync(string licenseNumber, CancellationToken cancellationToken = default)
     {
         return context.CompanyProfiles.AnyAsync(profile => profile.LicenseNumber == licenseNumber, cancellationToken);

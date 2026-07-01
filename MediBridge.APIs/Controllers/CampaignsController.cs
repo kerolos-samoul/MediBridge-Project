@@ -110,6 +110,74 @@ public sealed class CampaignsController : ControllerBase
     }
 
     /// <summary>
+    /// Update content for an owned draft or revision-required campaign.
+    /// </summary>
+    [HttpPut("{campaignId}")]
+    [ProducesResponseType(typeof(ApiEnvelope<CampaignDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiEnvelope<CampaignDto>>> UpdateCampaign(
+        string campaignId,
+        [FromBody] UpdateCampaignRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var companyUserId = GetUserId();
+        if (string.IsNullOrWhiteSpace(companyUserId))
+        {
+            return Unauthorized(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status401Unauthorized, "Authentication denied.", null));
+        }
+
+        try
+        {
+            var campaign = await campaignWorkflowService.UpdateCampaignAsync(
+                companyUserId,
+                campaignId,
+                request,
+                cancellationToken);
+            return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", campaign));
+        }
+        catch (Exception exception) when (IsWorkflowException(exception))
+        {
+            return WorkflowActionResultMapper.ToActionResult(exception);
+        }
+    }
+
+    /// <summary>
+    /// Gets the public moderation outcome for an owned campaign without exposing internal review notes.
+    /// </summary>
+    [HttpGet("{campaignId}/review-outcome")]
+    [ProducesResponseType(typeof(ApiEnvelope<CompanyReviewOutcomeDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object?>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiEnvelope<CompanyReviewOutcomeDto>>> GetReviewOutcome(
+        string campaignId,
+        CancellationToken cancellationToken)
+    {
+        var companyUserId = GetUserId();
+        if (string.IsNullOrWhiteSpace(companyUserId))
+        {
+            return Unauthorized(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status401Unauthorized, "Authentication denied.", null));
+        }
+
+        try
+        {
+            var outcome = await campaignWorkflowService.GetReviewOutcomeAsync(
+                companyUserId,
+                campaignId,
+                cancellationToken);
+            return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", outcome));
+        }
+        catch (Exception exception) when (IsWorkflowException(exception))
+        {
+            return WorkflowActionResultMapper.ToActionResult(exception);
+        }
+    }
+
+    /// <summary>
     /// Upload campaign media for an owned draft campaign.
     /// </summary>
     [HttpPost("{campaignId}/assets")]
@@ -237,7 +305,7 @@ public sealed class CampaignsController : ControllerBase
     }
 
     /// <summary>
-    /// Submit campaign for admin review and reserve company funds.
+    /// Submit a draft or revision-required campaign for admin review after affordability validation.
     /// </summary>
     [HttpPost("{campaignId}/submit")]
     [ProducesResponseType(typeof(ApiEnvelope<CampaignSubmissionDto>), StatusCodes.Status200OK)]

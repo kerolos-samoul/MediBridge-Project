@@ -1,0 +1,1484 @@
+{
+  "generatedAtUtc": "2026-06-26T11:59:21.4793405Z",
+  "apiUrl": "http://localhost:5246",
+  "databaseTarget": "db54839.public.databaseasp.net/db54839 (from active configuration; credentials masked)",
+  "uploadProvider": "Cloudinary configured in Development; credentials masked",
+  "cloudinaryEnabled": true,
+  "appProcessId": 7208,
+  "swaggerPath": "D:\\My Project\\MediBridge Project\\MediBridge\\.build\\swagger-v1.json",
+  "users": {
+    "company": {
+      "email": "e2e.company.20260626-150048@example.com",
+      "password": "E2eTest123!",
+      "phoneNumber": "+2010026150048",
+      "userId": "87268c68a48d4f51ac3165334032a4d2",
+      "verification": {
+        "UserId": "87268c68a48d4f51ac3165334032a4d2",
+        "Role": "Company",
+        "AccountStatus": "Pending",
+        "VerificationRequired": true,
+        "VerificationChannel": "Email",
+        "MaskedVerificationDestination": "e***@example.com",
+        "VerificationExpiresAtUtc": "2026-06-26T12:10:49.3491671Z",
+        "VerificationDeliveryStatus": "Sent"
+      },
+      "accessTokenMasked": null,
+      "refreshTokenMasked": null,
+      "approval": null
+    },
+    "doctor": {
+      "email": "e2e.doctor.20260626-150048@example.com",
+      "password": "E2eTest123!",
+      "phoneNumber": "+2011026150048",
+      "userId": "6ef06b74897848719c0f1c13149c9130",
+      "verification": {
+        "UserId": "6ef06b74897848719c0f1c13149c9130",
+        "Role": "Doctor",
+        "AccountStatus": "Pending",
+        "VerificationRequired": true,
+        "VerificationChannel": "Email",
+        "MaskedVerificationDestination": "e***@example.com",
+        "VerificationExpiresAtUtc": "2026-06-26T12:10:52.6775082Z",
+        "VerificationDeliveryStatus": "Sent"
+      },
+      "accessTokenMasked": null,
+      "refreshTokenMasked": null,
+      "approval": {
+        "UserId": "6ef06b74897848719c0f1c13149c9130",
+        "ResultingAccountStatus": "Approved",
+        "ResubmissionToken": null
+      }
+    }
+  },
+  "ids": {
+    "doctorProfileId": "bdd3e4a3de8947fab7fc41ca9f4eba26",
+    "companyProfileId": "c57841fd446149689e0522acbfdf99e5",
+    "pricedDoctorId": "bdd3e4a3de8947fab7fc41ca9f4eba26",
+    "walletId": "a297ad3f20e24b369c49267234b35370",
+    "walletCompanyId": "c57841fd446149689e0522acbfdf99e5",
+    "paymentId": "0bce6abae6a64fcca8a298de5f2d24f6",
+    "topUpTransactionReference": "MOCK-316bdd876b6448a58e7c4e3a2db4bdb4",
+    "campaignId": "bf1613544425406f921cb930d5422507",
+    "eligibleDoctorCount": 2,
+    "estimatedTotalCost": 35.0,
+    "queueRows": [],
+    "queueSummary": {
+      "campaignId": "bf1613544425406f921cb930d5422507",
+      "queuedCount": 0,
+      "activatedCount": 0,
+      "cancelledCount": 0,
+      "expiredCount": 0,
+      "generatedAtUtc": "2026-06-26T12:12:45.3541473Z"
+    },
+    "resumeAssetId": "37275ab4d2cb45aabcf494be019f15af",
+    "resumeExtraAssetId": "18a3709002ed493dbba920909fb1701b",
+    "resumeReplacementAssetId": "06f0e116e76e491b95e43215fbabf665",
+    "resumeEligibleDoctorCount": 2,
+    "resumeEstimatedTotalCost": 35.0,
+    "resumeSubmittedTargetCount": 2,
+    "resumeReservedAmount": 35.0,
+    "resumeQueuedCount": 2,
+    "resumeQueueRows": [
+      {
+        "queueId": "541f0726096e427981d444de8a03c9a5",
+        "campaignId": "bf1613544425406f921cb930d5422507",
+        "doctorId": "5b2f73f190774dbab4e83987b635f704",
+        "status": "Queued",
+        "queuedAtUtc": "2026-06-26T17:27:48.8251002"
+      },
+      {
+        "queueId": "713f9c64c24841fc95bfae7f6cee08aa",
+        "campaignId": "bf1613544425406f921cb930d5422507",
+        "doctorId": "bdd3e4a3de8947fab7fc41ca9f4eba26",
+        "status": "Queued",
+        "queuedAtUtc": "2026-06-26T17:27:48.8251002"
+      }
+    ],
+    "resumeQueueSummary": {
+      "campaignId": "bf1613544425406f921cb930d5422507",
+      "queuedCount": 2,
+      "activatedCount": 0,
+      "cancelledCount": 0,
+      "expiredCount": 0,
+      "generatedAtUtc": "2026-06-26T17:27:52.654225Z"
+    }
+  },
+  "idempotencyKeys": {
+    "walletTopUp": "e2e-topup-20260626151231",
+    "campaignSubmit": "e2e-submit-20260626151241",
+    "campaignReview": "e2e-review-20260626151243",
+    "resumeCampaignSubmit": "e2e-resume-submit-20260626202747",
+    "resumeCampaignReview": "e2e-resume-review-20260626202750"
+  },
+  "tokens": {
+    "adminAccessTokenMasked": "eyJhbGci...5t7QgUQ4",
+    "adminRefreshTokenMasked": "j1IA5xKO...-Hs_EcCA",
+    "companyAccessTokenMasked": "eyJhbGci...3g8IzPAI",
+    "doctorAccessTokenMasked": "eyJhbGci...inwHSN5U",
+    "companyRefreshTokenMasked": "cdzFOusr...yBYGwCqg",
+    "companyRotatedAccessTokenMasked": "eyJhbGci...3aG4VYIM",
+    "companyRotatedRefreshTokenMasked": "0z1Um5FL...w3BZB49g",
+    "resumeAdminAccessTokenMasked": "eyJhbGci...o8NzY61A",
+    "resumeCompanyAccessTokenMasked": "eyJhbGci...xOyKn0og",
+    "resumeDoctorAccessTokenMasked": "eyJhbGci...1sRSZXG8"
+  },
+  "scenarios": [
+    {
+      "name": "Swagger OpenAPI reachable",
+      "method": "GET",
+      "endpoint": "/swagger/v1/swagger.json",
+      "authorization": "Anonymous",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": null,
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Swagger UI reachable",
+      "method": "GET",
+      "endpoint": "/swagger/index.html",
+      "authorization": "Anonymous",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": null,
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Anonymous weather forecast",
+      "method": "GET",
+      "endpoint": "/WeatherForecast",
+      "authorization": "Anonymous",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Anonymous denied from admin pending accounts",
+      "method": "GET",
+      "endpoint": "/api/admin/pending-accounts",
+      "authorization": "Anonymous",
+      "requestSummary": null,
+      "status": 401,
+      "pass": true,
+      "responseMessage": "Response status code does not indicate success: 401 (Unauthorized).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Admin login success",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"admin@medibridge.local\",\r\n  \"Password\": \"Admin123!\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Invalid login rejected",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"admin@medibridge.local\",\r\n  \"Password\": \"Wrong123!\"\r\n}",
+      "status": 401,
+      "pass": true,
+      "responseMessage": "Response status code does not indicate success: 401 (Unauthorized).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Invalid refresh rejected",
+      "method": "POST",
+      "endpoint": "/api/auth/refresh",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"RefreshToken\": \"not-a-real-refresh-token\"\r\n}",
+      "status": 401,
+      "pass": true,
+      "responseMessage": "Response status code does not indicate success: 401 (Unauthorized).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Admin pending accounts authorized",
+      "method": "GET",
+      "endpoint": "/api/admin/pending-accounts?pageNumber=1&pageSize=10",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Register company unique",
+      "method": "POST",
+      "endpoint": "/api/auth/register-company",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Email\": \"e2e.company.20260626-145921@example.com\",\r\n  \"Password\": \"E2eTest123!\",\r\n  \"PhoneNumber\": \"+20100626145921\",\r\n  \"CompanyName\": \"E2E Pharma 20260626-145921\",\r\n  \"LicenseNumber\": \"LIC-20260626-145921\",\r\n  \"ContactName\": \"E2E Contact\",\r\n  \"VerificationMetadata\": {\r\n    \"IpAddress\": \"127.0.0.1\",\r\n    \"UserAgent\": \"Codex real HTTP e2e smoke\"\r\n  }\r\n}",
+      "status": 400,
+      "pass": false,
+      "responseMessage": "Response status code does not indicate success: 400 (Bad Request).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Duplicate company registration rejected",
+      "method": "POST",
+      "endpoint": "/api/auth/register-company",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Email\": \"e2e.company.20260626-145921@example.com\",\r\n  \"Password\": \"E2eTest123!\",\r\n  \"PhoneNumber\": \"+20100626145921\",\r\n  \"CompanyName\": \"E2E Pharma 20260626-145921\",\r\n  \"LicenseNumber\": \"LIC-20260626-145921\",\r\n  \"ContactName\": \"E2E Contact\",\r\n  \"VerificationMetadata\": {\r\n    \"IpAddress\": \"127.0.0.1\",\r\n    \"UserAgent\": \"Codex real HTTP e2e smoke\"\r\n  }\r\n}",
+      "status": 400,
+      "pass": false,
+      "responseMessage": "Response status code does not indicate success: 400 (Bad Request).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Register doctor unique",
+      "method": "POST",
+      "endpoint": "/api/auth/register-doctor",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Email\": \"e2e.doctor.20260626-145921@example.com\",\r\n  \"Password\": \"E2eTest123!\",\r\n  \"PhoneNumber\": \"+20110626145921\",\r\n  \"Specialization\": \"Cardiology\",\r\n  \"ExperienceYears\": 7,\r\n  \"Location\": \"Cairo\",\r\n  \"VerificationMetadata\": {\r\n    \"IpAddress\": \"127.0.0.1\",\r\n    \"UserAgent\": \"Codex real HTTP e2e smoke\"\r\n  }\r\n}",
+      "status": 400,
+      "pass": false,
+      "responseMessage": "Response status code does not indicate success: 400 (Bad Request).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Validation failure register company missing required fields",
+      "method": "POST",
+      "endpoint": "/api/auth/register-company",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Email\": \"bad\",\r\n  \"Password\": \"short\"\r\n}",
+      "status": 400,
+      "pass": true,
+      "responseMessage": "Response status code does not indicate success: 400 (Bad Request).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Admin pending accounts after registrations",
+      "method": "GET",
+      "endpoint": "/api/admin/pending-accounts?pageNumber=1&pageSize=50",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Generated company login before verification/approval denied",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.company.20260626-145921@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "status": 401,
+      "pass": false,
+      "responseMessage": "Response status code does not indicate success: 401 (Unauthorized).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "name": "Generated doctor login before verification/approval denied",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.doctor.20260626-145921@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "status": 401,
+      "pass": false,
+      "responseMessage": "Response status code does not indicate success: 401 (Unauthorized).",
+      "importantDatabaseEffect": null
+    },
+    {
+      "requestSummary": "{\r\n  \"Username\": \"admin@medibridge.local\",\r\n  \"Password\": \"Admin123!\"\r\n}",
+      "responseMessage": "Success",
+      "pass": true,
+      "importantDatabaseEffect": null,
+      "authorization": "Anonymous",
+      "name": "Admin login success for continuation",
+      "method": "POST",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OWI1ZWI2MC1iMzY4LTQ1ZjUtYTUzMi1mYTk2ZjIzYjZmYTIiLCJlbWFpbCI6ImFkbWluQG1lZGlicmlkZ2UubG9jYWwiLCJuYW1lIjoiYWRtaW5AbWVkaWJyaWRnZS5sb2NhbCIsInJvbGUiOiJBZG1pbiIsImlzcyI6Ik1lZGlCcmlkZ2UiLCJhdWQiOiJNZWRpQnJpZGdlLkFwaUNsaWVudHMiLCJpYXQiOjE3ODI0NzUyNDgsIm5iZiI6MTc4MjQ3NTI0OCwiZXhwIjoxNzgyNDc4ODQ4LCJqdGkiOiJlMDZhODkzMWQxYjI0OTcwOWFjNGYwZTVhMjlhNDNkMiJ9.C7EYzDz2scDcdGalrqxSZwrAq1rOlkcjmnx6OEIG20Q\",\r\n    \"RefreshToken\": \"FPP0y6PrJNUK3GQ2g8CZiAzh5iVU0o92yGfMOj2ssQhd-RxbK0prZh9AAOez5Xsd7U9N-KwAHB0BesShMUCdqw\",\r\n    \"Role\": \"Admin\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:00:48.3091041Z\"\r\n  }\r\n}",
+      "status": 200,
+      "endpoint": "/api/auth/login"
+    },
+    {
+      "requestSummary": "{\r\n  \"Email\": \"e2e.company.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\",\r\n  \"PhoneNumber\": \"+2010026150048\",\r\n  \"CompanyName\": \"E2E Pharma 20260626-150048\",\r\n  \"LicenseNumber\": \"LIC-20260626-150048\",\r\n  \"ContactName\": \"E2E Contact\",\r\n  \"VerificationMetadata\": {\r\n    \"DocumentType\": \"CompanyLicense\",\r\n    \"OriginalFileName\": \"company-license-20260626-150048.pdf\",\r\n    \"ContentType\": \"application/pdf\",\r\n    \"SizeBytes\": 2048,\r\n    \"Reference\": \"e2e-company-license-20260626-150048\"\r\n  }\r\n}",
+      "responseMessage": "Success",
+      "pass": true,
+      "importantDatabaseEffect": "Created company user 87268c68a48d4f51ac3165334032a4d2 with status Pending",
+      "authorization": "Anonymous",
+      "name": "Register company unique with verification metadata",
+      "method": "POST",
+      "responseBodyPreview": "{\r\n  \"Code\": 201,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"UserId\": \"87268c68a48d4f51ac3165334032a4d2\",\r\n    \"Role\": \"Company\",\r\n    \"AccountStatus\": \"Pending\",\r\n    \"VerificationRequired\": true,\r\n    \"VerificationChannel\": \"Email\",\r\n    \"MaskedVerificationDestination\": \"e***@example.com\",\r\n    \"VerificationExpiresAtUtc\": \"2026-06-26T12:10:49.3491671Z\",\r\n    \"VerificationDeliveryStatus\": \"Sent\"\r\n  }\r\n}",
+      "status": 201,
+      "endpoint": "/api/auth/register-company"
+    },
+    {
+      "requestSummary": "{\r\n  \"Email\": \"e2e.company.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\",\r\n  \"PhoneNumber\": \"+2010026150048\",\r\n  \"CompanyName\": \"E2E Pharma 20260626-150048\",\r\n  \"LicenseNumber\": \"LIC-20260626-150048\",\r\n  \"ContactName\": \"E2E Contact\",\r\n  \"VerificationMetadata\": {\r\n    \"DocumentType\": \"CompanyLicense\",\r\n    \"OriginalFileName\": \"company-license-20260626-150048.pdf\",\r\n    \"ContentType\": \"application/pdf\",\r\n    \"SizeBytes\": 2048,\r\n    \"Reference\": \"e2e-company-license-20260626-150048\"\r\n  }\r\n}",
+      "responseMessage": "Duplicate email, phone, or license.",
+      "pass": true,
+      "importantDatabaseEffect": null,
+      "authorization": "Anonymous",
+      "name": "Duplicate company registration rejected after successful create",
+      "method": "POST",
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Duplicate email, phone, or license.\",\r\n  \"Data\": null\r\n}",
+      "status": 409,
+      "endpoint": "/api/auth/register-company"
+    },
+    {
+      "requestSummary": "{\r\n  \"Email\": \"e2e.doctor.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\",\r\n  \"PhoneNumber\": \"+2011026150048\",\r\n  \"Specialization\": \"Cardiology\",\r\n  \"ExperienceYears\": 7,\r\n  \"Location\": \"Cairo\",\r\n  \"VerificationMetadata\": {\r\n    \"DocumentType\": \"MedicalLicense\",\r\n    \"OriginalFileName\": \"doctor-license-20260626-150048.pdf\",\r\n    \"ContentType\": \"application/pdf\",\r\n    \"SizeBytes\": 2048,\r\n    \"Reference\": \"e2e-doctor-license-20260626-150048\"\r\n  }\r\n}",
+      "responseMessage": "Success",
+      "pass": true,
+      "importantDatabaseEffect": "Created doctor user 6ef06b74897848719c0f1c13149c9130 with status Pending",
+      "authorization": "Anonymous",
+      "name": "Register doctor unique with verification metadata",
+      "method": "POST",
+      "responseBodyPreview": "{\r\n  \"Code\": 201,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"UserId\": \"6ef06b74897848719c0f1c13149c9130\",\r\n    \"Role\": \"Doctor\",\r\n    \"AccountStatus\": \"Pending\",\r\n    \"VerificationRequired\": true,\r\n    \"VerificationChannel\": \"Email\",\r\n    \"MaskedVerificationDestination\": \"e***@example.com\",\r\n    \"VerificationExpiresAtUtc\": \"2026-06-26T12:10:52.6775082Z\",\r\n    \"VerificationDeliveryStatus\": \"Sent\"\r\n  }\r\n}",
+      "status": 201,
+      "endpoint": "/api/auth/register-doctor"
+    },
+    {
+      "requestSummary": null,
+      "responseMessage": "Success",
+      "pass": true,
+      "importantDatabaseEffect": null,
+      "authorization": "Bearer",
+      "name": "Admin pending accounts include new users",
+      "method": "GET",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"Items\": [\r\n      {\r\n        \"UserId\": \"6ef06b74897848719c0f1c13149c9130\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-26T12:00:52.6775082\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"MedicalLicense\",\r\n          \"OriginalFileName\": \"doctor-license-20260626-150048.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e-doctor-license-20260626-150048\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"87268c68a48d4f51ac3165334032a4d2\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-26T12:00:49.3491671\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"CompanyLicense\",\r\n          \"OriginalFileName\": \"company-license-20260626-150048.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e-company-license-20260626-150048\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"b0bf13532edf4435bf4dbdf6f33dd6aa\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-12T08:13:57.4022236\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"MedicalLicense\",\r\n          \"OriginalFileName\": \"resubmitted-license.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 1600,\r\n          \"Reference\": \"manual-smoke-resubmitted-license\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"041c177e9ed149d98b4059f21b3d01ce\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-12T07:54:20.9217858\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"MedicalLicense\",\r\n          \"OriginalFileName\": \"Mona_Pediatrics_License.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 510000,\r\n          \"Reference\": \"DOC-GIZA-001\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"5eb4c1f0ae964f049c3ee0270008399c\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-12T06:45:35.3996539\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"MedicalLicense\",\r\n          \"OriginalFileName\": \"Ahmed_Cardiology_License.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 520000,\r\n          \"Reference\": \"DOC-CAIRO-001\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"dc4a0a88f1844d3598026201a65a44c0\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-09T15:28:25.790258\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"MedicalLicense\",\r\n          \"OriginalFileName\": \"Omar_Cardiology_License.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 520000,\r\n          \"Reference\": \"DOC-CAIRO-001\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"166e536e74314dfa9a863704683213dc\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:39:58.6242361\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550227.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550227.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"51459d068378450285c6434b77453fdd\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:39:56.5844523\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550225.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550225.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"30de11d972654d919cff5985d56e733c\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:39:12.9826731\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550207.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550207.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"9babb18c963c45ef898a08cfb1142f76\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:39:10.9344463\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550204.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550204.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"a4bc0246e64c441d903177dd98a39a77\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:39:07.754039\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550200.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550200.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"fe6c920350e14e099921c3fbecd64cad\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:52.2968724\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550196.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550196.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"ec75d1f4af59475d84400f42e72e43ae\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:34.3855721\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550188.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550188.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"285191f66b6f4a08b7fe22930de5d64f\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:32.4031211\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550186.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550186.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"3c4f3e9931d449ec85295ce1cfc2efaf\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:30.4745961\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550184.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550184.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"24ac9be6a8274911bc16807e93e13c00\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:27.4717468\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550182.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550182.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"5f6ac7a672084e959dcc6418a0cfbfac\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:13.1366392\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550180.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550180.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"d195c84051c54710ac77130eecee81f7\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:11.2581731\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550178.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550178.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"33631e5eb5f94f20abadc4d6d5091183\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:09.412818\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550176.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550176.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"35a710a747474182a3f71766159531d9\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:38:06.5226168\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550174.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550174.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"c02cf0090abf4c4d8fa3cdfaa89d4612\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:36:05.6146534\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550140.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550140.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"027a360d253841059176f059e0984abc\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:36:03.6020175\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550139.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550139.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"c1fede70e2584879ba75cef54de9d46f\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:36:02.5432248\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550138.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550138.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"672404123ec84ee1b7ea4f65ab66c634\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:36:00.4058374\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550137.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550137.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"c171afa119a540148d5bd5b34982856b\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:58.6420433\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550136.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550136.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"09cba966f8d344faa1508ed2fa4c520d\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:44.4133519\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550135.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550135.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"e8c8dea095424409847a9d5f6637d573\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:43.2414557\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550134.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550134.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"1cb62d3e7b054ede9df354117b3d0bf7\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:42.0651503\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550133.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550133.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"e5a54d9ebab94ea2ac9cb3c09cb5dd1d\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:40.1762301\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550130.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550130.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"d821257f11204d779bc5a8e112741c75\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:37.7782676\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550125.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550125.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"a42f0eb9a12048668d075f5a362af7aa\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:24.0973399\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550124.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550124.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"943f70dffa4842c0818a39929e84c9d7\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:21.8742549\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550121.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550121.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"146cad2e3651466e88bf4b9cad84185b\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:35:20.6170561\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550120.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550120.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"7271651435e847aa8ec9ea83bf9c1113\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:31:49.8576145\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550090.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550090.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"6a8cecf52cfc469cae57c3591c312246\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:31:26.9465008\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550084.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550084.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"236851c400bd4fc3bb09aa2eb1c6075d\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:30:24.3849813\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550073.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550073.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"5e6b0bed195a46449dd086ed32a20682\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:30:23.3591771\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550071.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550071.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"d3bd9e4f0e6143d786875df5a18cfa68\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:30:22.1898841\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550069.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550069.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"8a0e0b3a4ac5471cb2e84e913b3d80cc\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:30:09.1360592\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550067.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550067.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"a255cf8f4b4646acb7c92f7a658073e0\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:30:08.0069026\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550060.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550060.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"5c31529fe6184778896fe28850c779d4\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:55.1228619\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550059.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550059.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"8dfe361e751543c291fead81472a3682\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:54.3261175\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550058.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550058.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"bd1b4430355548239dc332100fe962b0\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:53.4036313\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550055.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550055.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"94e03a7c32c84562abe3392849e1b230\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:52.3435297\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550053.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 1,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550053.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"6e15e211d69042dba5987a0c1e29938a\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:39.3006894\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550051.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550051.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"a43d1284a91c40a498bbc0df9b09d87b\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:38.5750057\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550049.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550049.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"ad7c2731d52a481989031e0e19f6c69d\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:37.7394348\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550047.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550047.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"c003dc34e6d24d469c4137e7f51d49b3\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:23.5025968\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550042.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550042.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"5e8043c01d4445d99773e5bbaf42b928\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:22.6567788\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550040.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550040.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"1cb0157b106c4d2c815e723acc3c1445\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:21.7517817\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550038.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550038.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"bcbaaa90aa5d4f18a3985bc1bc0deb28\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:20.7099399\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550036.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550036.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"cbe06ac673ac424b8d4ab387e94a0427\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:08.2876362\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550033.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550033.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"e01ab8c8bcf44f9daed966e1c3a58fa8\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:07.5688697\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550032.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 1,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550032.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"03612f7d2bcc4afe8fbcf561e4cb849f\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:06.8904628\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550031.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550031.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"41517231b2604cf4bba6b69655a97605\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:06.1990869\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550030.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550030.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"8a7c5d6f623e429b88d16f6d58b85f1b\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:29:05.2134132\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550027.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550027.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"aa9febde7b6a4137be27b05a84aadc21\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:28:42.5105831\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550012.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550012.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"dc88ef0c3a8b4a2e9951e09de5d8848e\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:28:26.8889517\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550006.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550006.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"fe33863718d94d429820f83d2563f9b2\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:28:26.2060564\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550005.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550005.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"aaa74f9e86074ba6a2f0b6ae20557ce2\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:28:25.5254626\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550004.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550004.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"a8a6c742afa3438caa6e9b601e2b74ee\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:28:24.8548248\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550003.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550003.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"b18fc8047c6e4e0caebe66113dc3d4cd\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:28:24.167974\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550002.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550002.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"60dd4c3dd8ff4125843a79e50877c19c\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:28:23.3142259\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050228116550001.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605022811655/e2e202606050228116550001.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"2c276ed691c3444bbbd7fb24e318b362\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:26:27.9419955\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830229.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830229.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"4d6d097edf9f4b0fb73cf5bd1d0078e6\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:26:25.8285165\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830227.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830227.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"ee4b2f1a6d7e4fac9cda09e195adbeef\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:42.6499408\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830209.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830209.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"1e72422328ec4fdbac102ebea7ac1af6\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:41.8456869\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830207.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830207.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"c27804a5ce6f4aeb87c5cc8e2cd24201\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:39.7274875\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830204.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830204.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"1ab631d03dba4f41ae7457ea02dfccc6\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:36.4839169\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830200.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830200.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"f31ec4e1824949b5a62ea1caa32162d3\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:21.0500993\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830196.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830196.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"607f79c6d62e4a6d8dc0262344a10522\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:04.3465539\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830188.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830188.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"ce2905ae9e7942ec98165ebf898a443c\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:02.3970683\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830186.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830186.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"4dbb6f8e25a447f6bfa84f8211cc90c2\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:25:00.547107\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830184.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830184.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"bb12c3515a8c46028e6a74f91ecc89c0\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:24:57.5894686\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830182.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830182.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"8ab6d90726f349b7b7283555edf18b28\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:24:43.4662121\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830180.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830180.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"8cf1369e5e454b7aa27dce2ece7d6c70\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:24:41.5249367\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830178.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830178.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"7e810469e4a441e08727535fb64c7aa4\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:24:39.5071808\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830176.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830176.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"361e27a169ba481095c550a29dedbe72\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:24:36.3644661\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830174.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830174.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"cb00b42300a147749636eab65be213cd\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:36.0586881\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830140.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830140.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"726d7c62a2bb46a0bdd5ce5b4772e561\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:33.902342\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830139.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830139.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"b4f27bcc968a46bdae847369f98e12a0\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:32.7367277\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830138.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830138.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"497caf15c00c4abea5eaf5e6dca04bbd\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:30.3960869\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830137.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830137.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"9e796f56689449e88484e29a4e620a05\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:28.2206344\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830136.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830136.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"e0b0b04a22b74c53be67901ac20b032d\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:14.2295751\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830135.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830135.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"5d3b541a618b49c4a958b2c623c348a2\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:13.0451525\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830134.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830134.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"ad7a3144d7814954a54c34126892aafd\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:11.8336109\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830133.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830133.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"53882c5dcfdd47c4ba57ae36213eb491\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:09.7863304\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830130.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830130.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"465d31409bb24de7b1a897e823338606\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:22:07.3394355\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830125.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830125.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"7ad3bcd0b7a24b3c8b29f8937e046c1e\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:21:53.7492522\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830124.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830124.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"4c322bab11a1429d9b1d4f19cda02465\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:21:51.5249211\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830121.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830121.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"868b12035e3a4dcfb8c77077539501ea\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:21:50.2759873\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830120.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830120.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"f0b2cc9a14a9459e9182a43ed2471774\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:18:19.8523565\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830090.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830090.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"cf0d54430c04464fbe9ddf054c591392\",\r\n        \"Role\": \"Doctor\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:17:57.3181198\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830084.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830084.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"3ab45ac35eb74c3baf888bfa66b3e82c\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:16:55.466203\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830073.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830073.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"c03eebf5da6345a1ae9097c6bfa31300\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:16:54.4019163\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830071.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830071.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"d97f7fb3c19541f1948bb804ca6a67a2\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:16:53.1688463\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830069.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830069.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"5b848620eb85482a8a5565462ae588fc\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:16:39.9196055\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830067.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830067.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"cabdd6e72e66406a9041dddedbf21e22\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:16:38.7842536\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830060.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830060.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"ef00a04c865e43969afb9f1f9f49362c\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:16:25.9760079\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830059.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830059.pdf\"\r\n        }\r\n      },\r\n      {\r\n        \"UserId\": \"1a56b1fe4a1044b083d05b24a69df176\",\r\n        \"Role\": \"Company\",\r\n        \"AccountStatus\": \"Pending\",\r\n        \"SubmittedAtUtc\": \"2026-06-05T02:16:25.1558197\",\r\n        \"VerificationMetadata\": {\r\n          \"DocumentType\": \"License\",\r\n          \"OriginalFileName\": \"e2e202606050214389830058.pdf\",\r\n          \"ContentType\": \"application/pdf\",\r\n          \"SizeBytes\": 2048,\r\n          \"Reference\": \"e2e/e2e20260605021438983/e2e202606050214389830058.pdf\"\r\n        }\r\n      }\r\n    ],\r\n    \"PageNumber\": 1,\r\n    \"PageSize\": 100,\r\n    \"TotalCount\": 190\r\n  }\r\n}",
+      "status": 200,
+      "endpoint": "/api/admin/pending-accounts?pageNumber=1&pageSize=100"
+    },
+    {
+      "requestSummary": "{\r\n  \"Contact\": \"e2e.company.20260626-150048@example.com\",\r\n  \"Channel\": \"Email\",\r\n  \"VerificationToken\": \"747227\"\r\n}",
+      "authorization": "Anonymous",
+      "pass": true,
+      "status": 200,
+      "endpoint": "/api/auth/verify-contact",
+      "name": "Verify generated company email OTP",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": null\r\n}",
+      "importantDatabaseEffect": null,
+      "method": "POST",
+      "responseMessage": "Success"
+    },
+    {
+      "requestSummary": "{\r\n  \"Contact\": \"e2e.doctor.20260626-150048@example.com\",\r\n  \"Channel\": \"Email\",\r\n  \"VerificationToken\": \"577832\"\r\n}",
+      "authorization": "Anonymous",
+      "pass": true,
+      "status": 200,
+      "endpoint": "/api/auth/verify-contact",
+      "name": "Verify generated doctor email OTP",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": null\r\n}",
+      "importantDatabaseEffect": null,
+      "method": "POST",
+      "responseMessage": "Success"
+    },
+    {
+      "requestSummary": "{\r\n  \"Username\": \"admin@medibridge.local\",\r\n  \"Password\": \"Admin123!\"\r\n}",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OWI1ZWI2MC1iMzY4LTQ1ZjUtYTUzMi1mYTk2ZjIzYjZmYTIiLCJlbWFpbCI6ImFkbWluQG1lZGlicmlkZ2UubG9jYWwiLCJuYW1lIjoiYWRtaW5AbWVkaWJyaWRnZS5sb2NhbCIsInJvbGUiOiJBZG1pbiIsImlzcyI6Ik1lZGlCcmlkZ2UiLCJhdWQiOiJNZWRpQnJpZGdlLkFwaUNsaWVudHMiLCJpYXQiOjE3ODI0NzU1NDAsIm5iZiI6MTc4MjQ3NTU0MCwiZXhwIjoxNzgyNDc5MTQwLCJqdGkiOiJkNGY3MWNjNTJmMWU0OWEzYjY5YTNjOTkxYWYzYTA3MCJ9.3JB0im7RttXeiSYUWsZ52YQXu7GK8r58_72-IDp7RIU\",\r\n    \"RefreshToken\": \"Qw6zPMhyN3mNrwmktdLWO8-vhLqy7xrvVXh1TmSkvnpEaJVKW5Mw4a9_NMhPtQvdLIsBgiNHFFoKVujobuIaXw\",\r\n    \"Role\": \"Admin\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:05:40.3012998Z\"\r\n  }\r\n}",
+      "importantDatabaseEffect": null,
+      "responseMessage": "Success",
+      "method": "POST",
+      "authorization": "Anonymous",
+      "name": "Admin login for approval workflow",
+      "pass": true,
+      "endpoint": "/api/auth/login",
+      "status": 200
+    },
+    {
+      "requestSummary": "{\r\n  \"Decision\": \"Approve\",\r\n  \"Reason\": \"E2E smoke approved verified account\",\r\n  \"Notes\": \"Codex real HTTP smoke\"\r\n}",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"UserId\": \"87268c68a48d4f51ac3165334032a4d2\",\r\n    \"ResultingAccountStatus\": \"Approved\",\r\n    \"ResubmissionToken\": null\r\n  }\r\n}",
+      "importantDatabaseEffect": null,
+      "responseMessage": "Success",
+      "method": "PUT",
+      "authorization": "Bearer",
+      "name": "Admin approves generated company account",
+      "pass": true,
+      "endpoint": "/api/admin/accounts/87268c68a48d4f51ac3165334032a4d2/decision",
+      "status": 200
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "requestSummary": "{\r\n  \"Username\": \"admin@medibridge.local\",\r\n  \"Password\": \"Admin123!\"\r\n}",
+      "name": "Admin login for continuing approval workflow",
+      "importantDatabaseEffect": null,
+      "responseMessage": "Success",
+      "authorization": "Anonymous",
+      "status": 200,
+      "method": "POST",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OWI1ZWI2MC1iMzY4LTQ1ZjUtYTUzMi1mYTk2ZjIzYjZmYTIiLCJlbWFpbCI6ImFkbWluQG1lZGlicmlkZ2UubG9jYWwiLCJuYW1lIjoiYWRtaW5AbWVkaWJyaWRnZS5sb2NhbCIsInJvbGUiOiJBZG1pbiIsImlzcyI6Ik1lZGlCcmlkZ2UiLCJhdWQiOiJNZWRpQnJpZGdlLkFwaUNsaWVudHMiLCJpYXQiOjE3ODI0NzU1ODMsIm5iZiI6MTc4MjQ3NTU4MywiZXhwIjoxNzgyNDc5MTgzLCJqdGkiOiIyNTFhMDI2YmZmMjU0YzcxOTk0NjZmYWQ1Y2RhZDhjMSJ9.GYaqrKgcKFsPshB3VCshHxbTFh-2hiIXmiZbdoxspjQ\",\r\n    \"RefreshToken\": \"j1IA5xKObxqW448Oio0ZhBzg7Kpl58viZZb0JuiYPCBTg7eKw1QHFyA0XbvEL7is0mfzO7O6zF2SmQ-Hs_EcCA\",\r\n    \"Role\": \"Admin\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:06:23.398641Z\"\r\n  }\r\n}",
+      "pass": true
+    },
+    {
+      "endpoint": "/api/admin/accounts/6ef06b74897848719c0f1c13149c9130/decision",
+      "requestSummary": "{\r\n  \"Decision\": \"Approve\",\r\n  \"Reason\": \"E2E smoke approved verified account\",\r\n  \"Notes\": \"Codex real HTTP smoke\"\r\n}",
+      "name": "Admin approves generated doctor account",
+      "importantDatabaseEffect": "Doctor account 6ef06b74897848719c0f1c13149c9130 approved",
+      "responseMessage": "Success",
+      "authorization": "Bearer",
+      "status": 200,
+      "method": "PUT",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"UserId\": \"6ef06b74897848719c0f1c13149c9130\",\r\n    \"ResultingAccountStatus\": \"Approved\",\r\n    \"ResubmissionToken\": null\r\n  }\r\n}",
+      "pass": true
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.company.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "name": "Generated company login after approval",
+      "importantDatabaseEffect": null,
+      "responseMessage": "Success",
+      "authorization": "Anonymous",
+      "status": 200,
+      "method": "POST",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NzI2OGM2OGE0OGQ0ZjUxYWMzMTY1MzM0MDMyYTRkMiIsImVtYWlsIjoiZTJlLmNvbXBhbnkuMjAyNjA2MjYtMTUwMDQ4QGV4YW1wbGUuY29tIiwibmFtZSI6ImUyZS5jb21wYW55LjIwMjYwNjI2LTE1MDA0OEBleGFtcGxlLmNvbSIsInJvbGUiOiJDb21wYW55IiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MjQ3NTU4NSwibmJmIjoxNzgyNDc1NTg1LCJleHAiOjE3ODI0NzkxODUsImp0aSI6ImRjMzQ0OTgyMmUyYTQwOGQ5NTk0ZmIwMmQ1ZjIxYzg1In0.Dj3HAEIUs8b39B78gZcJXmMPKwk5yTGvNa1t3--P-Os\",\r\n    \"RefreshToken\": \"491bsyknjjWBBsaV_lodOHXOLUATp3sR2bOg-kEa4ONZQVfGGqBD3DnG5fWxOpXgdRv9jJ_k9UaQmraRVLqW3g\",\r\n    \"Role\": \"Company\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:06:24.675634Z\"\r\n  }\r\n}",
+      "pass": true
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.doctor.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "name": "Generated doctor login after approval",
+      "importantDatabaseEffect": null,
+      "responseMessage": "Success",
+      "authorization": "Anonymous",
+      "status": 200,
+      "method": "POST",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ZWYwNmI3NDg5Nzg0ODcxOWMwZjFjMTMxNDljOTEzMCIsImVtYWlsIjoiZTJlLmRvY3Rvci4yMDI2MDYyNi0xNTAwNDhAZXhhbXBsZS5jb20iLCJuYW1lIjoiZTJlLmRvY3Rvci4yMDI2MDYyNi0xNTAwNDhAZXhhbXBsZS5jb20iLCJyb2xlIjoiRG9jdG9yIiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MjQ3NTU4NSwibmJmIjoxNzgyNDc1NTg1LCJleHAiOjE3ODI0NzkxODUsImp0aSI6ImFkOTgwMTUyMDQzOTQ5OTZhNjE2ODMyZGVlMDljYzVjIn0.jSDgSELEH1u--Z_dXpLlTanhgDmJs191X-dZClQhKXw\",\r\n    \"RefreshToken\": \"BJnkHCGmhyYRTD4ZOF0gYc01mhXcjHPHBfGQciKDXs9EDK2bC6CavcV-LPbB_DA9cWsf64x15Y-VxK9TKmPONA\",\r\n    \"Role\": \"Doctor\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:06:25.257717Z\"\r\n  }\r\n}",
+      "pass": true
+    },
+    {
+      "name": "Admin login for wallet/campaign workflow",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"admin@medibridge.local\",\r\n  \"Password\": \"Admin123!\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OWI1ZWI2MC1iMzY4LTQ1ZjUtYTUzMi1mYTk2ZjIzYjZmYTIiLCJlbWFpbCI6ImFkbWluQG1lZGlicmlkZ2UubG9jYWwiLCJuYW1lIjoiYWRtaW5AbWVkaWJyaWRnZS5sb2NhbCIsInJvbGUiOiJBZG1pbiIsImlzcyI6Ik1lZGlCcmlkZ2UiLCJhdWQiOiJNZWRpQnJpZGdlLkFwaUNsaWVudHMiLCJpYXQiOjE3ODI0NzU5NDgsIm5iZiI6MTc4MjQ3NTk0OCwiZXhwIjoxNzgyNDc5NTQ4LCJqdGkiOiJiM2NkNmQ4OTgxNDM0ZDdjOGNlOTdlMWEzNjhlM2VkMyJ9.KHiJGY_dJgN4shMZO5JL62_FWm2tkThj1zv5t7QgUQ4\",\r\n    \"RefreshToken\": \"ki-ySMrU0Zq0IpXhQh4pZJxXLeS49gCKkIxFaXvj1YU7KDuCBrGux-10nsn_hw7ZZg_xfFTpk_pF7ry6KqhLLg\",\r\n    \"Role\": \"Admin\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:12:28.0344548Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Generated company login for wallet/campaign workflow",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.company.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NzI2OGM2OGE0OGQ0ZjUxYWMzMTY1MzM0MDMyYTRkMiIsImVtYWlsIjoiZTJlLmNvbXBhbnkuMjAyNjA2MjYtMTUwMDQ4QGV4YW1wbGUuY29tIiwibmFtZSI6ImUyZS5jb21wYW55LjIwMjYwNjI2LTE1MDA0OEBleGFtcGxlLmNvbSIsInJvbGUiOiJDb21wYW55IiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MjQ3NTk0OSwibmJmIjoxNzgyNDc1OTQ5LCJleHAiOjE3ODI0Nzk1NDksImp0aSI6IjU1YWFiZDQ1OWU0NDQ3NDg4ODcwYzAxNmZkZWY2YTE0In0.YaK8naOdunA4lYBDoRJ-LmVR3Z5zlWo07TO3g8IzPAI\",\r\n    \"RefreshToken\": \"cdzFOusrc-54xsm06L3IG9N679YpjibZS6EOYLJTVp5rgxYSl-eP2sN52tjHqAhN5qVzpmamL3UXOCyBYGwCqg\",\r\n    \"Role\": \"Company\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:12:29.1179703Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Generated doctor login for authorization probes",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.doctor.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ZWYwNmI3NDg5Nzg0ODcxOWMwZjFjMTMxNDljOTEzMCIsImVtYWlsIjoiZTJlLmRvY3Rvci4yMDI2MDYyNi0xNTAwNDhAZXhhbXBsZS5jb20iLCJuYW1lIjoiZTJlLmRvY3Rvci4yMDI2MDYyNi0xNTAwNDhAZXhhbXBsZS5jb20iLCJyb2xlIjoiRG9jdG9yIiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MjQ3NTk1MCwibmJmIjoxNzgyNDc1OTUwLCJleHAiOjE3ODI0Nzk1NTAsImp0aSI6IjI3NGUyZTNmM2FmOTRmYmY4MjBjNjBkM2VhY2VhNWViIn0.T_Fv0aGs7Tp0NS8BHk4nAEHn5etRfcfjG65inwHSN5U\",\r\n    \"RefreshToken\": \"TSotS8hFSFEgQmcfKywC9EwYwzwBBj9yYsjVylVilSe_fNQ6V4XhS7YSNqJqpTfczcg--TA5aAzMnt9A_GnSpw\",\r\n    \"Role\": \"Doctor\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:12:29.6952804Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Anonymous denied from company wallet",
+      "method": "GET",
+      "endpoint": "/api/company/wallet",
+      "authorization": "Anonymous",
+      "requestSummary": null,
+      "status": 401,
+      "pass": true,
+      "responseMessage": "Unauthorized.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 401,\r\n  \"Message\": \"Unauthorized.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Doctor wrong-role denied from company wallet",
+      "method": "GET",
+      "endpoint": "/api/company/wallet",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 403,
+      "pass": true,
+      "responseMessage": "Forbidden.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 403,\r\n  \"Message\": \"Forbidden.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company wrong-role denied from admin pending accounts",
+      "method": "GET",
+      "endpoint": "/api/admin/pending-accounts",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 403,
+      "pass": true,
+      "responseMessage": "Forbidden.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 403,\r\n  \"Message\": \"Forbidden.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Anonymous denied from file access",
+      "method": "GET",
+      "endpoint": "/api/files/not-a-real-file",
+      "authorization": "Anonymous",
+      "requestSummary": null,
+      "status": 401,
+      "pass": true,
+      "responseMessage": "Unauthorized.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 401,\r\n  \"Message\": \"Unauthorized.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company wrong-role denied from setting doctor price",
+      "method": "PUT",
+      "endpoint": "/api/admin/doctors/bdd3e4a3de8947fab7fc41ca9f4eba26/price",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"PricePerMessage\": 10.0,\r\n  \"Reason\": \"wrong-role probe\"\r\n}",
+      "status": 403,
+      "pass": true,
+      "responseMessage": "Forbidden.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 403,\r\n  \"Message\": \"Forbidden.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Admin doctor price validation rejects negative price",
+      "method": "PUT",
+      "endpoint": "/api/admin/doctors/bdd3e4a3de8947fab7fc41ca9f4eba26/price",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"PricePerMessage\": -1,\r\n  \"Reason\": \"validation probe\"\r\n}",
+      "status": 400,
+      "pass": true,
+      "responseMessage": "Validation failed.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 400,\r\n  \"Message\": \"Validation failed.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Admin sets approved doctor price",
+      "method": "PUT",
+      "endpoint": "/api/admin/doctors/bdd3e4a3de8947fab7fc41ca9f4eba26/price",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"PricePerMessage\": 10.0,\r\n  \"Reason\": \"E2E campaign eligibility price\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": "Doctor profile bdd3e4a3de8947fab7fc41ca9f4eba26 price set to 10.00 EGP",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"doctorId\": \"bdd3e4a3de8947fab7fc41ca9f4eba26\",\r\n    \"pricePerMessage\": 10.0,\r\n    \"currency\": \"EGP\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Approved company gets wallet",
+      "method": "GET",
+      "endpoint": "/api/company/wallet",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": "Wallet a297ad3f20e24b369c49267234b35370 availableBalance=0",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"walletId\": \"a297ad3f20e24b369c49267234b35370\",\r\n    \"companyId\": \"c57841fd446149689e0522acbfdf99e5\",\r\n    \"availableBalance\": 0.0,\r\n    \"reservedBalance\": 0.0,\r\n    \"currency\": \"EGP\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Mock checkout missing idempotency key rejected",
+      "method": "POST",
+      "endpoint": "/api/company/wallet/mock-checkout",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"amount\": 50.0,\r\n  \"currency\": \"EGP\"\r\n}",
+      "status": 400,
+      "pass": true,
+      "responseMessage": "Validation failed.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 400,\r\n  \"Message\": \"Validation failed.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company mock wallet top-up succeeds",
+      "method": "POST",
+      "endpoint": "/api/company/wallet/mock-checkout",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"amount\": 1000.0,\r\n  \"currency\": \"EGP\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": "Wallet credited from 0 to 1000",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"paymentId\": \"0bce6abae6a64fcca8a298de5f2d24f6\",\r\n    \"companyId\": \"c57841fd446149689e0522acbfdf99e5\",\r\n    \"amount\": 1000.0,\r\n    \"status\": \"Succeeded\",\r\n    \"createdAtUtc\": \"2026-06-26T12:12:32.0318843Z\",\r\n    \"transactionReference\": \"MOCK-316bdd876b6448a58e7c4e3a2db4bdb4\",\r\n    \"walletBalanceBefore\": 0.0,\r\n    \"walletBalanceAfter\": 1000.0\r\n  }\r\n}"
+    },
+    {
+      "name": "Company mock wallet top-up idempotent replay returns same result",
+      "method": "POST",
+      "endpoint": "/api/company/wallet/mock-checkout",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"amount\": 1000.0,\r\n  \"currency\": \"EGP\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"paymentId\": \"0bce6abae6a64fcca8a298de5f2d24f6\",\r\n    \"companyId\": \"c57841fd446149689e0522acbfdf99e5\",\r\n    \"amount\": 1000.0,\r\n    \"status\": \"Succeeded\",\r\n    \"createdAtUtc\": \"2026-06-26T12:12:32.0318843\",\r\n    \"transactionReference\": \"MOCK-316bdd876b6448a58e7c4e3a2db4bdb4\",\r\n    \"walletBalanceBefore\": 0.0,\r\n    \"walletBalanceAfter\": 1000.0\r\n  }\r\n}"
+    },
+    {
+      "name": "Company mock wallet top-up same key different amount conflicts",
+      "method": "POST",
+      "endpoint": "/api/company/wallet/mock-checkout",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"amount\": 1001.0,\r\n  \"currency\": \"EGP\"\r\n}",
+      "status": 409,
+      "pass": true,
+      "responseMessage": "Idempotency conflict.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Idempotency conflict.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company creates campaign draft",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Title\": \"E2E Hypertension Awareness\",\r\n  \"Description\": \"Real HTTP smoke campaign for approved doctors.\",\r\n  \"ClinicalResearchInfo\": \"E2E clinical reference metadata.\"\r\n}",
+      "status": 201,
+      "pass": true,
+      "responseMessage": "Created",
+      "importantDatabaseEffect": "Draft campaign bf1613544425406f921cb930d5422507 created",
+      "responseBodyPreview": "{\r\n  \"Code\": 201,\r\n  \"Message\": \"Created\",\r\n  \"Data\": {\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"companyId\": \"c57841fd446149689e0522acbfdf99e5\",\r\n    \"title\": \"E2E Hypertension Awareness\",\r\n    \"description\": \"Real HTTP smoke campaign for approved doctors.\",\r\n    \"status\": \"Draft\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Company submit before approved asset rejected",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company uploads main campaign asset to Cloudinary",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/assets",
+      "authorization": "Bearer",
+      "requestSummary": "multipart file=campaign-main.png; contentType=image/png; bytes=68",
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company uploads secondary pending asset for replacement/delete coverage",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/assets",
+      "authorization": "Bearer",
+      "requestSummary": "multipart file=campaign-extra.png; contentType=image/png; bytes=68",
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company obtains signed URL for owned uploaded asset",
+      "method": "GET",
+      "endpoint": "/api/files/",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 404,
+      "pass": false,
+      "responseMessage": "Not found.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 404,\r\n  \"Message\": \"Not found.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Doctor wrong-role denied from company-owned file access",
+      "method": "GET",
+      "endpoint": "/api/files/",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 404,
+      "pass": false,
+      "responseMessage": "Not found.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 404,\r\n  \"Message\": \"Not found.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Submit with pending asset still rejected before admin asset approval",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Admin approves main campaign asset",
+      "method": "POST",
+      "endpoint": "/api/admin/campaign-assets//review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Approved\",\r\n  \"Reason\": null\r\n}",
+      "status": 404,
+      "pass": false,
+      "responseMessage": "Not found.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 404,\r\n  \"Message\": \"Not found.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company previews campaign targets after doctor pricing",
+      "method": "GET",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/target-preview",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"eligibleDoctorCount\": 2,\r\n    \"estimatedTotalCost\": 35.0,\r\n    \"currency\": \"EGP\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Company submits campaign after approved asset and funded wallet",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company submit idempotent replay returns same pending review result",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company submit after pending review with different idempotency key conflicts",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Admin approves submitted campaign and queues doctors",
+      "method": "POST",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Approved\",\r\n  \"Reason\": null\r\n}",
+      "status": 409,
+      "pass": false,
+      "responseMessage": "Campaign is not in a reviewable state.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Campaign is not in a reviewable state.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Admin campaign review idempotent replay returns same result",
+      "method": "POST",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Approved\",\r\n  \"Reason\": null\r\n}",
+      "status": 409,
+      "pass": false,
+      "responseMessage": "Campaign is not in a reviewable state.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Campaign is not in a reviewable state.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Admin campaign review same key different decision conflicts",
+      "method": "POST",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Rejected\",\r\n  \"Reason\": \"conflict probe\"\r\n}",
+      "status": 409,
+      "pass": true,
+      "responseMessage": "Campaign is not in a reviewable state.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Campaign is not in a reviewable state.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Admin inspects doctor-level campaign queue",
+      "method": "GET",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/queue",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": []\r\n}"
+    },
+    {
+      "name": "Company wrong-role denied from admin campaign queue",
+      "method": "GET",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/queue",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 403,
+      "pass": true,
+      "responseMessage": "Forbidden.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 403,\r\n  \"Message\": \"Forbidden.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company reads aggregate campaign queue summary",
+      "method": "GET",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/queue-summary",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"queuedCount\": 0,\r\n    \"activatedCount\": 0,\r\n    \"cancelledCount\": 0,\r\n    \"expiredCount\": 0,\r\n    \"generatedAtUtc\": \"2026-06-26T12:12:45.3541473Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Company refresh token rotates successfully",
+      "method": "POST",
+      "endpoint": "/api/auth/refresh",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"RefreshToken\": \"cdzFOusrc-54xsm06L3IG9N679YpjibZS6EOYLJTVp5rgxYSl-eP2sN52tjHqAhN5qVzpmamL3UXOCyBYGwCqg\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NzI2OGM2OGE0OGQ0ZjUxYWMzMTY1MzM0MDMyYTRkMiIsImVtYWlsIjoiZTJlLmNvbXBhbnkuMjAyNjA2MjYtMTUwMDQ4QGV4YW1wbGUuY29tIiwibmFtZSI6ImUyZS5jb21wYW55LjIwMjYwNjI2LTE1MDA0OEBleGFtcGxlLmNvbSIsInJvbGUiOiJDb21wYW55IiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MjQ3NTk2NSwibmJmIjoxNzgyNDc1OTY1LCJleHAiOjE3ODI0Nzk1NjUsImp0aSI6ImU1NjlkNWM5YzVmMTQzYTdiZjkwMDAzYzkyY2NlZmViIn0.AHtAtPa5C5KGOVxqGKCk-ezbbEe2NMDNqQC3aG4VYIM\",\r\n    \"RefreshToken\": \"0z1Um5FLMe5rl5cxYrWaELNSydZJo7nqbdCnCgtcbgD8EJvagkxg93lLkcFUA3wZ_s3nLuHAb4UR4Yw3BZB49g\",\r\n    \"Role\": \"Company\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T13:12:45.3884842Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "Company old refresh token reuse detected",
+      "method": "POST",
+      "endpoint": "/api/auth/refresh",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"RefreshToken\": \"cdzFOusrc-54xsm06L3IG9N679YpjibZS6EOYLJTVp5rgxYSl-eP2sN52tjHqAhN5qVzpmamL3UXOCyBYGwCqg\"\r\n}",
+      "status": 409,
+      "pass": true,
+      "responseMessage": "Refresh reuse detected.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Refresh reuse detected.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company logout revokes rotated refresh token",
+      "method": "POST",
+      "endpoint": "/api/auth/logout",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"RefreshToken\": \"0z1Um5FLMe5rl5cxYrWaELNSydZJo7nqbdCnCgtcbgD8EJvagkxg93lLkcFUA3wZ_s3nLuHAb4UR4Yw3BZB49g\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Company refresh after logout denied",
+      "method": "POST",
+      "endpoint": "/api/auth/refresh",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"RefreshToken\": \"0z1Um5FLMe5rl5cxYrWaELNSydZJo7nqbdCnCgtcbgD8EJvagkxg93lLkcFUA3wZ_s3nLuHAb4UR4Yw3BZB49g\"\r\n}",
+      "status": 409,
+      "pass": true,
+      "responseMessage": "Refresh reuse detected.",
+      "importantDatabaseEffect": "Rotated refresh token is no longer usable; API returned Refresh reuse detected (409).",
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Refresh reuse detected.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Forgot password accepts unknown contact without enumeration",
+      "method": "POST",
+      "endpoint": "/api/auth/forgot-password",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Contact\": \"unknown-639180835676294150@example.com\"\r\n}",
+      "status": 202,
+      "pass": true,
+      "responseMessage": "Accepted",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 202,\r\n  \"Message\": \"Accepted\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Reset password invalid token denied",
+      "method": "POST",
+      "endpoint": "/api/auth/reset-password",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"ResetToken\": \"not-a-valid-reset-token\",\r\n  \"NewPassword\": \"Another123!\"\r\n}",
+      "status": 401,
+      "pass": true,
+      "responseMessage": "Authentication denied.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 401,\r\n  \"Message\": \"Authentication denied.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "Resubmit registration invalid token rejected",
+      "method": "POST",
+      "endpoint": "/api/auth/resubmit-registration",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"ResubmissionToken\": \"not-a-valid-resubmission-token\",\r\n  \"VerificationMetadata\": {\r\n    \"DocumentType\": \"CompanyLicense\",\r\n    \"OriginalFileName\": \"resubmit.pdf\",\r\n    \"ContentType\": \"application/pdf\",\r\n    \"SizeBytes\": 100,\r\n    \"Reference\": \"invalid-token-probe\"\r\n  }\r\n}",
+      "status": 403,
+      "pass": true,
+      "responseMessage": "Account status denied.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 403,\r\n  \"Message\": \"Account status denied.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "RESUME admin login after migrations",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"admin@medibridge.local\",\r\n  \"Password\": \"Admin123!\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OWI1ZWI2MC1iMzY4LTQ1ZjUtYTUzMi1mYTk2ZjIzYjZmYTIiLCJlbWFpbCI6ImFkbWluQG1lZGlicmlkZ2UubG9jYWwiLCJuYW1lIjoiYWRtaW5AbWVkaWJyaWRnZS5sb2NhbCIsInJvbGUiOiJBZG1pbiIsImlzcyI6Ik1lZGlCcmlkZ2UiLCJhdWQiOiJNZWRpQnJpZGdlLkFwaUNsaWVudHMiLCJpYXQiOjE3ODI0OTQ4NTcsIm5iZiI6MTc4MjQ5NDg1NywiZXhwIjoxNzgyNDk4NDU3LCJqdGkiOiJiOWQ2N2NlODhlYTk0MDlhODBlODhjMDczZDNlMjdkNiJ9.C9GHNLdsJg5mLpD1CuYPY3jzPnUaMYG5PCIo8NzY61A\",\r\n    \"RefreshToken\": \"h5lHDCiKJRIKDVDnaacY-6hnnDxCSOhOQ7wcZTP_hcpss81VKGgRy5WT2HslpJ0899rB_wGEqv0TLkdo6L50rw\",\r\n    \"Role\": \"Admin\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T18:27:36.1356512Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company login after migrations",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.company.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NzI2OGM2OGE0OGQ0ZjUxYWMzMTY1MzM0MDMyYTRkMiIsImVtYWlsIjoiZTJlLmNvbXBhbnkuMjAyNjA2MjYtMTUwMDQ4QGV4YW1wbGUuY29tIiwibmFtZSI6ImUyZS5jb21wYW55LjIwMjYwNjI2LTE1MDA0OEBleGFtcGxlLmNvbSIsInJvbGUiOiJDb21wYW55IiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MjQ5NDg1NywibmJmIjoxNzgyNDk0ODU3LCJleHAiOjE3ODI0OTg0NTcsImp0aSI6IjY5ZmE2NGZiMGVkYzQ2MjVhMTliZWU5YmM4NGJjYTFlIn0.BqXcrMygmLVq3xIq73ySB2Cf02z-OQ8UcJexOyKn0og\",\r\n    \"RefreshToken\": \"CW9t1-Eo_y8vE_aO0OMjIt2xF5vsK4XUMjLx90E3VJy_e_7UQTsiKUgdn-jlHBVUnI0F4RSrlKfmtfdb4PC37g\",\r\n    \"Role\": \"Company\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T18:27:37.337578Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME doctor login after migrations",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "authorization": "Anonymous",
+      "requestSummary": "{\r\n  \"Username\": \"e2e.doctor.20260626-150048@example.com\",\r\n  \"Password\": \"E2eTest123!\"\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"AccessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ZWYwNmI3NDg5Nzg0ODcxOWMwZjFjMTMxNDljOTEzMCIsImVtYWlsIjoiZTJlLmRvY3Rvci4yMDI2MDYyNi0xNTAwNDhAZXhhbXBsZS5jb20iLCJuYW1lIjoiZTJlLmRvY3Rvci4yMDI2MDYyNi0xNTAwNDhAZXhhbXBsZS5jb20iLCJyb2xlIjoiRG9jdG9yIiwiaXNzIjoiTWVkaUJyaWRnZSIsImF1ZCI6Ik1lZGlCcmlkZ2UuQXBpQ2xpZW50cyIsImlhdCI6MTc4MjQ5NDg1OCwibmJmIjoxNzgyNDk0ODU4LCJleHAiOjE3ODI0OTg0NTgsImp0aSI6IjUyMDg0ZjkwNGYzYTQ4MWE5MDhiMTg3NjE2N2ZiYzAwIn0.xnFzrhWEagLB6yZ9Vg7NGgvvcs65VtGNbZP1sRSZXG8\",\r\n    \"RefreshToken\": \"OfSPf6bttlnLGOmlyt0e89Tk9wwl-oWvNH45TOeLI79VvX-RAuPCBlPI8GLI3V9OOb7xeNS-gsF0hUeRkS9DSQ\",\r\n    \"Role\": \"Doctor\",\r\n    \"ExpiresAtUtc\": \"2026-06-26T18:27:37.9419182Z\"\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company uploads main campaign asset to Cloudinary",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/assets",
+      "authorization": "Bearer",
+      "requestSummary": "multipart file=campaign-main-resume.png; contentType=image/png; bytes=68",
+      "status": 201,
+      "pass": true,
+      "responseMessage": "Created",
+      "importantDatabaseEffect": "Stored file asset 37275ab4d2cb45aabcf494be019f15af persisted with pending review",
+      "responseBodyPreview": "{\r\n  \"Code\": 201,\r\n  \"Message\": \"Created\",\r\n  \"Data\": {\r\n    \"assetId\": \"37275ab4d2cb45aabcf494be019f15af\",\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"reviewStatus\": \"Pending\",\r\n    \"reviewReason\": null\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company uploads secondary asset for replacement/delete",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/assets",
+      "authorization": "Bearer",
+      "requestSummary": "multipart file=campaign-extra-resume.png; contentType=image/png; bytes=68",
+      "status": 201,
+      "pass": true,
+      "responseMessage": "Created",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 201,\r\n  \"Message\": \"Created\",\r\n  \"Data\": {\r\n    \"assetId\": \"18a3709002ed493dbba920909fb1701b\",\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"reviewStatus\": \"Pending\",\r\n    \"reviewReason\": null\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company replaces pending secondary asset",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/assets/18a3709002ed493dbba920909fb1701b/replacement",
+      "authorization": "Bearer",
+      "requestSummary": "multipart file=campaign-replacement-resume.png; contentType=image/png; bytes=68",
+      "status": 201,
+      "pass": true,
+      "responseMessage": "Created",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 201,\r\n  \"Message\": \"Created\",\r\n  \"Data\": {\r\n    \"assetId\": \"06f0e116e76e491b95e43215fbabf665\",\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"reviewStatus\": \"Pending\",\r\n    \"reviewReason\": null\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company deletes replacement pending asset",
+      "phase": "resume-after-migrations",
+      "method": "DELETE",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/assets/06f0e116e76e491b95e43215fbabf665",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 204,
+      "pass": true,
+      "responseMessage": null,
+      "importantDatabaseEffect": "Replacement asset marked deletion pending/deleted and Cloudinary delete invoked",
+      "responseBodyPreview": null
+    },
+    {
+      "name": "RESUME company obtains signed URL for owned uploaded asset",
+      "phase": "resume-after-migrations",
+      "method": "GET",
+      "endpoint": "/api/files/37275ab4d2cb45aabcf494be019f15af",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 500,
+      "pass": false,
+      "responseMessage": "An unexpected error occurred.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 500,\r\n  \"Message\": \"An unexpected error occurred.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "RESUME doctor wrong-role denied from company-owned file access",
+      "phase": "resume-after-migrations",
+      "method": "GET",
+      "endpoint": "/api/files/37275ab4d2cb45aabcf494be019f15af",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 403,
+      "pass": true,
+      "responseMessage": "Forbidden.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 403,\r\n  \"Message\": \"Forbidden.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "RESUME admin approves main campaign asset",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/admin/campaign-assets/37275ab4d2cb45aabcf494be019f15af/review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Approved\",\r\n  \"Reason\": null\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": "Asset 37275ab4d2cb45aabcf494be019f15af reviewStatus=Approved",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"assetId\": \"37275ab4d2cb45aabcf494be019f15af\",\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"reviewStatus\": \"Approved\",\r\n    \"reviewReason\": null\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company previews campaign targets",
+      "phase": "resume-after-migrations",
+      "method": "GET",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/target-preview",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"eligibleDoctorCount\": 2,\r\n    \"estimatedTotalCost\": 35.0,\r\n    \"currency\": \"EGP\"\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company submits campaign after approved asset and funded wallet",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": "Campaign bf1613544425406f921cb930d5422507 submitted; reservedAmount=35",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"status\": \"PendingReview\",\r\n    \"targetCount\": 2,\r\n    \"reservedAmount\": 35.0\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company submit idempotent replay returns same result",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"status\": \"PendingReview\",\r\n    \"targetCount\": 2,\r\n    \"reservedAmount\": 35.0\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME company submit after pending review with different key conflicts",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/submit",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 409,
+      "pass": true,
+      "responseMessage": "Campaign is not in a submit-ready state.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Campaign is not in a submit-ready state.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "RESUME admin approves submitted campaign and queues doctors",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Approved\",\r\n  \"Reason\": null\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": "Campaign bf1613544425406f921cb930d5422507 approved; queuedCount=2",
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"decision\": \"Approved\",\r\n    \"status\": \"Approved\",\r\n    \"queuedCount\": 2\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME admin campaign review idempotent replay returns same result",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Approved\",\r\n  \"Reason\": null\r\n}",
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"decision\": \"Approved\",\r\n    \"status\": \"Approved\",\r\n    \"queuedCount\": 2\r\n  }\r\n}"
+    },
+    {
+      "name": "RESUME admin campaign review same key different decision conflicts",
+      "phase": "resume-after-migrations",
+      "method": "POST",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/review",
+      "authorization": "Bearer",
+      "requestSummary": "{\r\n  \"Decision\": \"Rejected\",\r\n  \"Reason\": \"conflict probe\"\r\n}",
+      "status": 409,
+      "pass": true,
+      "responseMessage": "Idempotency conflict.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 409,\r\n  \"Message\": \"Idempotency conflict.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "RESUME admin inspects doctor-level campaign queue",
+      "phase": "resume-after-migrations",
+      "method": "GET",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/queue",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": [\r\n    {\r\n      \"queueId\": \"541f0726096e427981d444de8a03c9a5\",\r\n      \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n      \"doctorId\": \"5b2f73f190774dbab4e83987b635f704\",\r\n      \"status\": \"Queued\",\r\n      \"queuedAtUtc\": \"2026-06-26T17:27:48.8251002\"\r\n    },\r\n    {\r\n      \"queueId\": \"713f9c64c24841fc95bfae7f6cee08aa\",\r\n      \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n      \"doctorId\": \"bdd3e4a3de8947fab7fc41ca9f4eba26\",\r\n      \"status\": \"Queued\",\r\n      \"queuedAtUtc\": \"2026-06-26T17:27:48.8251002\"\r\n    }\r\n  ]\r\n}"
+    },
+    {
+      "name": "RESUME company wrong-role denied from admin campaign queue",
+      "phase": "resume-after-migrations",
+      "method": "GET",
+      "endpoint": "/api/admin/campaigns/bf1613544425406f921cb930d5422507/queue",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 403,
+      "pass": true,
+      "responseMessage": "Forbidden.",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 403,\r\n  \"Message\": \"Forbidden.\",\r\n  \"Data\": null\r\n}"
+    },
+    {
+      "name": "RESUME company reads aggregate campaign queue summary",
+      "phase": "resume-after-migrations",
+      "method": "GET",
+      "endpoint": "/api/company/campaigns/bf1613544425406f921cb930d5422507/queue-summary",
+      "authorization": "Bearer",
+      "requestSummary": null,
+      "status": 200,
+      "pass": true,
+      "responseMessage": "Success",
+      "importantDatabaseEffect": null,
+      "responseBodyPreview": "{\r\n  \"Code\": 200,\r\n  \"Message\": \"Success\",\r\n  \"Data\": {\r\n    \"campaignId\": \"bf1613544425406f921cb930d5422507\",\r\n    \"queuedCount\": 2,\r\n    \"activatedCount\": 0,\r\n    \"cancelledCount\": 0,\r\n    \"expiredCount\": 0,\r\n    \"generatedAtUtc\": \"2026-06-26T17:27:52.654225Z\"\r\n  }\r\n}"
+    }
+  ],
+  "otpPause": null,
+  "cloudinary": {
+    "resumeStoredFiles": [
+      {
+        "Id": "37275ab4d2cb45aabcf494be019f15af",
+        "StorageKey": "medibridge/campaigns/bf1613544425406f921cb930d5422507/98d91042db33466c98fa2266386f4df8",
+        "StorageResourceType": "image",
+        "StorageState": "1",
+        "SupersededByFileId": null,
+        "ReviewStatus": "2",
+        "OwnerId": "bf1613544425406f921cb930d5422507",
+        "OriginalFileName": "campaign-main-resume.png",
+        "ContentType": "image/png",
+        "SizeBytes": 68
+      },
+      {
+        "Id": "18a3709002ed493dbba920909fb1701b",
+        "StorageKey": "medibridge/campaigns/bf1613544425406f921cb930d5422507/20ee594c378d4851b3fdc306e021c5c5",
+        "StorageResourceType": "image",
+        "StorageState": "1",
+        "SupersededByFileId": "06f0e116e76e491b95e43215fbabf665",
+        "ReviewStatus": "1",
+        "OwnerId": "bf1613544425406f921cb930d5422507",
+        "OriginalFileName": "campaign-extra-resume.png",
+        "ContentType": "image/png",
+        "SizeBytes": 68
+      },
+      {
+        "Id": "06f0e116e76e491b95e43215fbabf665",
+        "StorageKey": "medibridge/campaigns/bf1613544425406f921cb930d5422507/56150721bed8424ea9960a801e3a8766",
+        "StorageResourceType": "image",
+        "StorageState": "3",
+        "SupersededByFileId": null,
+        "ReviewStatus": "1",
+        "OwnerId": "bf1613544425406f921cb930d5422507",
+        "OriginalFileName": "campaign-replacement-resume.png",
+        "ContentType": "image/png",
+        "SizeBytes": 68
+      }
+    ]
+  },
+  "failures": {
+    "storedFileSchemaDrift": {
+      "severity": "Critical",
+      "rootCause": "The running EF model references StoredFiles.StorageState and StoredFiles.SupersededByFileId, but the configured real SQL Server database does not contain those columns. __EFMigrationsHistory stops at 20260621200235_HardenCampaignReviewWorkflow while repository migrations include later StoredFile lifecycle migrations. The live table also has ReplacedByFileId instead of the model property SupersededByFileId.",
+      "endpoints": [
+        "POST /api/company/campaigns/{campaignId}/submit",
+        "POST /api/company/campaigns/{campaignId}/assets",
+        "POST /api/company/campaigns/{campaignId}/assets/{assetId}/replacement",
+        "DELETE /api/company/campaigns/{campaignId}/assets/{assetId}",
+        "GET /api/files/{fileId}",
+        "POST /api/admin/campaign-assets/{assetId}/review",
+        "POST /api/admin/campaigns/{campaignId}/review"
+      ],
+      "reproduction": [
+        "Start API with current branch and configured database.",
+        "Create/approve company and doctor.",
+        "Set doctor price and fund company wallet.",
+        "Create campaign draft.",
+        "POST /api/company/campaigns/{campaignId}/submit with Idempotency-Key before assets, or upload multipart asset.",
+        "Observe 500 envelope; API log shows Microsoft.Data.SqlClient.SqlException: Invalid column name StorageState/SupersededByFileId."
+      ],
+      "expected": "Workflow validation responses for submit-before-asset, successful asset upload/persist metadata, and campaign submission after approved assets.",
+      "actual": "500 unexpected error on submit and upload paths; downstream campaign review stays 409 because campaign never reaches PendingReview.",
+      "relatedFiles": [
+        "MediBridge.Core/Entities/Files/StoredFile.cs",
+        "MediBridge.Repository/Configurations/Files/StoredFileConfiguration.cs",
+        "MediBridge.Repository/Migrations/20260625133151_AddStoredFileStorageObjectLifecycle.cs",
+        "MediBridge.Repository/Migrations/20260625134424_ReconcileOtpAndFileStorageLifecycle.cs",
+        "MediBridge.Services/Services/CampaignWorkflowService.cs"
+      ],
+      "suggestedFix": "Apply/reconcile the pending StoredFiles lifecycle migrations against the configured database, including the StorageState and SupersededByFileId model columns, or update the EF mapping/migration history to match the actual ReplacedByFileId schema. Then rerun the blocked file/campaign workflow."
+    },
+    "cloudinarySignedUrlGeneration": {
+      "severity": "High",
+      "rootCause": "GET /api/files/{fileId} reaches CloudinaryFileStorageProvider.CreateSignedReadUrlAsync and CloudinaryDotNet.AuthToken.Generate throws System.FormatException: Could not find any recognizable digits. Cloudinary AuthToken.HexStringToByteArray is receiving the configured API secret, which is not in the hex format expected by that AuthToken code path.",
+      "endpoint": "GET /api/files/37275ab4d2cb45aabcf494be019f15af",
+      "request": "Authorized company GET for its own uploaded campaign asset.",
+      "expected": "200 envelope with signed Cloudinary URL and expiry.",
+      "actual": "500 envelope: An unexpected error occurred.",
+      "relatedFiles": [
+        "MediBridge.Repository/Storage/CloudinaryFileStorageProvider.cs",
+        "MediBridge.Services/Services/FileAccessService.cs",
+        "MediBridge.APIs/Controllers/FilesController.cs"
+      ],
+      "reproduction": [
+        "Use configured Cloudinary credentials.",
+        "Upload a campaign asset successfully.",
+        "GET /api/files/{assetId} as owning company.",
+        "Observe 500 and API log FormatException in CloudinaryDotNet.AuthToken.HexStringToByteArray."
+      ],
+      "suggestedFix": "Investigate Cloudinary signed/authenticated URL generation for non-hex API secrets. Use the Cloudinary SDK-supported signing/token method for the configured secret format, or validate required secret format at startup and return a controlled 503 from storage provider failures."
+    }
+  },
+  "notTested": {
+    "blockedByStoredFileSchemaDrift": [
+      "Successful campaign asset metadata persistence",
+      "Signed URL generation for a persisted file",
+      "Cloudinary signed URL fetch for persisted file",
+      "Admin asset approval happy path",
+      "Campaign submission happy path",
+      "Campaign review happy path with queue creation",
+      "Replacement/delete happy path after persisted asset"
+    ]
+  },
+  "databaseEvidence": {
+    "appliedMigrations": [
+      "20260531185506_Phase2IdentityApproval",
+      "20260602022951_Phase3DatabaseCoreModels",
+      "20260602025256_Phase3US2IntegrityConstraints",
+      "20260604054249_EmailOtpVerificationMetadata",
+      "20260608032307_Phase4FileStorageSecurity",
+      "20260609152557_AddMaxAttemptsReachedColumn",
+      "20260619132753_AddMockPaymentTransactions",
+      "20260621200235_HardenCampaignReviewWorkflow"
+    ],
+    "storedFileColumns": [
+      {
+        "Name": "Id",
+        "Type": "nvarchar",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "OwnerType",
+        "Type": "int",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "OwnerId",
+        "Type": "nvarchar",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "Purpose",
+        "Type": "int",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "OriginalFileName",
+        "Type": "nvarchar",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "ContentType",
+        "Type": "nvarchar",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "SizeBytes",
+        "Type": "bigint",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "StorageKey",
+        "Type": "nvarchar",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "Visibility",
+        "Type": "int",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "ReviewStatus",
+        "Type": "int",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "CreatedAtUtc",
+        "Type": "datetime2",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "ReviewedAtUtc",
+        "Type": "datetime2",
+        "Nullable": "YES"
+      },
+      {
+        "Name": "ReviewedByAdminId",
+        "Type": "nvarchar",
+        "Nullable": "YES"
+      },
+      {
+        "Name": "ReviewReason",
+        "Type": "nvarchar",
+        "Nullable": "YES"
+      },
+      {
+        "Name": "ConcurrencyStamp",
+        "Type": "nvarchar",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "DeletedAtUtc",
+        "Type": "datetime2",
+        "Nullable": "YES"
+      },
+      {
+        "Name": "RelatedCampaignId",
+        "Type": "nvarchar",
+        "Nullable": "YES"
+      },
+      {
+        "Name": "ReplacedByFileId",
+        "Type": "nvarchar",
+        "Nullable": "YES"
+      },
+      {
+        "Name": "SafetyScanCheckedAtUtc",
+        "Type": "datetime2",
+        "Nullable": "YES"
+      },
+      {
+        "Name": "SafetyScanStatus",
+        "Type": "int",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "StorageDeliveryType",
+        "Type": "int",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "StorageProvider",
+        "Type": "nvarchar",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "StorageResourceType",
+        "Type": "int",
+        "Nullable": "NO"
+      },
+      {
+        "Name": "UploadStatus",
+        "Type": "int",
+        "Nullable": "NO"
+      }
+    ],
+    "storedFilesForCampaignCount": 0,
+    "campaign": {
+      "Id": "bf1613544425406f921cb930d5422507",
+      "Status": "1",
+      "CompanyId": "c57841fd446149689e0522acbfdf99e5",
+      "Title": "E2E Hypertension Awareness"
+    },
+    "wallet": {
+      "AvailableBalance": 1000.0,
+      "ReservedBalance": 0.0
+    }
+  },
+  "coverage": {
+    "totalControllers": 8,
+    "totalEndpoints": 27,
+    "workflowsDiscovered": 7,
+    "workflowsCompleted": 6,
+    "workflowsBlocked": 1,
+    "scenariosExecuted": 88,
+    "passed": 70,
+    "failed": 18,
+    "blocked": "Signed Cloudinary URL generation blocked; schema drift resolved."
+  },
+  "resume": {
+    "startedAtUtc": "2026-06-26T17:27:35.9541795Z",
+    "campaignDb": {
+      "Id": "bf1613544425406f921cb930d5422507",
+      "Status": "3",
+      "UpdatedAtUtc": "2026-06-26T17:27:50.5662904"
+    },
+    "walletDb": {
+      "AvailableBalance": 965.0,
+      "ReservedBalance": 35.0
+    },
+    "queueCount": 2,
+    "completedAtUtc": "2026-06-26T17:27:53.4659382Z",
+    "scenariosExecuted": 20,
+    "passed": 19,
+    "failed": 1,
+    "blocked": "Signed file access / signed URL fetch blocked by Cloudinary AuthToken FormatException; upload/persist/review/submission/queue completed."
+  },
+  "migrationApplication": {
+    "requestedAtUtc": "2026-06-26T17:27:35.9541795Z",
+    "primaryCommand": "dotnet ef database update --project MediBridge.Repository --startup-project MediBridge.APIs --no-build",
+    "primaryCommandInitialResult": "Failed on 20260625133151_AddStoredFileStorageObjectLifecycle because StoredFiles.DeletedAtUtc already existed while migration history did not record the migration.",
+    "databaseOnlyReconciliation": [
+      "Added missing StoredFiles.StorageState and StoredFiles.SupersededByFileId; copied ReplacedByFileId into SupersededByFileId; converted StorageResourceType from int to nvarchar(40) and mapped values by ContentType; inserted migration history row for 20260625133151_AddStoredFileStorageObjectLifecycle.",
+      "Re-ran dotnet ef database update; EF applied 20260625134424_ReconcileOtpAndFileStorageLifecycle, then failed because old IX_ContactVerificationFlows_UserId index was already absent.",
+      "Created missing IX_ContactVerificationFlows_UserId_Channel_CreatedAtUtc index if absent and inserted migration history row for 20260625135441_MapContactVerificationLifecycleModel."
+    ],
+    "appliedMigrations": [
+      "20260625133151_AddStoredFileStorageObjectLifecycle",
+      "20260625134424_ReconcileOtpAndFileStorageLifecycle",
+      "20260625135441_MapContactVerificationLifecycleModel"
+    ],
+    "finalVerification": "dotnet ef migrations list shows no pending migrations; StoredFiles has StorageState int, SupersededByFileId nvarchar(450), and StorageResourceType nvarchar(40).",
+    "codeChanged": false
+  }
+}

@@ -39,7 +39,9 @@ public sealed class StoredFileRepository : IStoredFileRepository
 
     public Task<StoredFile?> FindStoredFileAsync(string storedFileId, CancellationToken cancellationToken = default)
     {
-        return context.StoredFiles.FirstOrDefaultAsync(file => file.Id == storedFileId, cancellationToken);
+        return context.StoredFiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(file => file.Id == storedFileId, cancellationToken);
     }
 
     public Task<StoredFile?> FindStoredFileForUpdateAsync(string storedFileId, CancellationToken cancellationToken = default)
@@ -94,7 +96,54 @@ public sealed class StoredFileRepository : IStoredFileRepository
                 && file.Purpose == purpose
                 && file.ReviewStatus == reviewStatus
                 && file.StorageState == StorageObjectState.Active
-                && file.DeletedAtUtc == null,
+                && file.DeletedAtUtc == null
+                && file.SupersededByFileId == null,
             cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StoredFile>> ListActiveReviewableCampaignFilesAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        return await ActiveCampaignFiles(campaignId)
+            .Where(file => file.Purpose == StoredFilePurpose.CampaignMedia
+                && (file.ReviewStatus == StoredFileReviewStatus.Pending
+                    || file.ReviewStatus == StoredFileReviewStatus.Approved))
+            .OrderBy(file => file.CreatedAtUtc)
+            .ThenBy(file => file.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> HasActiveApprovedCampaignMediaAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        return ActiveCampaignFiles(campaignId)
+            .AnyAsync(file => file.Purpose == StoredFilePurpose.CampaignMedia
+                && file.ReviewStatus == StoredFileReviewStatus.Approved,
+                cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StoredFile>> ListActiveOptionalCampaignFilesAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        return await ActiveCampaignFiles(campaignId)
+            .Where(file => file.Purpose == StoredFilePurpose.VoiceNote
+                || file.Purpose == StoredFilePurpose.ClinicalResearchAttachment)
+            .OrderBy(file => file.CreatedAtUtc)
+            .ThenBy(file => file.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    private IQueryable<StoredFile> ActiveCampaignFiles(string campaignId)
+    {
+        return context.StoredFiles
+            .AsNoTracking()
+            .Where(file => file.OwnerType == StoredFileOwnerType.Campaign
+                && file.OwnerId == campaignId
+                && file.StorageState == StorageObjectState.Active
+                && file.DeletedAtUtc == null
+                && file.SupersededByFileId == null);
     }
 }

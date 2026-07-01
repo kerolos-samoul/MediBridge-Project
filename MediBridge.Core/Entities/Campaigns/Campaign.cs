@@ -12,6 +12,7 @@ public sealed class Campaign : ISoftDeleteRecord
     public string? ClinicalResearchInfo { get; set; }
     public string Description { get; set; } = string.Empty;
     public CampaignStatus Status { get; set; } = CampaignStatus.Draft;
+    public DateTime? SubmittedAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
     public bool IsDeleted { get; set; }
