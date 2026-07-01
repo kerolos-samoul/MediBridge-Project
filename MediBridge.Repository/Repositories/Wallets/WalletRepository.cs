@@ -57,6 +57,50 @@ public sealed class WalletRepository : IWalletRepository
             .SingleOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Wallet> GetOrCreateActiveWalletForUpdateAsync(
+        string walletId,
+        WalletOwnerType ownerType,
+        string ownerId,
+        string? ownerUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var trackedWallet = context.Wallets.Local.FirstOrDefault(
+            wallet => wallet.OwnerType == ownerType && wallet.OwnerId == ownerId && !wallet.IsDeleted);
+        if (trackedWallet is not null)
+        {
+            return trackedWallet;
+        }
+
+        var wallet = await context.Wallets
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [Wallets] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [OwnerType] = {(int)ownerType}
+                    AND [OwnerId] = {ownerId}
+                    AND [IsDeleted] = CAST(0 AS bit)
+                """)
+            .IgnoreQueryFilters()
+            .SingleOrDefaultAsync(cancellationToken);
+        if (wallet is not null)
+        {
+            return wallet;
+        }
+
+        wallet = new Wallet
+        {
+            Id = walletId,
+            OwnerType = ownerType,
+            OwnerId = ownerId,
+            OwnerUserId = ownerUserId,
+            AvailableBalance = 0m,
+            ReservedBalance = 0m,
+            Currency = "EGP",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+        await context.Wallets.AddAsync(wallet, cancellationToken);
+        return wallet;
+    }
+
     public Task<string?> FindWalletIdByOwnerIncludingDeletedAsync(WalletOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default)
     {
         return context.Wallets
@@ -79,7 +123,8 @@ public sealed class WalletRepository : IWalletRepository
     public async Task StageAvailableBalanceChangeAsync(string walletId, decimal amountDelta, CancellationToken cancellationToken = default)
     {
         MoneyRules.EnsureValid(amountDelta, nameof(amountDelta), allowNegative: true);
-        var wallet = await context.Wallets.FirstOrDefaultAsync(candidate => candidate.Id == walletId, cancellationToken)
+        var wallet = context.Wallets.Local.FirstOrDefault(candidate => candidate.Id == walletId)
+            ?? await context.Wallets.FirstOrDefaultAsync(candidate => candidate.Id == walletId, cancellationToken)
             ?? throw new InvalidOperationException($"Wallet '{walletId}' was not found.");
 
         var resultingBalance = wallet.AvailableBalance + amountDelta;

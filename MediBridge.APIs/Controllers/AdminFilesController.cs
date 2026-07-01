@@ -51,6 +51,31 @@ public sealed class AdminFilesController : ControllerBase
         }
     }
 
+    [HttpPost("~/api/admin/campaign-assets/{assetId}/review")]
+    public async Task<ActionResult<ApiEnvelope<FileReviewDto>>> ReviewCampaignAsset(
+        string assetId,
+        [FromBody] FileReviewRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await fileWorkflowService.ReviewFileAsync(GetUserId(), assetId, request, cancellationToken);
+            return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+        }
+        catch (ValidationException)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status403Forbidden, "Forbidden.", null));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status404NotFound, "Not found.", null));
+        }
+    }
+
     [HttpGet("{fileId}/reviews")]
     public async Task<ActionResult<ApiEnvelope<IReadOnlyList<FileReviewDto>>>> GetReviewHistory(string fileId, CancellationToken cancellationToken)
     {

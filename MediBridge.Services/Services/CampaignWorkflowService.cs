@@ -414,6 +414,62 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
         return await LoadCompanyCampaignDetailAsync(company.CompanyId, campaignId, cancellationToken);
     }
 
+    public async Task<TargetPreviewDto> PreviewTargetsAsync(
+        string actorUserId,
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        var company = await ResolveApprovedCompanyActorAsync(actorUserId, cancellationToken);
+        _ = await domainUnitOfWork.Campaigns.FindCompanyCampaignAsync(
+                company.CompanyId,
+                campaignId,
+                cancellationToken)
+            ?? throw new Phase5NotFoundException("Campaign was not found.");
+
+        var criteria = new EligibleDoctorSearchCriteria(null, null, null, null, null, null, null);
+        var eligibleDoctorCount = await identityUnitOfWork.Profiles.CountEligibleDoctorsAsync(
+            criteria,
+            cancellationToken);
+        if (eligibleDoctorCount == 0)
+        {
+            return new TargetPreviewDto(0, 0m, "EGP");
+        }
+
+        var doctors = await identityUnitOfWork.Profiles.SearchEligibleDoctorsAsync(
+            criteria,
+            0,
+            eligibleDoctorCount,
+            cancellationToken);
+        return new TargetPreviewDto(
+            doctors.Count,
+            doctors.Sum(doctor => doctor.PricePerMessage ?? 0m),
+            "EGP");
+    }
+
+    public async Task<QueueSummaryDto> GetQueueSummaryAsync(
+        string actorUserId,
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        var company = await ResolveApprovedCompanyActorAsync(actorUserId, cancellationToken);
+        _ = await domainUnitOfWork.Campaigns.FindCompanyCampaignAsync(
+                company.CompanyId,
+                campaignId,
+                cancellationToken)
+            ?? throw new Phase5NotFoundException("Campaign was not found.");
+
+        var counts = await domainUnitOfWork.MessageQueues.CountQueueItemsByCampaignAsync(
+            campaignId,
+            cancellationToken);
+        return new QueueSummaryDto(
+            campaignId,
+            GetQueueStatusCount(counts, QueueItemStatus.Queued),
+            GetQueueStatusCount(counts, QueueItemStatus.Activated),
+            GetQueueStatusCount(counts, QueueItemStatus.Cancelled),
+            0,
+            DateTime.UtcNow);
+    }
+
     public Task<CampaignQueueCreationResultDto> CreateQueueForApprovedCampaignAsync(string campaignId, DateTime queuedAtUtc, string? actorUserId = null, CancellationToken cancellationToken = default)
     {
         return domainUnitOfWork.ExecuteInTransactionAsync(
@@ -597,6 +653,11 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
         var assets = await domainUnitOfWork.StoredFiles.ListByCampaignAsync(campaignId, null, cancellationToken);
         return CampaignDtoMapper.ToDetail(campaign, assets, targets);
     }
+
+    private static int GetQueueStatusCount(
+        IReadOnlyDictionary<QueueItemStatus, int> counts,
+        QueueItemStatus status)
+        => counts.TryGetValue(status, out var count) ? count : 0;
 
     private async Task<CompanyActor> ResolveApprovedCompanyActorAsync(string actorUserId, CancellationToken cancellationToken)
     {

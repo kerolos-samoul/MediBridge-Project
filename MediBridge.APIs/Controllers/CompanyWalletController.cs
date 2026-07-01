@@ -3,6 +3,7 @@ using MediBridge.APIs.Config;
 using MediBridge.APIs.Contracts;
 using MediBridge.APIs.Security;
 using MediBridge.Services.DTOs.Wallets;
+using MediBridge.Services.DTOs.Payments;
 using MediBridge.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -56,6 +57,31 @@ public sealed class CompanyWalletController : ControllerBase
         }
 
         var result = await companyWalletService.TopUpCompanyWalletAsync(actorUserId, idempotencyKey, request, cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    [HttpPost("mock-checkout")]
+    [EnableRateLimiting(RateLimitPolicyNames.Phase5WalletTopUp)]
+    public async Task<ActionResult<ApiEnvelope<MockPaymentResultDto>>> CreateMockTopUp(
+        [FromBody] MockTopUpRequestDto? request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(idempotencyKey) || request is null)
+        {
+            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+
+        var result = await companyWalletService.CreateMockTopUpAsync(
+            actorUserId,
+            idempotencyKey,
+            request,
+            cancellationToken);
         return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }
 

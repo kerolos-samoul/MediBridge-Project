@@ -2,6 +2,7 @@ using MediBridge.Core.Interfaces.Campaigns;
 using MediBridge.Core.Interfaces.Files;
 using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Core.Interfaces.Messaging;
+using MediBridge.Core.Interfaces.Payments;
 using MediBridge.Core.Interfaces.Policies;
 using MediBridge.Core.Interfaces.Wallets;
 
@@ -16,6 +17,7 @@ public interface IDomainUnitOfWork
     IWalletRepository Wallets { get; }
     IWalletTransactionRepository WalletTransactions { get; }
     IWalletLedgerEntryRepository WalletLedgerEntries { get; }
+    IPaymentRepository Payments { get; }
     IStoredFileRepository StoredFiles { get; }
     IFileReviewRepository FileReviews { get; }
     IFileAccessGrantAuditRepository FileAccessGrantAudits { get; }

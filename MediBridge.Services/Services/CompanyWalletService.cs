@@ -1,10 +1,14 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using FluentValidation;
+using MediBridge.Core.Entities.Payments;
 using MediBridge.Core.Entities.Wallets;
 using MediBridge.Core.Enums;
 using MediBridge.Core.Interfaces;
 using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Services.DTOs.Wallets;
+using MediBridge.Services.DTOs.Payments;
 using MediBridge.Services.Interfaces;
 using MediBridge.Services.Validators.Wallets;
 
@@ -16,15 +20,18 @@ public sealed class CompanyWalletService : ICompanyWalletService
     private readonly IDomainUnitOfWork domainUnitOfWork;
     private readonly IIdentityUnitOfWork identityUnitOfWork;
     private readonly IValidator<TopUpCompanyWalletRequestDto> topUpValidator;
+    private readonly IValidator<MockTopUpRequestDto> mockTopUpValidator;
 
     public CompanyWalletService(
         IDomainUnitOfWork domainUnitOfWork,
         IIdentityUnitOfWork identityUnitOfWork,
-        IValidator<TopUpCompanyWalletRequestDto> topUpValidator)
+        IValidator<TopUpCompanyWalletRequestDto> topUpValidator,
+        IValidator<MockTopUpRequestDto> mockTopUpValidator)
     {
         this.domainUnitOfWork = domainUnitOfWork;
         this.identityUnitOfWork = identityUnitOfWork;
         this.topUpValidator = topUpValidator;
+        this.mockTopUpValidator = mockTopUpValidator;
     }
 
     public async Task<CompanyWalletDto> GetCompanyWalletAsync(string actorUserId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
@@ -34,7 +41,14 @@ public sealed class CompanyWalletService : ICompanyWalletService
         var wallet = await domainUnitOfWork.Wallets.FindActiveWalletByOwnerAsync(WalletOwnerType.Company, company.CompanyId, cancellationToken);
         if (wallet is null)
         {
-            throw new Phase5NotFoundException("Company wallet was not found.");
+            wallet = await domainUnitOfWork.ExecuteInTransactionAsync(
+                transactionCancellationToken => domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
+                    Guid.NewGuid().ToString("N"),
+                    WalletOwnerType.Company,
+                    company.CompanyId,
+                    company.UserId,
+                    transactionCancellationToken),
+                cancellationToken);
         }
 
         var skip = (pageNumber - 1) * pageSize;
@@ -105,6 +119,37 @@ public sealed class CompanyWalletService : ICompanyWalletService
         return processingResult.Result ?? throw new InvalidOperationException("Wallet top-up processing did not produce a result.");
     }
 
+    public async Task<MockPaymentResultDto> CreateMockTopUpAsync(
+        string actorUserId,
+        string? idempotencyKey,
+        MockTopUpRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            throw new Phase5ValidationException("Validation failed.", ["Mock checkout request body is required."]);
+        }
+
+        var normalizedIdempotencyKey = CompanyWalletTopUpValidation.NormalizeIdempotencyKey(idempotencyKey);
+        var validationResult = await mockTopUpValidator.ValidateAsync(request, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            throw new Phase5ValidationException(
+                "Validation failed.",
+                validationResult.Errors.Select(error => error.ErrorMessage).ToArray());
+        }
+
+        var company = await ResolveApprovedCompanyActorAsync(actorUserId, cancellationToken);
+        return await domainUnitOfWork.ExecuteInTransactionAsync(
+            transactionCancellationToken => ProcessMockCheckoutAsync(
+                actorUserId,
+                company,
+                normalizedIdempotencyKey,
+                request,
+                transactionCancellationToken),
+            cancellationToken);
+    }
+
     private async Task<TopUpProcessingResult> ProcessTopUpInTransactionAsync(
         string actorUserId,
         CompanyActor company,
@@ -113,11 +158,12 @@ public sealed class CompanyWalletService : ICompanyWalletService
         string? description,
         CancellationToken cancellationToken)
     {
-        var wallet = await domainUnitOfWork.Wallets.FindActiveWalletForUpdateByOwnerAsync(WalletOwnerType.Company, company.CompanyId, cancellationToken);
-        if (wallet is null)
-        {
-            return TopUpProcessingResult.Failure(new Phase5NotFoundException("Company wallet was not found."));
-        }
+        var wallet = await domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
+            Guid.NewGuid().ToString("N"),
+            WalletOwnerType.Company,
+            company.CompanyId,
+            company.UserId,
+            cancellationToken);
 
         var existingTransaction = await domainUnitOfWork.WalletTransactions.FindTransactionByIdempotencyAsync(WalletTransactionType.TopUp, idempotencyKey, cancellationToken);
         if (existingTransaction is not null)
@@ -210,6 +256,102 @@ public sealed class CompanyWalletService : ICompanyWalletService
         });
     }
 
+    private async Task<MockPaymentResultDto> ProcessMockCheckoutAsync(
+        string actorUserId,
+        CompanyActor company,
+        string idempotencyKey,
+        MockTopUpRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var existingPayment = await domainUnitOfWork.Payments.FindByCompanyAndIdempotencyForUpdateAsync(
+            company.CompanyId,
+            idempotencyKey,
+            cancellationToken);
+        if (existingPayment is not null)
+        {
+            if (existingPayment.Amount != request.Amount ||
+                !string.Equals(existingPayment.Currency, request.Currency, StringComparison.Ordinal))
+            {
+                throw new Phase5ConflictException("Mock checkout conflicts with a previous request.");
+            }
+
+            return ToMockPaymentResult(existingPayment);
+        }
+
+        var wallet = await domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
+            Guid.NewGuid().ToString("N"),
+            WalletOwnerType.Company,
+            company.CompanyId,
+            company.UserId,
+            cancellationToken);
+        var paymentId = Guid.NewGuid().ToString("N");
+        var transactionId = Guid.NewGuid().ToString("N");
+        var auditEventId = Guid.NewGuid().ToString("N");
+        var walletTransactionIdempotencyKey = CreateMockWalletTransactionIdempotencyKey(company.CompanyId, idempotencyKey);
+        var now = DateTime.UtcNow;
+        var balanceBefore = wallet.AvailableBalance;
+        var balanceAfter = MoneyRules.EnsureValid(
+            balanceBefore + request.Amount,
+            nameof(MockPaymentTransaction.WalletBalanceAfter));
+
+        await domainUnitOfWork.Wallets.StageAvailableBalanceChangeAsync(wallet.Id, request.Amount, cancellationToken);
+        await domainUnitOfWork.WalletTransactions.AddTransactionAsync(new WalletTransaction
+        {
+            Id = transactionId,
+            WalletId = wallet.Id,
+            OperationType = WalletTransactionType.TopUp,
+            IdempotencyKey = walletTransactionIdempotencyKey,
+            Amount = request.Amount,
+            Description = "Mock checkout top-up",
+            Metadata = JsonSerializer.Serialize(new { Gateway = "MockCheckout", PaymentId = paymentId, Currency = "EGP" }, AuditJsonOptions),
+            CreatedAtUtc = now
+        }, cancellationToken);
+        await domainUnitOfWork.WalletLedgerEntries.AddLedgerEntryAsync(new WalletLedgerEntry
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            WalletTransactionId = transactionId,
+            WalletId = wallet.Id,
+            Direction = WalletLedgerEntryDirection.Credit,
+            BalanceType = WalletBalanceType.Available,
+            Amount = request.Amount,
+            Currency = wallet.Currency,
+            CompanyId = company.CompanyId,
+            IdempotencyKey = walletTransactionIdempotencyKey,
+            CreatedAtUtc = now
+        }, cancellationToken);
+        await domainUnitOfWork.AuditEvents.AddPhase5AuditEventAsync(
+            auditEventId,
+            "MockPaymentTopUpSucceeded",
+            actorUserId,
+            company.ActorRole,
+            AuditTargetType.WalletTransaction,
+            transactionId,
+            AuditOutcome.Success,
+            "Mock checkout top-up succeeded.",
+            correlationId: null,
+            JsonSerializer.Serialize(new { WalletId = wallet.Id, TransactionId = transactionId, Amount = request.Amount, Currency = "EGP" }, AuditJsonOptions),
+            now,
+            cancellationToken);
+
+        var payment = new MockPaymentTransaction
+        {
+            PaymentId = paymentId,
+            CompanyId = company.CompanyId,
+            WalletId = wallet.Id,
+            Amount = request.Amount,
+            Currency = request.Currency,
+            Status = PaymentStatus.Succeeded,
+            CreatedAtUtc = now,
+            IdempotencyKey = idempotencyKey,
+            WalletBalanceBefore = balanceBefore,
+            WalletBalanceAfter = balanceAfter,
+            WalletTransactionId = transactionId,
+            AuditEventId = auditEventId
+        };
+        await domainUnitOfWork.Payments.AddMockPaymentAsync(payment, cancellationToken);
+        return ToMockPaymentResult(payment);
+    }
+
     private async Task<CompanyActor> ResolveApprovedCompanyActorAsync(string actorUserId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(actorUserId))
@@ -221,7 +363,7 @@ public sealed class CompanyWalletService : ICompanyWalletService
         var profile = await identityUnitOfWork.Profiles.FindCompanyProfileByUserIdAsync(actorUserId, cancellationToken);
         if (user is { Role: UserRole.Company, AccountStatus: AccountStatus.Approved, IsDeleted: false } && profile is { IsDeleted: false })
         {
-            return new CompanyActor(profile.Id, user.Role.ToString());
+            return new CompanyActor(profile.Id, profile.UserId, user.Role.ToString());
         }
 
         await AddAuditAsync(
@@ -265,6 +407,25 @@ public sealed class CompanyWalletService : ICompanyWalletService
         return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 
+    private static string CreateMockWalletTransactionIdempotencyKey(string companyId, string idempotencyKey)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"mock-checkout:{companyId}:{idempotencyKey}"));
+        return Convert.ToHexString(bytes);
+    }
+
+    private static MockPaymentResultDto ToMockPaymentResult(MockPaymentTransaction payment)
+    {
+        return new MockPaymentResultDto(
+            payment.PaymentId,
+            payment.CompanyId,
+            payment.Amount,
+            payment.Status.ToString(),
+            payment.CreatedAtUtc,
+            payment.TransactionReference,
+            payment.WalletBalanceBefore,
+            payment.WalletBalanceAfter);
+    }
+
     private async Task AddAuditAsync(
         string eventType,
         string? actorUserId,
@@ -291,7 +452,7 @@ public sealed class CompanyWalletService : ICompanyWalletService
             cancellationToken);
     }
 
-    private sealed record CompanyActor(string CompanyId, string ActorRole);
+    private sealed record CompanyActor(string CompanyId, string UserId, string ActorRole);
 
     private sealed record TopUpProcessingResult(TopUpCompanyWalletResultDto? Result, Phase5WorkflowException? Exception)
     {

@@ -49,6 +49,50 @@ public sealed class CompanyCampaignsController : ControllerBase
         return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }
 
+    [HttpGet("{campaignId}/target-preview")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    [ProducesResponseType(typeof(ApiEnvelope<TargetPreviewDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiEnvelope<TargetPreviewDto>>> GetTargetPreview(
+        string campaignId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var result = await campaignWorkflowService.PreviewTargetsAsync(
+            actorUserId,
+            campaignId,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    [HttpGet("{campaignId}/queue-summary")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    [ProducesResponseType(typeof(ApiEnvelope<QueueSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiEnvelope<QueueSummaryDto>>> GetQueueSummary(
+        string campaignId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var result = await campaignWorkflowService.GetQueueSummaryAsync(
+            actorUserId,
+            campaignId,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
     [HttpPut("{campaignId}")]
     [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
     [ProducesResponseType(typeof(ApiEnvelope<CampaignDraftDto>), StatusCodes.Status200OK)]

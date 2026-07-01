@@ -889,6 +889,87 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("DoctorMessageQueues", (string)null);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Payments.MockPaymentTransaction", b =>
+                {
+                    b.Property<string>("PaymentId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("AuditEventId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CompanyId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransactionReference")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<decimal>("WalletBalanceAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("WalletBalanceBefore")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("WalletId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("WalletTransactionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("PaymentId");
+
+                    b.HasIndex("AuditEventId");
+
+                    b.HasIndex("TransactionReference")
+                        .IsUnique();
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("WalletTransactionId");
+
+                    b.HasIndex("CompanyId", "CreatedAtUtc");
+
+                    b.HasIndex("CompanyId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("MockPaymentTransactions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MockPaymentTransactions_Amount_Positive", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_MockPaymentTransactions_Balances_NonNegative", "[WalletBalanceBefore] >= 0 AND [WalletBalanceAfter] >= 0");
+
+                            t.HasCheckConstraint("CK_MockPaymentTransactions_Currency_EGP", "[Currency] = 'EGP'");
+
+                            t.HasCheckConstraint("CK_MockPaymentTransactions_Status_Succeeded", "[Status] = 1");
+                        });
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Policies.ActivityScoreHistory", b =>
                 {
                     b.Property<string>("Id")
@@ -1929,6 +2010,32 @@ namespace MediBridge.Repository.Migrations
                     b.HasOne("MediBridge.Core.Entities.Profiles.DoctorProfile", null)
                         .WithMany()
                         .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Payments.MockPaymentTransaction", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Policies.AuditEvent", null)
+                        .WithMany()
+                        .HasForeignKey("AuditEventId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MediBridge.Core.Entities.Profiles.CompanyProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Wallets.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Wallets.WalletTransaction", null)
+                        .WithMany()
+                        .HasForeignKey("WalletTransactionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

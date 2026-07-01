@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using MediBridge.Core.Entities.Campaigns;
 using MediBridge.Core.Entities.Files;
@@ -17,6 +18,112 @@ namespace MediBridge.IntegrationTests;
 
 public sealed class Phase4CampaignFileIntegrationTests
 {
+    [Fact]
+    public async Task CampaignAssetCompatibilityUpload_DelegatesToCurrentFileWorkflow()
+    {
+        await using var factory = CreateFactory(out var storageProvider);
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var email = await Phase6IdentityTestHelpers.RegisterCompanyAsync(client);
+        await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, email, AccountStatus.Approved);
+        var user = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, email);
+        var campaignId = await SeedCampaignAsync(factory.Services, user.Id);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Company", user.Id));
+
+        using var response = await client.PostAsync(
+            $"/api/company/campaigns/{campaignId}/assets",
+            CreateReplacementMultipart());
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(1, storageProvider.UploadCallCount);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            StoredFilePurpose.CampaignMedia.ToString(),
+            document.RootElement.GetProperty("Data").GetProperty("Purpose").GetString());
+    }
+
+    [Theory]
+    [InlineData("replace", HttpStatusCode.Created)]
+    [InlineData("delete", HttpStatusCode.NoContent)]
+    public async Task CampaignAssetCompatibilityChanges_DelegateToCurrentFileWorkflow(
+        string operation,
+        HttpStatusCode expectedStatus)
+    {
+        await using var factory = CreateFactory(out var storageProvider);
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var email = await Phase6IdentityTestHelpers.RegisterCompanyAsync(client);
+        await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, email, AccountStatus.Approved);
+        var user = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, email);
+        var campaignId = await SeedCampaignAsync(factory.Services, user.Id);
+        var fileId = await SeedOwnedCampaignFileAsync(factory.Services, user.Id, campaignId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Company", user.Id));
+
+        using var response = operation == "replace"
+            ? await client.PostAsync(
+                $"/api/company/campaigns/{campaignId}/assets/{fileId}/replacement",
+                CreateReplacementMultipart())
+            : await client.DeleteAsync($"/api/company/campaigns/{campaignId}/assets/{fileId}");
+
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.Equal(operation == "replace" ? 1 : 0, storageProvider.UploadCallCount);
+        Assert.Equal(operation == "delete" ? 1 : 0, storageProvider.DeleteCallCount);
+    }
+
+    [Fact]
+    public async Task FileAccessCompatibilityGet_DelegatesToCurrentPrivateAccessWorkflow()
+    {
+        await using var factory = CreateFactory(out var storageProvider);
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var email = await Phase6IdentityTestHelpers.RegisterCompanyAsync(client);
+        await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, email, AccountStatus.Approved);
+        var user = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, email);
+        var campaignId = await SeedCampaignAsync(factory.Services, user.Id);
+        var fileId = await SeedOwnedCampaignFileAsync(
+            factory.Services,
+            user.Id,
+            campaignId,
+            StoredFileReviewStatus.Approved);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Company", user.Id));
+
+        using var response = await client.GetAsync($"/api/files/{fileId}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(1, storageProvider.AccessGrantCallCount);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.StartsWith(
+            "https://files.example.test/",
+            document.RootElement.GetProperty("Data").GetProperty("Url").GetString(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AdminCampaignAssetReviewCompatibilityPost_DelegatesToCurrentFileReviewWorkflow()
+    {
+        await using var factory = CreateFactory(out _);
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var companyEmail = await Phase6IdentityTestHelpers.RegisterCompanyAsync(client);
+        await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, companyEmail, AccountStatus.Approved);
+        var company = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, companyEmail);
+        var campaignId = await SeedCampaignAsync(factory.Services, company.Id);
+        var fileId = await SeedOwnedCampaignFileAsync(factory.Services, company.Id, campaignId);
+        var admin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Admin", admin.Id));
+
+        using var response = await client.PostAsJsonAsync(
+            $"/api/admin/campaign-assets/{fileId}/review",
+            new { Decision = "Approved" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var storedFile = await db.StoredFiles.SingleAsync(file => file.Id == fileId);
+        Assert.Equal(StoredFileReviewStatus.Approved, storedFile.ReviewStatus);
+        Assert.Equal(admin.Id, storedFile.ReviewedByAdminId);
+    }
+
     [Theory]
     [InlineData(StoredFilePurpose.CampaignMedia, "banner.png", "image/png", 1024)]
     [InlineData(StoredFilePurpose.VoiceNote, "voice.mp3", "audio/mpeg", 1024)]
@@ -326,7 +433,8 @@ public sealed class Phase4CampaignFileIntegrationTests
     private static async Task<string> SeedOwnedCampaignFileAsync(
         IServiceProvider services,
         string companyUserId,
-        string campaignId)
+        string campaignId,
+        StoredFileReviewStatus reviewStatus = StoredFileReviewStatus.Rejected)
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
@@ -349,7 +457,7 @@ public sealed class Phase4CampaignFileIntegrationTests
             StorageResourceType = StoredFileStorageResourceType.Image,
             StorageDeliveryType = StoredFileStorageDeliveryType.Private,
             Visibility = StoredFileVisibility.Private,
-            ReviewStatus = StoredFileReviewStatus.Rejected,
+            ReviewStatus = reviewStatus,
             UploadStatus = StoredFileUploadStatus.Stored,
             SafetyScanStatus = StoredFileSafetyScanStatus.Deferred,
             CreatedAtUtc = DateTime.UtcNow

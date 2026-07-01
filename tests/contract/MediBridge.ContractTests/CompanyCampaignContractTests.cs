@@ -145,6 +145,41 @@ public sealed class CompanyCampaignContractTests
         Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
     }
 
+    [Fact]
+    public async Task CompanyCampaignPreviewAndQueueSummary_ReturnStableAggregateEnvelopes()
+    {
+        using var factory = new ContractWebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var seed = await SeedApprovedCompanyAsync(factory);
+        Phase5ContractTestHelpers.AuthorizeAsCompany(client, seed.CompanyUserId);
+        var campaignId = await CreateDraftAsync(client);
+
+        using var previewResponse = await client.GetAsync($"/api/company/campaigns/{campaignId}/target-preview");
+        using var summaryResponse = await client.GetAsync($"/api/company/campaigns/{campaignId}/queue-summary");
+
+        Assert.Equal(HttpStatusCode.OK, previewResponse.StatusCode);
+        using (var document = await JsonDocument.ParseAsync(await previewResponse.Content.ReadAsStreamAsync()))
+        {
+            var data = Phase5ContractTestHelpers.AssertDataEnvelope(document, 200);
+            Assert.Equal(0, data.GetProperty("eligibleDoctorCount").GetInt32());
+            Assert.Equal(0m, data.GetProperty("estimatedTotalCost").GetDecimal());
+            Assert.Equal("EGP", data.GetProperty("currency").GetString());
+        }
+
+        Assert.Equal(HttpStatusCode.OK, summaryResponse.StatusCode);
+        using (var document = await JsonDocument.ParseAsync(await summaryResponse.Content.ReadAsStreamAsync()))
+        {
+            var data = Phase5ContractTestHelpers.AssertDataEnvelope(document, 200);
+            Assert.Equal(campaignId, data.GetProperty("campaignId").GetString());
+            Assert.Equal(0, data.GetProperty("queuedCount").GetInt32());
+            Assert.Equal(0, data.GetProperty("activatedCount").GetInt32());
+            Assert.Equal(0, data.GetProperty("cancelledCount").GetInt32());
+            Assert.Equal(0, data.GetProperty("expiredCount").GetInt32());
+            Assert.True(data.TryGetProperty("generatedAtUtc", out _));
+        }
+    }
+
     private static object CreateDraftScenarioRequest(string scenario)
     {
         return scenario switch

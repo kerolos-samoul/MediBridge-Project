@@ -14,6 +14,7 @@ public interface IMessageQueueRepository
     // QueuedAtUtc is derived from campaign submission time or queue insertion time. Phase 3 has no priority queue behavior.
     Task<IReadOnlyList<string>> ListActiveQueueItemIdsForDoctorAsync(string doctorId, QueueItemStatus status, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DoctorMessageQueue>> ListQueueItemsForDoctorAsync(string doctorId, QueueItemStatus status, int skip, int take, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<QueueItemStatus, int>> CountQueueItemsByCampaignAsync(string campaignId, CancellationToken cancellationToken = default);
 
     Task UpdateQueueItemStatusAsync(string queueItemId, QueueItemStatus status, DateTime updatedAtUtc, CancellationToken cancellationToken = default);
 }

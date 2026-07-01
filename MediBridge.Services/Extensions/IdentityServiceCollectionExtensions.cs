@@ -64,6 +64,7 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<ICampaignDraftService, CampaignDraftService>();
         services.AddScoped<IAdminCampaignReviewService, AdminCampaignReviewService>();
         services.AddScoped<ICompanyWalletService, CompanyWalletService>();
+        services.AddScoped<IAdminPricingService, AdminPricingService>();
 
         RegisterValidators(services, typeof(IdentityServiceCollectionExtensions).Assembly);
 
