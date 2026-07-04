@@ -1,12 +1,14 @@
 using System.Reflection;
 using FluentValidation;
 using MediBridge.Core.Interfaces.Identity;
+using MediBridge.Core.Interfaces.Time;
 using MediBridge.Services.Config;
 using MediBridge.Services.Interfaces;
 using MediBridge.Services.Services;
 using MediBridge.Services.Validators.Files;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace MediBridge.Services.Extensions;
@@ -43,6 +45,8 @@ public static class IdentityServiceCollectionExtensions
             tokenOptions.SigningKey,
             tokenOptions.AccessTokenMinutes,
             tokenOptions.RefreshTokenDays));
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IEgyptBusinessClock, EgyptBusinessClock>();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
@@ -65,6 +69,20 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<IAdminCampaignReviewService, AdminCampaignReviewService>();
         services.AddScoped<ICompanyWalletService, CompanyWalletService>();
         services.AddScoped<IAdminPricingService, AdminPricingService>();
+        services.AddScoped<DeliveryJobRunTracker>();
+        services.AddScoped<IDeliveryJobRecoveryCoordinator, DeliveryJobRecoveryCoordinator>();
+        services.AddScoped<IDeliveryExpiryService, DeliveryExpiryService>();
+        services.AddScoped<IDoctorMessageService, DoctorMessageService>();
+        services.AddSingleton<DeliverySettlementSnapshotCalculator>();
+        services.AddSingleton<DeliveryCandidateEligibilityPolicy>();
+        services.AddScoped<IDailyDeliveryInjectorService>(serviceProvider => new DailyDeliveryInjectorService(
+            serviceProvider.GetRequiredService<MediBridge.Core.Interfaces.IDomainUnitOfWork>(),
+            serviceProvider.GetRequiredService<IEgyptBusinessClock>(),
+            serviceProvider.GetRequiredService<DeliverySettlementSnapshotCalculator>(),
+            serviceProvider.GetRequiredService<DeliveryCandidateEligibilityPolicy>(),
+            configuration.GetValue<int?>("DeliveryJobs:BatchSize") ?? 100,
+            serviceProvider.GetRequiredService<DeliveryJobRunTracker>(),
+            serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<DailyDeliveryInjectorService>>()));
 
         RegisterValidators(services, typeof(IdentityServiceCollectionExtensions).Assembly);
 

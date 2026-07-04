@@ -41,12 +41,14 @@ public sealed class CompanyWalletService : ICompanyWalletService
         var wallet = await domainUnitOfWork.Wallets.FindActiveWalletByOwnerAsync(WalletOwnerType.Company, company.CompanyId, cancellationToken);
         if (wallet is null)
         {
+            var createdAtUtc = DateTime.UtcNow;
             wallet = await domainUnitOfWork.ExecuteInTransactionAsync(
                 transactionCancellationToken => domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
                     Guid.NewGuid().ToString("N"),
                     WalletOwnerType.Company,
                     company.CompanyId,
                     company.UserId,
+                    createdAtUtc,
                     transactionCancellationToken),
                 cancellationToken);
         }
@@ -158,11 +160,13 @@ public sealed class CompanyWalletService : ICompanyWalletService
         string? description,
         CancellationToken cancellationToken)
     {
+        var now = DateTime.UtcNow;
         var wallet = await domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
             Guid.NewGuid().ToString("N"),
             WalletOwnerType.Company,
             company.CompanyId,
             company.UserId,
+            now,
             cancellationToken);
 
         var existingTransaction = await domainUnitOfWork.WalletTransactions.FindTransactionByIdempotencyAsync(WalletTransactionType.TopUp, idempotencyKey, cancellationToken);
@@ -207,8 +211,7 @@ public sealed class CompanyWalletService : ICompanyWalletService
         }
 
         var transactionId = Guid.NewGuid().ToString("N");
-        var now = DateTime.UtcNow;
-        await domainUnitOfWork.Wallets.StageAvailableBalanceChangeAsync(wallet.Id, amount, cancellationToken);
+        await domainUnitOfWork.Wallets.StageAvailableBalanceChangeAsync(wallet.Id, amount, now, cancellationToken);
         await domainUnitOfWork.WalletTransactions.AddTransactionAsync(new WalletTransaction
         {
             Id = transactionId,
@@ -278,23 +281,24 @@ public sealed class CompanyWalletService : ICompanyWalletService
             return ToMockPaymentResult(existingPayment);
         }
 
+        var now = DateTime.UtcNow;
         var wallet = await domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
             Guid.NewGuid().ToString("N"),
             WalletOwnerType.Company,
             company.CompanyId,
             company.UserId,
+            now,
             cancellationToken);
         var paymentId = Guid.NewGuid().ToString("N");
         var transactionId = Guid.NewGuid().ToString("N");
         var auditEventId = Guid.NewGuid().ToString("N");
         var walletTransactionIdempotencyKey = CreateMockWalletTransactionIdempotencyKey(company.CompanyId, idempotencyKey);
-        var now = DateTime.UtcNow;
         var balanceBefore = wallet.AvailableBalance;
         var balanceAfter = MoneyRules.EnsureValid(
             balanceBefore + request.Amount,
             nameof(MockPaymentTransaction.WalletBalanceAfter));
 
-        await domainUnitOfWork.Wallets.StageAvailableBalanceChangeAsync(wallet.Id, request.Amount, cancellationToken);
+        await domainUnitOfWork.Wallets.StageAvailableBalanceChangeAsync(wallet.Id, request.Amount, now, cancellationToken);
         await domainUnitOfWork.WalletTransactions.AddTransactionAsync(new WalletTransaction
         {
             Id = transactionId,

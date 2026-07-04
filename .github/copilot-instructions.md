@@ -52,3 +52,12 @@ Linting: no dedicated lint command/tooling is configured in this repo. Treat `do
 - Keep Swagger availability development-only unless there is an explicit requirement to expose it elsewhere.
 - Follow the existing namespace layout (`MediBridge.APIs` and `MediBridge.APIs.Controllers`) when adding new types.
 - This repo includes **SpecKit workflow integration** (`.specify`, `.github/agents`, `.github/prompts`). Feature work is expected to use `specs\<feature-branch>\` artifacts (`spec.md`, `plan.md`, `tasks.md`) and feature branch naming like `001-short-name` (or timestamp-based `YYYYMMDD-HHMMSS-short-name`).
+
+## Active Technologies
+
+- C# / .NET 8 + ASP.NET Core Web API, DI, JWT Bearer authorization, Entity Framework Core 8.0.11 SQL Server, Hangfire.AspNetCore 1.8.17, Hangfire.SqlServer 1.8.17, BCL `TimeProvider`/`TimeZoneInfo`, existing API envelope/exception/correlation middleware, existing campaign/file/queue/delivery/wallet/audit abstractions (008-delivery-expiry-jobs)
+- SQL Server through EF Core implementations in `MediBridge.Repository`; Hangfire uses its own `HangFire` scheduler schema in the configured SQL Server database, while all MediBridge delivery, wallet, ledger, and job-run records remain behind Repository + Unit of Work abstractions (008-delivery-expiry-jobs)
+
+## Recent Changes
+
+- 008-delivery-expiry-jobs: Added C# / .NET 8 + ASP.NET Core Web API, EF Core SQL Server, Hangfire 1.8.17, and DST-aware `TimeProvider`/`TimeZoneInfo` planning context

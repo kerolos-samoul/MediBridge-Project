@@ -55,6 +55,30 @@ public enum ReservationStatus
     Charged = 3
 }
 
+public enum DeliveryJobType
+{
+    ExpiryCleaner = 1,
+    DailyInjector = 2
+}
+
+public enum DeliveryJobRunStatus
+{
+    Running = 1,
+    Succeeded = 2,
+    PartiallySucceeded = 3,
+    Failed = 4,
+    Deferred = 5,
+    Interrupted = 6
+}
+
+public enum RecoveryDispatchStatus
+{
+    Pending = 1,
+    Enqueued = 2,
+    Completed = 3,
+    Failed = 4
+}
+
 public enum FeedbackQualityStatus
 {
     Pending = 1,

@@ -1,4 +1,5 @@
 using MediBridge.Core.Entities.Profiles;
+using MediBridge.Core.Interfaces.Messaging;
 
 namespace MediBridge.Core.Interfaces.Identity;
 
@@ -24,4 +25,5 @@ public interface IProfileRepository
     Task<IReadOnlyList<DoctorProfile>> SearchEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, int skip, int take, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DoctorProfile>> ListEligibleDoctorsByIdsAsync(IReadOnlyCollection<string> doctorIds, CancellationToken cancellationToken = default);
     Task<int> CountEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, CancellationToken cancellationToken = default);
+    Task<LockedDoctorDeliveryEligibilityReadModel?> FindDoctorDeliveryEligibilityForUpdateAsync(string doctorId, CancellationToken cancellationToken = default);
 }

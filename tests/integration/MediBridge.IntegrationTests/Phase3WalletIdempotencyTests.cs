@@ -37,13 +37,13 @@ public sealed class Phase3WalletIdempotencyTests
 
         await unitOfWork.ExecuteInTransactionAsync(async cancellationToken =>
         {
-            await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, 10m, cancellationToken);
+            await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, 10m, DateTime.UtcNow, cancellationToken);
             await unitOfWork.WalletTransactions.AddTransactionAsync($"transaction-{Guid.NewGuid():N}", walletId, operationType, idempotencyKey, 10m, cancellationToken);
         });
 
         await Assert.ThrowsAsync<DbUpdateException>(() => unitOfWork.ExecuteInTransactionAsync(async cancellationToken =>
         {
-            await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, 10m, cancellationToken);
+            await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, 10m, DateTime.UtcNow, cancellationToken);
             await unitOfWork.WalletTransactions.AddTransactionAsync($"transaction-{Guid.NewGuid():N}", walletId, operationType, idempotencyKey, 10m, cancellationToken);
         }));
 

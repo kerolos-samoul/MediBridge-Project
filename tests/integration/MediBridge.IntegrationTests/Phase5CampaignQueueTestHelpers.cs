@@ -113,10 +113,15 @@ public static class Phase5CampaignQueueTestHelpers
         return wallet.Id;
     }
 
-    public static async Task<string> SeedCampaignAsync(IServiceProvider services, string companyId, CampaignStatus status = CampaignStatus.PendingReview)
+    public static async Task<string> SeedCampaignAsync(
+        IServiceProvider services,
+        string companyId,
+        CampaignStatus status = CampaignStatus.PendingReview,
+        DateTime? submittedAtUtc = null)
     {
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var createdAtUtc = DateTime.UtcNow;
         var campaign = new Campaign
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -125,7 +130,8 @@ public static class Phase5CampaignQueueTestHelpers
             Description = "Phase 5 seeded campaign",
             ClinicalResearchInfo = "Phase 5 research context",
             Status = status,
-            CreatedAtUtc = DateTime.UtcNow
+            SubmittedAtUtc = status == CampaignStatus.Draft ? null : submittedAtUtc ?? createdAtUtc,
+            CreatedAtUtc = createdAtUtc
         };
 
         await context.Campaigns.AddAsync(campaign);
@@ -137,11 +143,17 @@ public static class Phase5CampaignQueueTestHelpers
     {
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var campaignSubmittedAtUtc = await context.Campaigns
+            .Where(campaign => campaign.Id == campaignId)
+            .Select(campaign => campaign.SubmittedAtUtc)
+            .SingleAsync()
+            ?? throw new InvalidOperationException("The queue fixture requires an authentic campaign submission timestamp.");
         var queueItem = new DoctorMessageQueue
         {
             Id = Guid.NewGuid().ToString("N"),
             CampaignId = campaignId,
             DoctorId = doctorId,
+            CampaignSubmittedAtUtc = campaignSubmittedAtUtc,
             QueuedAtUtc = queuedAtUtc ?? DateTime.UtcNow,
             Status = QueueItemStatus.Queued,
             CreatedAtUtc = DateTime.UtcNow

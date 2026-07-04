@@ -21,6 +21,8 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         IProfileRepository profiles,
         IMessageQueueRepository messageQueues,
         IDeliveryRepository deliveries,
+        IDeliveryJobRunRepository deliveryJobRuns,
+        IDeliveryRecoveryDispatchRepository deliveryRecoveryDispatches,
         IWalletRepository wallets,
         IWalletTransactionRepository walletTransactions,
         IWalletLedgerEntryRepository walletLedgerEntries,
@@ -36,6 +38,8 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         Profiles = profiles;
         MessageQueues = messageQueues;
         Deliveries = deliveries;
+        DeliveryJobRuns = deliveryJobRuns;
+        DeliveryRecoveryDispatches = deliveryRecoveryDispatches;
         Wallets = wallets;
         WalletTransactions = walletTransactions;
         WalletLedgerEntries = walletLedgerEntries;
@@ -51,6 +55,8 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     public IProfileRepository Profiles { get; }
     public IMessageQueueRepository MessageQueues { get; }
     public IDeliveryRepository Deliveries { get; }
+    public IDeliveryJobRunRepository DeliveryJobRuns { get; }
+    public IDeliveryRecoveryDispatchRepository DeliveryRecoveryDispatches { get; }
     public IWalletRepository Wallets { get; }
     public IWalletTransactionRepository WalletTransactions { get; }
     public IWalletLedgerEntryRepository WalletLedgerEntries { get; }
@@ -68,20 +74,82 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
 
     public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
     {
-        await using IDbContextTransaction transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-        await operation(cancellationToken);
-        // Persist staged wallet balance, transaction, and ledger changes in the same database transaction.
-        await context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        await ExecuteTransactionCoreAsync(
+            async transactionCancellationToken =>
+            {
+                await operation(transactionCancellationToken);
+                return true;
+            },
+            clearTrackingAfterSuccess: false,
+            cancellationToken);
     }
 
-    public async Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default)
+    public Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default)
     {
-        await using IDbContextTransaction transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-        var result = await operation(cancellationToken);
-        // Keep returned results tied to a fully committed unit of work.
-        await context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return result;
+        return ExecuteTransactionCoreAsync(operation, clearTrackingAfterSuccess: false, cancellationToken);
+    }
+
+    public Task<T> ExecuteIsolatedInTransactionAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        return ExecuteTransactionCoreAsync(operation, clearTrackingAfterSuccess: true, cancellationToken);
+    }
+
+    private async Task<T> ExecuteTransactionCoreAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        bool clearTrackingAfterSuccess,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        var completed = false;
+        try
+        {
+            T result;
+            await using (var transaction = await context.Database.BeginTransactionAsync(cancellationToken))
+            {
+                try
+                {
+                    result = await operation(cancellationToken);
+                    await context.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch (Exception operationException)
+                {
+                    try
+                    {
+                        await transaction.RollbackAsync(CancellationToken.None);
+                    }
+                    catch (Exception rollbackException)
+                    {
+                        var combinedFailure = new AggregateException(
+                            "The transaction operation and its rollback both failed.",
+                            operationException,
+                            rollbackException);
+                        if (operationException is OperationCanceledException && cancellationToken.IsCancellationRequested)
+                        {
+                            throw new OperationCanceledException(
+                                "The transaction was cancelled and rollback also failed.",
+                                combinedFailure,
+                                cancellationToken);
+                        }
+
+                        throw combinedFailure;
+                    }
+
+                    throw;
+                }
+            }
+
+            completed = true;
+            return result;
+        }
+        finally
+        {
+            if (clearTrackingAfterSuccess || !completed)
+            {
+                context.ChangeTracker.Clear();
+            }
+        }
     }
 }

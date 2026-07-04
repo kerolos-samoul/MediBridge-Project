@@ -50,8 +50,7 @@ public sealed class CloudinaryFileStorageProvider : IFileStorageProvider
     {
         var cloudinary = CreateClient();
         logger.LogInformation(
-            "TEMP Cloudinary upload starting. StorageKey: {StorageKey}, ContentType: {ContentType}, ResourceType: {ResourceType}, DeliveryType: {DeliveryType}, LengthKnown: {LengthKnown}",
-            request.StorageKey,
+            "Private file upload starting. ContentType: {ContentType}, ResourceType: {ResourceType}, DeliveryType: {DeliveryType}, LengthKnown: {LengthKnown}",
             request.ContentType,
             request.ResourceType,
             request.DeliveryType,
@@ -89,12 +88,9 @@ public sealed class CloudinaryFileStorageProvider : IFileStorageProvider
             }
 
             logger.LogInformation(
-                "TEMP Cloudinary upload succeeded. StorageKey: {StorageKey}, PublicId: {PublicId}, Bytes: {Bytes}, Version: {Version}, SecureUrlPresent: {SecureUrlPresent}",
-                request.StorageKey,
-                result.PublicId,
+                "Private file upload succeeded. Bytes: {Bytes}, Version: {Version}",
                 result.Bytes,
-                result.Version,
-                result.SecureUrl is not null);
+                result.Version);
 
             return new FileStorageUploadResponse(
                 "Cloudinary",
@@ -105,12 +101,10 @@ public sealed class CloudinaryFileStorageProvider : IFileStorageProvider
                 request.ContentType,
                 result.Version);
         }
-        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogError(
-                exception,
-                "TEMP Cloudinary upload failed. StorageKey: {StorageKey}, ContentType: {ContentType}, ResourceType: {ResourceType}, DeliveryType: {DeliveryType}",
-                request.StorageKey,
+                "Private file upload failed. ContentType: {ContentType}, ResourceType: {ResourceType}, DeliveryType: {DeliveryType}",
                 request.ContentType,
                 request.ResourceType,
                 request.DeliveryType);
@@ -142,22 +136,12 @@ public sealed class CloudinaryFileStorageProvider : IFileStorageProvider
         if (errors.Count > 0)
         {
             logger.LogError(
-                "TEMP Cloudinary configuration validation failed. CloudinaryUrlConfigured: {CloudinaryUrlConfigured}, ConfigCloudName: {ConfigCloudName}, UseSecureUrls: {UseSecureUrls}, FolderPrefix: {FolderPrefix}, Errors: {Errors}",
-                !string.IsNullOrWhiteSpace(cloudinaryUrl),
-                options.CloudName,
-                options.UseSecureUrls,
-                options.FolderPrefix,
-                string.Join(" ", errors));
+                "Private storage configuration validation failed with {ErrorCount} safe validation errors.",
+                errors.Count);
             throw new InvalidOperationException(string.Join(" ", errors));
         }
 
-        logger.LogInformation(
-            "TEMP Cloudinary client created. CloudinaryUrlConfigured: {CloudinaryUrlConfigured}, ConfigCloudName: {ConfigCloudName}, UrlCloudName: {UrlCloudName}, UseSecureUrls: {UseSecureUrls}, FolderPrefix: {FolderPrefix}",
-            !string.IsNullOrWhiteSpace(cloudinaryUrl),
-            options.CloudName,
-            TryReadCloudName(cloudinaryUrl),
-            options.UseSecureUrls,
-            options.FolderPrefix);
+        logger.LogDebug("Private storage client created using secure URLs: {UseSecureUrls}.", options.UseSecureUrls);
 
         var cloudinary = new Cloudinary(cloudinaryUrl)
         {
@@ -167,13 +151,6 @@ public sealed class CloudinaryFileStorageProvider : IFileStorageProvider
             }
         };
         return cloudinary;
-    }
-
-    private static string? TryReadCloudName(string? value)
-    {
-        return !string.IsNullOrWhiteSpace(value) && Uri.TryCreate(value, UriKind.Absolute, out var uri)
-            ? uri.Host
-            : null;
     }
 
     private string BuildPublicId(string storageKey)

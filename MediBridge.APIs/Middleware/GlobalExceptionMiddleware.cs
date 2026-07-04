@@ -25,7 +25,23 @@ public sealed class GlobalExceptionMiddleware
         catch (Exception ex)
         {
             var correlationId = CorrelationIdMiddleware.GetCorrelationId(context);
-            _logger.LogError(ex, "Unhandled exception while processing {Method} {Path} {CorrelationId}", context.Request.Method, context.Request.Path, correlationId);
+            if (ex is Phase7StorageUnavailableException)
+            {
+                _logger.LogWarning("Storage unavailable while processing {Method} {Path} {CorrelationId}", context.Request.Method, context.Request.Path, correlationId);
+            }
+            else if (ex is Phase7WorkflowException)
+            {
+                _logger.LogInformation("Phase 7 request rejected with {ExceptionType} while processing {Method} {Path} {CorrelationId}", ex.GetType().Name, context.Request.Method, context.Request.Path, correlationId);
+            }
+            else
+            {
+                _logger.LogError(
+                    "Unhandled {ExceptionType} while processing {Method} {Path} {CorrelationId}",
+                    ex.GetType().Name,
+                    context.Request.Method,
+                    context.Request.Path,
+                    correlationId);
+            }
             if (context.Response.HasStarted)
             {
                 throw;
@@ -39,6 +55,11 @@ public sealed class GlobalExceptionMiddleware
                 Phase5NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
                 Phase5ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
                 Phase5ServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Service unavailable."),
+                Phase7BadRequestException => (StatusCodes.Status400BadRequest, "Invalid request."),
+                Phase7ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden."),
+                Phase7NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
+                Phase7ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
+                Phase7StorageUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Storage unavailable."),
                 _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
             };
 

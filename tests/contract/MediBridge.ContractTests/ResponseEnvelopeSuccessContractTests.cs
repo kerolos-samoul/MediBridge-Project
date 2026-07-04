@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using MediBridge.APIs.Contracts;
 using MediBridge.ContractTests.TestHost;
+using MediBridge.Services.DTOs.Messaging;
 using Xunit;
 
 namespace MediBridge.ContractTests;
@@ -35,5 +37,30 @@ public sealed class ResponseEnvelopeSuccessContractTests
 
         Assert.Equal(32 + (int)(temperatureC / 0.5556), temperatureF);
         Assert.False(string.IsNullOrWhiteSpace(firstForecast.GetProperty("Summary").GetString()));
+    }
+
+    [Fact]
+    public void Phase7DoctorSuccessEnvelopes_KeepExactPascalCaseShapeAndNullableCursor()
+    {
+        var inbox = new ApiEnvelope<TodayInboxDto>(
+            200,
+            "Today's messages retrieved.",
+            new TodayInboxDto(new DateOnly(2026, 7, 4), [], null));
+        var access = new ApiEnvelope<DeliveryAssetAccessGrantDto>(
+            200,
+            "Asset access granted.",
+            new DeliveryAssetAccessGrantDto("https://storage.example.test/grant", new DateTime(2026, 7, 4, 12, 10, 0, DateTimeKind.Utc)));
+
+        using var inboxDocument = JsonDocument.Parse(JsonSerializer.Serialize(inbox));
+        Assert.Equal(["Code", "Message", "Data"], inboxDocument.RootElement.EnumerateObject().Select(property => property.Name));
+        var inboxData = inboxDocument.RootElement.GetProperty("Data");
+        Assert.Equal(["BusinessDateEgypt", "Items", "NextCursor"], inboxData.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(JsonValueKind.Null, inboxData.GetProperty("NextCursor").ValueKind);
+
+        using var accessDocument = JsonDocument.Parse(JsonSerializer.Serialize(access));
+        Assert.Equal(["Code", "Message", "Data"], accessDocument.RootElement.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(
+            ["AccessUrl", "ExpiresAtUtc"],
+            accessDocument.RootElement.GetProperty("Data").EnumerateObject().Select(property => property.Name));
     }
 }
