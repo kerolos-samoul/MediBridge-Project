@@ -35,6 +35,8 @@ public sealed class MediBridgeDbContext : IdentityDbContext<MediBridgeIdentityUs
     public DbSet<CampaignReviewHistory> CampaignReviewHistories => Set<CampaignReviewHistory>();
     public DbSet<DoctorMessageQueue> DoctorMessageQueues => Set<DoctorMessageQueue>();
     public DbSet<DoctorAdDelivery> DoctorAdDeliveries => Set<DoctorAdDelivery>();
+    public DbSet<DeliveryJobRun> DeliveryJobRuns => Set<DeliveryJobRun>();
+    public DbSet<DeliveryRecoveryDispatch> DeliveryRecoveryDispatches => Set<DeliveryRecoveryDispatch>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<WalletLedgerEntry> WalletLedgerEntries => Set<WalletLedgerEntry>();

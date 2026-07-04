@@ -23,6 +23,7 @@ public sealed class DoctorAdDelivery : IConcurrencyTrackedRecord
     public decimal DoctorEarnings { get; set; }
     public decimal ReservedAmount { get; set; }
     public ReservationStatus ReservationStatus { get; set; } = ReservationStatus.Reserved;
+    public DateTime? ExpiredAtUtc { get; set; }
     public byte[] ConcurrencyToken { get; set; } = Array.Empty<byte>();
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
@@ -54,5 +55,23 @@ public sealed class DoctorAdDelivery : IConcurrencyTrackedRecord
         {
             throw new ArgumentException("Reserved amount must equal the price per message snapshot.", nameof(reservedAmount));
         }
+    }
+
+    public void MarkExpiredAndReleased(DateTime expiredAtUtc)
+    {
+        if (expiredAtUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The expiry timestamp must be UTC.", nameof(expiredAtUtc));
+        }
+
+        if (Status != DeliveryStatus.Active || ReservationStatus != ReservationStatus.Reserved)
+        {
+            throw new InvalidOperationException($"Delivery in state '{Status}/{ReservationStatus}' cannot expire and release.");
+        }
+
+        Status = DeliveryStatus.Expired;
+        ReservationStatus = ReservationStatus.Released;
+        ExpiredAtUtc = expiredAtUtc;
+        UpdatedAtUtc = expiredAtUtc;
     }
 }

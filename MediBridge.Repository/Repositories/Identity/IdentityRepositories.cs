@@ -2,6 +2,7 @@ using MediBridge.Core.Entities.Identity;
 using MediBridge.Core.Entities.Profiles;
 using MediBridge.Core.Enums;
 using MediBridge.Core.Interfaces.Identity;
+using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Repository.Data;
 using MediBridge.Repository.Data.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -259,6 +260,38 @@ public sealed class ProfileRepository : IProfileRepository
     public Task<int> CountEligibleDoctorsAsync(EligibleDoctorSearchCriteria criteria, CancellationToken cancellationToken = default)
     {
         return ApplyEligibleDoctorFilters(criteria).CountAsync(cancellationToken);
+    }
+
+    public async Task<LockedDoctorDeliveryEligibilityReadModel?> FindDoctorDeliveryEligibilityForUpdateAsync(
+        string doctorId,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = await context.DoctorProfiles
+            .FromSqlInterpolated($"SELECT * FROM [DoctorProfiles] WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE [Id] = {doctorId}")
+            .SingleOrDefaultAsync(cancellationToken);
+        if (profile is null)
+        {
+            return null;
+        }
+
+        var user = await context.Users
+            .FromSqlInterpolated($"SELECT * FROM [Users] WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE [Id] = {profile.UserId}")
+            .SingleOrDefaultAsync(cancellationToken);
+        if (user is null)
+        {
+            return null;
+        }
+
+        return new LockedDoctorDeliveryEligibilityReadModel(
+            profile.Id,
+            profile.UserId,
+            user.Role,
+            user.AccountStatus,
+            user.IsDeleted,
+            profile.IsDeleted,
+            profile.Status,
+            profile.PricePerMessage,
+            profile.DailyMessageLimit);
     }
 
     private IQueryable<DoctorProfile> ApplyEligibleDoctorFilters(EligibleDoctorSearchCriteria criteria)

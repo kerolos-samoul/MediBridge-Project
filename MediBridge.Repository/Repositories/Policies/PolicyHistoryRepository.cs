@@ -1,6 +1,7 @@
 using MediBridge.Core.Entities.Policies;
 using MediBridge.Core.Entities.Wallets;
 using MediBridge.Core.Interfaces.Policies;
+using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -107,6 +108,33 @@ public sealed class PolicyHistoryRepository : IPolicyHistoryRepository
             .OrderBy(history => history.EffectiveFromUtc)
             .Select(history => history.Id)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<EffectivePlatformFeePolicyReadModel?> FindSingleEffectivePlatformFeePolicyAsync(
+        DateTime effectiveAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        if (effectiveAtUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The effective policy instant must be UTC.", nameof(effectiveAtUtc));
+        }
+
+        var matches = await context.PlatformFeePolicyHistories
+            .AsNoTracking()
+            .Where(history => history.EffectiveFromUtc <= effectiveAtUtc
+                && (history.EffectiveToUtc == null || effectiveAtUtc < history.EffectiveToUtc))
+            .OrderBy(history => history.EffectiveFromUtc)
+            .ThenBy(history => history.Id)
+            .Take(2)
+            .Select(history => new EffectivePlatformFeePolicyReadModel(history.Id, history.FeePercent))
+            .ToListAsync(cancellationToken);
+
+        return matches.Count switch
+        {
+            0 => null,
+            1 => matches[0],
+            _ => throw new EffectivePolicyConflictException("Multiple platform fee policies overlap at the requested instant.")
+        };
     }
 
     public async Task AddActivityScoreHistoryAsync(string historyId, string doctorId, decimal activityScore, DateOnly windowStartDateEgypt, DateOnly windowEndDateEgypt, CancellationToken cancellationToken = default)

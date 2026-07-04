@@ -1,6 +1,7 @@
 using MediBridge.Core.Entities.Campaigns;
 using MediBridge.Core.Enums;
 using MediBridge.Core.Interfaces.Campaigns;
+using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -446,5 +447,44 @@ public sealed class CampaignRepository : ICampaignRepository
             .Where(campaign => campaign.Id == campaignId)
             .Select(campaign => campaign.Id)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<LockedCampaignCompanyEligibilityReadModel?> FindDeliveryEligibilityForUpdateAsync(
+        string campaignId,
+        CancellationToken cancellationToken = default)
+    {
+        var campaign = await context.Campaigns
+            .FromSqlInterpolated($"SELECT * FROM [Campaigns] WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE [Id] = {campaignId}")
+            .SingleOrDefaultAsync(cancellationToken);
+        if (campaign is null)
+        {
+            return null;
+        }
+
+        var company = await context.CompanyProfiles
+            .FromSqlInterpolated($"SELECT * FROM [CompanyProfiles] WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE [Id] = {campaign.CompanyId}")
+            .SingleOrDefaultAsync(cancellationToken);
+        if (company is null)
+        {
+            return null;
+        }
+
+        var user = await context.Users
+            .FromSqlInterpolated($"SELECT * FROM [Users] WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE [Id] = {company.UserId}")
+            .SingleOrDefaultAsync(cancellationToken);
+        if (user is null)
+        {
+            return null;
+        }
+
+        return new LockedCampaignCompanyEligibilityReadModel(
+            campaign.Id,
+            campaign.CompanyId,
+            campaign.Status,
+            campaign.IsDeleted,
+            company.IsDeleted,
+            user.Role,
+            user.AccountStatus,
+            user.IsDeleted);
     }
 }

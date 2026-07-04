@@ -116,6 +116,9 @@ public static class ServiceCollectionExtensions
             options.AddPolicy(
                 AuthorizationPolicies.Phase5CompanyWalletAccess,
                 policy => policy.RequireRole(AuthorizationPolicies.Company));
+            options.AddPolicy(
+                AuthorizationPolicies.Phase7DoctorMessagesRead,
+                policy => policy.RequireRole(AuthorizationPolicies.Doctor));
         });
 
         return services;
@@ -143,7 +146,7 @@ public static class ServiceCollectionExtensions
             foreach (var policyName in RateLimitPolicyNames.All)
             {
                 var policy = options.GetPolicy(policyName);
-                if (policyName is RateLimitPolicyNames.FileUpload or RateLimitPolicyNames.Phase5CampaignSubmission or RateLimitPolicyNames.Phase5WalletTopUp)
+                if (policyName is RateLimitPolicyNames.FileUpload or RateLimitPolicyNames.Phase5CampaignSubmission or RateLimitPolicyNames.Phase5WalletTopUp or RateLimitPolicyNames.Phase7DoctorMessagesRead)
                 {
                     rateLimiterOptions.AddPolicy(policyName, context =>
                     {

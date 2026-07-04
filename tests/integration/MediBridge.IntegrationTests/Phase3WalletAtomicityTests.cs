@@ -28,7 +28,7 @@ public sealed class Phase3WalletAtomicityTests
 
         await Assert.ThrowsAsync<DbUpdateException>(() => unitOfWork.ExecuteInTransactionAsync(async cancellationToken =>
         {
-            await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, 50m, cancellationToken);
+            await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, 50m, DateTime.UtcNow, cancellationToken);
             await unitOfWork.WalletTransactions.AddTransactionAsync(transactionId, walletId, WalletTransactionType.TopUp, $"atomic-{Guid.NewGuid():N}", 50m, cancellationToken);
             await unitOfWork.WalletLedgerEntries.AddLedgerEntryAsync($"ledger-{Guid.NewGuid():N}", "missing-transaction", walletId, WalletLedgerEntryDirection.Credit, WalletBalanceType.Available, 50m, cancellationToken);
         }));

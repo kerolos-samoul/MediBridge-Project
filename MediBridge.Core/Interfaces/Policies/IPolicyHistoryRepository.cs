@@ -1,5 +1,15 @@
 namespace MediBridge.Core.Interfaces.Policies;
 
+using MediBridge.Core.Interfaces.Messaging;
+
+public sealed class EffectivePolicyConflictException : InvalidOperationException
+{
+    public EffectivePolicyConflictException(string message)
+        : base(message)
+    {
+    }
+}
+
 public interface IPolicyHistoryRepository
 {
     Task AddDoctorPriceHistoryAsync(string historyId, string doctorId, decimal? previousPricePerMessage, decimal? newPricePerMessage, string adminUserId, CancellationToken cancellationToken = default);
@@ -12,4 +22,5 @@ public interface IPolicyHistoryRepository
     Task AddActivityScoreHistoryAsync(string historyId, string doctorId, decimal activityScore, DateOnly windowStartDateEgypt, DateOnly windowEndDateEgypt, CancellationToken cancellationToken = default);
     Task AddActivityScoreHistoryCorrectionAsync(string historyId, string correctsHistoryId, string doctorId, decimal activityScore, DateOnly windowStartDateEgypt, DateOnly windowEndDateEgypt, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListActivityScoreHistoryIdsAsync(string doctorId, CancellationToken cancellationToken = default);
+    Task<EffectivePlatformFeePolicyReadModel?> FindSingleEffectivePlatformFeePolicyAsync(DateTime effectiveAtUtc, CancellationToken cancellationToken = default);
 }

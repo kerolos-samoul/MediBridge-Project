@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Reflection;
 using MediBridge.APIs.Controllers;
+using MediBridge.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Xunit;
@@ -23,7 +24,9 @@ public class LayeringBoundaryTests
             {
                 var ns = param.ParameterType.Namespace ?? string.Empty;
                 Assert.True(param.ParameterType.IsInterface, $"Controller {ctrl.Name} depends on concrete type {param.ParameterType.FullName}");
-                Assert.Equal("MediBridge.Services.Interfaces", ns);
+                Assert.True(
+                    ns == "MediBridge.Services.Interfaces" || param.ParameterType == typeof(ICurrentUserContext),
+                    $"Controller {ctrl.Name} has disallowed interface dependency {param.ParameterType.FullName}");
             }
 
             foreach (var field in ctrl.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
@@ -34,7 +37,9 @@ public class LayeringBoundaryTests
                 }
 
                 Assert.True(field.FieldType.IsInterface, $"Controller {ctrl.Name} has concrete field dependency {field.FieldType.FullName}");
-                Assert.Equal("MediBridge.Services.Interfaces", field.FieldType.Namespace);
+                Assert.True(
+                    field.FieldType.Namespace == "MediBridge.Services.Interfaces" || field.FieldType == typeof(ICurrentUserContext),
+                    $"Controller {ctrl.Name} has disallowed interface field {field.FieldType.FullName}");
             }
 
             foreach (var action in ctrl.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)

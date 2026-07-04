@@ -14,6 +14,7 @@ public static class RateLimitPolicyNames
     public const string FileUpload = "file-upload";
     public const string Phase5CampaignSubmission = "phase5-campaign-submission";
     public const string Phase5WalletTopUp = "phase5-wallet-top-up";
+    public const string Phase7DoctorMessagesRead = "phase7-doctor-messages-read";
     public const string Envelope = "rate-limit-envelope";
 
     public static readonly string[] All =
@@ -27,6 +28,7 @@ public static class RateLimitPolicyNames
         FileUpload,
         Phase5CampaignSubmission,
         Phase5WalletTopUp,
+        Phase7DoctorMessagesRead,
         Envelope
     ];
 }
@@ -51,6 +53,7 @@ public sealed class RateLimitingOptions
         },
         [RateLimitPolicyNames.Phase5CampaignSubmission] = new(),
         [RateLimitPolicyNames.Phase5WalletTopUp] = new(),
+        [RateLimitPolicyNames.Phase7DoctorMessagesRead] = new(),
         [RateLimitPolicyNames.Envelope] = new()
     };
 

@@ -185,16 +185,19 @@ public sealed class Phase5QueueCreationIntegrationTests : IClassFixture<WebAppFa
     }
 
     [Fact]
-    public async Task PendingQueueReads_OrderByQueuedAtThenStableId()
+    public async Task PendingQueueReads_OrderByCampaignSubmittedAtThenStableId()
     {
         await factory.InitializeDatabaseAsync();
         var company = await Phase5CampaignQueueTestHelpers.SeedApprovedCompanyAsync(factory.Services);
         var doctor = await Phase5CampaignQueueTestHelpers.SeedApprovedDoctorAsync(factory.Services);
         var queuedAtUtc = new DateTime(2026, 6, 18, 12, 0, 0, DateTimeKind.Utc);
-        await AddQueueItemWithIdAsync("queue-z-old", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved), doctor.DoctorId, queuedAtUtc.AddMinutes(-1));
-        await AddQueueItemWithIdAsync("queue-b-same", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved), doctor.DoctorId, queuedAtUtc);
-        await AddQueueItemWithIdAsync("queue-a-same", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved), doctor.DoctorId, queuedAtUtc);
-        await AddQueueItemWithIdAsync("queue-new", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved), doctor.DoctorId, queuedAtUtc.AddMinutes(1));
+        var oldSubmission = queuedAtUtc.AddDays(-3);
+        var tiedSubmission = queuedAtUtc.AddDays(-2);
+        var newSubmission = queuedAtUtc.AddDays(-1);
+        await AddQueueItemWithIdAsync("queue-z-old", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved, oldSubmission), doctor.DoctorId, queuedAtUtc.AddMinutes(3));
+        await AddQueueItemWithIdAsync("queue-b-same", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved, tiedSubmission), doctor.DoctorId, queuedAtUtc.AddMinutes(2));
+        await AddQueueItemWithIdAsync("queue-a-same", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved, tiedSubmission), doctor.DoctorId, queuedAtUtc.AddMinutes(1));
+        await AddQueueItemWithIdAsync("queue-new", await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved, newSubmission), doctor.DoctorId, queuedAtUtc);
 
         using var scope = factory.Services.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<MediBridge.Core.Interfaces.IDomainUnitOfWork>();
@@ -249,11 +252,17 @@ public sealed class Phase5QueueCreationIntegrationTests : IClassFixture<WebAppFa
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var campaignSubmittedAtUtc = await context.Campaigns
+            .Where(campaign => campaign.Id == campaignId)
+            .Select(campaign => campaign.SubmittedAtUtc)
+            .SingleAsync()
+            ?? throw new InvalidOperationException("The queue fixture requires an authentic campaign submission timestamp.");
         await context.DoctorMessageQueues.AddAsync(new DoctorMessageQueue
         {
             Id = queueItemId,
             CampaignId = campaignId,
             DoctorId = doctorId,
+            CampaignSubmittedAtUtc = campaignSubmittedAtUtc,
             QueuedAtUtc = queuedAtUtc,
             Status = QueueItemStatus.Queued,
             CreatedAtUtc = queuedAtUtc

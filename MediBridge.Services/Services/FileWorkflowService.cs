@@ -4,7 +4,9 @@ using MediBridge.Core.Entities.Files;
 using MediBridge.Core.Enums;
 using MediBridge.Core.Interfaces;
 using MediBridge.Core.Interfaces.Identity;
+using MediBridge.Core.Interfaces.Time;
 using MediBridge.Services.DTOs.Files;
+using MediBridge.Services.DTOs.Messaging;
 using MediBridge.Services.Interfaces;
 using MediBridge.Services.Validators.Files;
 using Microsoft.Extensions.Logging;
@@ -19,6 +21,7 @@ public sealed class FileWorkflowService : IFileWorkflowService
     private readonly FileUploadRequestValidator uploadValidator;
     private readonly FileReviewRequestValidator reviewValidator;
     private readonly ILogger<FileWorkflowService> logger;
+    private readonly IEgyptBusinessClock businessClock;
 
     public FileWorkflowService(
         IDomainUnitOfWork domainUnitOfWork,
@@ -26,7 +29,8 @@ public sealed class FileWorkflowService : IFileWorkflowService
         IFileStorageProvider storageProvider,
         FileUploadRequestValidator uploadValidator,
         FileReviewRequestValidator reviewValidator,
-        ILogger<FileWorkflowService> logger)
+        ILogger<FileWorkflowService> logger,
+        IEgyptBusinessClock businessClock)
     {
         this.domainUnitOfWork = domainUnitOfWork;
         this.identityUnitOfWork = identityUnitOfWork;
@@ -34,6 +38,7 @@ public sealed class FileWorkflowService : IFileWorkflowService
         this.uploadValidator = uploadValidator;
         this.reviewValidator = reviewValidator;
         this.logger = logger;
+        this.businessClock = businessClock;
     }
 
     public async Task<FileDto> UploadVerificationDocumentAsync(string actorUserId, UserRole role, FileWorkflowUpload upload, CancellationToken cancellationToken = default)
@@ -90,11 +95,9 @@ public sealed class FileWorkflowService : IFileWorkflowService
             cancellationToken: cancellationToken);
         await domainUnitOfWork.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
-            "TEMP verification upload pending metadata saved. StoredFileId: {StoredFileId}, OwnerType: {OwnerType}, OwnerId: {OwnerId}, StorageKey: {StorageKey}, ResourceType: {ResourceType}",
+            "Verification upload pending metadata saved. StoredFileId: {StoredFileId}, OwnerType: {OwnerType}, ResourceType: {ResourceType}",
             storedFileId,
             ownerType,
-            ownerId,
-            storageKey,
             resourceType);
 
         try
@@ -115,10 +118,8 @@ public sealed class FileWorkflowService : IFileWorkflowService
                 cancellationToken);
 
             logger.LogInformation(
-                "TEMP verification upload provider returned. StoredFileId: {StoredFileId}, StorageProvider: {StorageProvider}, StorageKey: {StorageKey}, SizeBytes: {SizeBytes}",
+                "Verification upload provider returned. StoredFileId: {StoredFileId}, SizeBytes: {SizeBytes}",
                 storedFileId,
-                uploadResponse.StorageProvider,
-                uploadResponse.StorageKey,
                 uploadResponse.SizeBytes);
 
             await domainUnitOfWork.StoredFiles.MarkUploadStoredAsync(
@@ -142,9 +143,9 @@ public sealed class FileWorkflowService : IFileWorkflowService
             await domainUnitOfWork.SaveChangesAsync(cancellationToken);
             logger.LogInformation("TEMP verification upload stored metadata saved. StoredFileId: {StoredFileId}", storedFileId);
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            logger.LogError(exception, "TEMP verification upload failed after pending metadata. StoredFileId: {StoredFileId}", storedFileId);
+            logger.LogError("Verification upload failed after pending metadata. StoredFileId: {StoredFileId}", storedFileId);
             await domainUnitOfWork.StoredFiles.MarkUploadFailedAsync(storedFileId, cancellationToken);
             await domainUnitOfWork.AuditEvents.AddAuditEventAsync(
                 Guid.NewGuid().ToString("N"),
@@ -277,6 +278,88 @@ public sealed class FileWorkflowService : IFileWorkflowService
     public Task<FileAccessGrantDto> CreatePrivateAccessGrantAsync(string actorUserId, UserRole role, string storedFileId, CancellationToken cancellationToken = default)
     {
         return CreatePrivateAccessGrantCoreAsync(actorUserId, role, storedFileId, cancellationToken);
+    }
+
+    public async Task<DeliveryAssetAccessGrantDto> CreateDeliveryAssetAccessGrantAsync(
+        string actorUserId,
+        string deliveryId,
+        string fileId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await identityUnitOfWork.Users.FindByIdAsync(actorUserId, cancellationToken);
+        var doctor = await identityUnitOfWork.Profiles.FindDoctorProfileByUserIdAsync(actorUserId, cancellationToken);
+        if (user is null
+            || doctor is null
+            || user.Role != UserRole.Doctor
+            || user.AccountStatus != AccountStatus.Approved
+            || user.IsDeleted
+            || doctor.IsDeleted
+            || doctor.Status != DoctorMarketplaceStatus.Active)
+        {
+            throw new Phase7ForbiddenException("Doctor access is required.");
+        }
+
+        var snapshot = businessClock.Capture();
+        var authorization = await domainUnitOfWork.Deliveries.FindDeliveryAssetAuthorizationAsync(
+            doctor.Id,
+            deliveryId,
+            fileId,
+            snapshot.BusinessDateEgypt,
+            cancellationToken);
+        if (authorization is null)
+        {
+            throw new Phase7NotFoundException("Delivery asset was not found.");
+        }
+
+        var expiresAtUtc = snapshot.UtcNow.AddMinutes(10);
+        FileStorageAccessGrant grant;
+        try
+        {
+            grant = await storageProvider.CreatePrivateAccessGrantAsync(
+                authorization.StorageKey,
+                authorization.StorageResourceType,
+                expiresAtUtc,
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new Phase7StorageUnavailableException("Storage provider is unavailable.", exception);
+        }
+
+        if (grant.ExpiresAtUtc <= snapshot.UtcNow)
+        {
+            throw new Phase7StorageUnavailableException(
+                "Storage provider is unavailable.",
+                new InvalidOperationException("The storage provider returned an expired grant."));
+        }
+
+        await domainUnitOfWork.FileAccessGrantAudits.AddAsync(new FileAccessGrantAudit
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            StoredFileId = fileId,
+            RequestedByUserId = actorUserId,
+            RequesterRole = UserRole.Doctor.ToString(),
+            Outcome = FileAccessGrantOutcome.Issued,
+            Reason = "Delivery asset access grant issued.",
+            ExpiresAtUtc = expiresAtUtc,
+            CreatedAtUtc = snapshot.UtcNow
+        }, cancellationToken);
+        await domainUnitOfWork.AuditEvents.AddAuditEventAsync(
+            Guid.NewGuid().ToString("N"),
+            "DeliveryAssetAccessIssued",
+            AuditOutcome.Success,
+            snapshot.UtcNow,
+            JsonSerializer.Serialize(new { actorUserId, deliveryId, fileId, expiresAtUtc }),
+            targetType: AuditTargetType.StoredFile,
+            targetId: fileId,
+            cancellationToken: cancellationToken);
+        await domainUnitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new DeliveryAssetAccessGrantDto(grant.Url, expiresAtUtc);
     }
 
     public async Task<FileDto> ReplaceCampaignFileAsync(

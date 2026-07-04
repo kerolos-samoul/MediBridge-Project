@@ -13,15 +13,18 @@ public sealed class DoctorMessageQueueConfiguration : IEntityTypeConfiguration<D
         builder.ToTable("DoctorMessageQueues");
         builder.HasKey(queue => queue.Id);
         builder.Property(queue => queue.Status).HasConversion<int>();
+        builder.Property(queue => queue.ConcurrencyToken).IsRowVersion();
+        builder.ToTable(table => table.HasCheckConstraint(
+            "CK_DoctorMessageQueues_QueuedCampaignSubmittedAtUtc",
+            "[Status] <> 1 OR [CampaignSubmittedAtUtc] IS NOT NULL"));
         builder.HasOne<DoctorProfile>().WithMany().HasForeignKey(queue => queue.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Campaign>().WithMany().HasForeignKey(queue => queue.CampaignId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(queue => new { queue.CampaignId, queue.DoctorId }).IsUnique();
         builder.HasIndex(queue => new
         {
-            queue.DoctorId,
             queue.Status,
+            queue.DoctorId,
             queue.CampaignSubmittedAtUtc,
-            queue.QueuedAtUtc,
             queue.Id
         });
     }
@@ -50,5 +53,20 @@ public sealed class DoctorAdDeliveryConfiguration : IEntityTypeConfiguration<Doc
         builder.HasOne<Campaign>().WithMany().HasForeignKey(delivery => delivery.CampaignId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<CompanyProfile>().WithMany().HasForeignKey(delivery => delivery.CompanyId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(delivery => new { delivery.DoctorId, delivery.DeliveryDateEgypt, delivery.CampaignId }).IsUnique();
+        builder.HasIndex(delivery => new
+        {
+            delivery.Status,
+            delivery.ReservationStatus,
+            delivery.DeliveryDateEgypt,
+            delivery.CompanyId,
+            delivery.Id
+        });
+        builder.HasIndex(delivery => new
+        {
+            delivery.DoctorId,
+            delivery.DeliveryDateEgypt,
+            delivery.DeliveredAtUtc,
+            delivery.Id
+        });
     }
 }

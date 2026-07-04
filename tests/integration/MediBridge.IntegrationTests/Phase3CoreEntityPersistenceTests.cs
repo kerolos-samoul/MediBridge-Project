@@ -45,8 +45,8 @@ public sealed class Phase3CoreEntityPersistenceTests
         await unitOfWork.Campaigns.AddCampaignAsync(campaignId, ids.CompanyProfileId, CampaignStatus.Approved);
         await unitOfWork.Campaigns.AddCampaignTargetAsync(targetId, campaignId, ids.DoctorProfileId);
         await unitOfWork.Campaigns.AddCampaignReviewHistoryAsync(reviewId, campaignId, ids.AdminUserId, CampaignReviewDecision.Approved);
-        await unitOfWork.MessageQueues.AddQueueItemAsync(queueId, ids.DoctorProfileId, campaignId, now);
-        await unitOfWork.Deliveries.AddDeliveryAsync(deliveryId, ids.DoctorProfileId, campaignId, ids.CompanyProfileId, DateOnly.FromDateTime(now), 50m, 10m, 5m, 45m, 50m);
+        await unitOfWork.MessageQueues.AddQueueItemAsync(queueId, ids.DoctorProfileId, campaignId, now.AddHours(-1), now);
+        await unitOfWork.Deliveries.AddDeliveryAsync(deliveryId, ids.DoctorProfileId, campaignId, ids.CompanyProfileId, DateOnly.FromDateTime(now), 50m, 10m, 5m, 45m, 50m, now);
         await unitOfWork.Wallets.AddWalletAsync(companyWalletId, WalletOwnerType.Company, ids.CompanyProfileId, ids.CompanyUserId);
         await unitOfWork.WalletTransactions.AddTransactionAsync(transactionId, companyWalletId, WalletTransactionType.TopUp, $"top-up-{Guid.NewGuid():N}", 100m);
         await unitOfWork.WalletLedgerEntries.AddLedgerEntryAsync(ledgerEntryId, transactionId, companyWalletId, WalletLedgerEntryDirection.Credit, WalletBalanceType.Available, 100m);

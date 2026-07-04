@@ -15,21 +15,22 @@ public sealed class Phase3QueueOrderingTests
         await factory.InitializeDatabaseAsync();
 
         var ids = await Phase3DatabaseTestHelpers.SeedProfilesAsync(factory.Services);
-        var olderCampaignId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId);
-        var sameTimeCampaignBId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId);
-        var sameTimeCampaignAId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId);
-        var laterCampaignId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId);
-        var oldCarryOverTime = new DateTime(2026, 6, 1, 8, 0, 0, DateTimeKind.Utc);
-        var sameQueuedTime = new DateTime(2026, 6, 1, 9, 0, 0, DateTimeKind.Utc);
-        var laterNextDayTime = new DateTime(2026, 6, 2, 8, 0, 0, DateTimeKind.Utc);
+        var oldSubmissionTime = new DateTime(2026, 5, 31, 8, 0, 0, DateTimeKind.Utc);
+        var tiedSubmissionTime = new DateTime(2026, 6, 1, 8, 0, 0, DateTimeKind.Utc);
+        var laterSubmissionTime = new DateTime(2026, 6, 2, 8, 0, 0, DateTimeKind.Utc);
+        var olderCampaignId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId, submittedAtUtc: oldSubmissionTime);
+        var sameTimeCampaignBId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId, submittedAtUtc: tiedSubmissionTime);
+        var sameTimeCampaignAId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId, submittedAtUtc: tiedSubmissionTime);
+        var laterCampaignId = await Phase3DatabaseTestHelpers.AddCampaignAsync(factory.Services, ids.CompanyProfileId, submittedAtUtc: laterSubmissionTime);
+        var deliberatelyReversedQueueTime = new DateTime(2026, 6, 3, 9, 0, 0, DateTimeKind.Utc);
 
         using var scope = factory.Services.CreateScope();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IDomainUnitOfWork>();
 
-        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-carry-over", ids.DoctorProfileId, olderCampaignId, oldCarryOverTime);
-        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-tie-b", ids.DoctorProfileId, sameTimeCampaignBId, sameQueuedTime);
-        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-tie-a", ids.DoctorProfileId, sameTimeCampaignAId, sameQueuedTime);
-        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-next-day", ids.DoctorProfileId, laterCampaignId, laterNextDayTime);
+        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-carry-over", ids.DoctorProfileId, olderCampaignId, oldSubmissionTime, deliberatelyReversedQueueTime.AddMinutes(3));
+        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-tie-b", ids.DoctorProfileId, sameTimeCampaignBId, tiedSubmissionTime, deliberatelyReversedQueueTime.AddMinutes(2));
+        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-tie-a", ids.DoctorProfileId, sameTimeCampaignAId, tiedSubmissionTime, deliberatelyReversedQueueTime.AddMinutes(1));
+        await unitOfWork.MessageQueues.AddQueueItemAsync("queue-next-day", ids.DoctorProfileId, laterCampaignId, laterSubmissionTime, deliberatelyReversedQueueTime);
         await unitOfWork.SaveChangesAsync();
 
         var orderedIds = await unitOfWork.MessageQueues.ListActiveQueueItemIdsForDoctorAsync(ids.DoctorProfileId, QueueItemStatus.Queued);
