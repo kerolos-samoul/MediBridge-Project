@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MediBridge.APIs.Config;
 using MediBridge.APIs.Contracts;
+using MediBridge.APIs.OpenApi;
 using MediBridge.APIs.Security;
 using MediBridge.Services.DTOs.Campaigns;
 using MediBridge.Services.Interfaces;
@@ -65,6 +66,7 @@ public sealed class AdminCampaignsController : ControllerBase
     }
 
     [HttpPost("{campaignId}/review")]
+    [RequireIdempotencyKey]
     [ProducesResponseType(typeof(ApiEnvelope<CampaignReviewResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]

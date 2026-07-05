@@ -31,7 +31,20 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.DocumentFilter<MediBridge.APIs.OpenApi.BearerSecurityDocumentFilter>();
+        options.OperationFilter<MediBridge.APIs.OpenApi.AuthorizeOperationFilter>();
+        options.OperationFilter<MediBridge.APIs.OpenApi.IdempotencyKeyOperationFilter>();
+        
+        // Include XML comments for API documentation
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (System.IO.File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
+        }
+    });
 }
 
 builder.Services.AddFoundationServices(builder.Configuration);

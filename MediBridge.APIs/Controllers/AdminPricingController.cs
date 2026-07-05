@@ -23,6 +23,13 @@ public sealed class AdminPricingController : ControllerBase
         this.adminPricingService = adminPricingService;
     }
 
+    /// <summary>
+    /// Sets or updates the pricing for a doctor profile.
+    /// </summary>
+    /// <param name="doctorId">The unique identifier of the DoctorProfile entity (not the User ID). Retrieve from GET /api/admin/pending-accounts or doctor profile endpoints.</param>
+    /// <param name="request">The pricing details to set for the doctor.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated doctor pricing information.</returns>
     [HttpPut("{doctorId}/price")]
     public async Task<ActionResult<ApiEnvelope<DoctorPriceDto>>> SetDoctorPrice(
         string doctorId,
