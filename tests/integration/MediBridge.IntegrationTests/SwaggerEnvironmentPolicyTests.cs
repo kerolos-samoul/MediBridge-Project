@@ -106,6 +106,32 @@ public class SwaggerEnvironmentPolicyTests
         Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, rateLimit?.PolicyName);
     }
 
+    [Fact]
+    public async Task Swagger_DocumentsBearerSecurityAndRequiredIdempotencyForActualReplaySafeEndpoints()
+    {
+        await using var factory = new WebAppFactory();
+        var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
+
+        var response = await client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var root = document.RootElement;
+        var schemes = root.GetProperty("components").GetProperty("securitySchemes");
+        Assert.True(schemes.TryGetProperty("Bearer", out var bearer));
+        Assert.Equal("http", bearer.GetProperty("type").GetString());
+        Assert.Equal("bearer", bearer.GetProperty("scheme").GetString());
+
+        var paths = root.GetProperty("paths");
+        AssertOperationReferencesBearer(paths.GetProperty("/api/admin/campaigns/{campaignId}/review").GetProperty("post"));
+        AssertRequiredIdempotencyKey(paths, "/api/company/campaigns/{campaignId}/submit", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/admin/campaigns/{campaignId}/review", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/company/wallet/topup", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/company/wallet/mock-checkout", "post");
+        AssertNoIdempotencyKey(paths, "/api/company/campaigns/drafts", "post");
+        AssertNoIdempotencyKey(paths, "/api/auth/login", "post");
+    }
+
     private static void AssertResponses(JsonElement operation, params string[] expectedStatusCodes)
     {
         var responses = operation.GetProperty("responses");
@@ -113,5 +139,55 @@ public class SwaggerEnvironmentPolicyTests
         {
             Assert.True(responses.TryGetProperty(statusCode, out _), $"Response {statusCode} was not documented.");
         }
+    }
+
+    private static void AssertOperationReferencesBearer(JsonElement operation)
+    {
+        var security = operation.GetProperty("security");
+        Assert.Contains(security.EnumerateArray(), requirement =>
+            requirement.TryGetProperty("Bearer", out var scopes)
+            && scopes.ValueKind == JsonValueKind.Array
+            && !scopes.EnumerateArray().Any());
+    }
+
+    private static void AssertRequiredIdempotencyKey(JsonElement paths, string path, string method)
+    {
+        Assert.True(
+            HasRequiredIdempotencyKey(paths.GetProperty(path).GetProperty(method)),
+            $"Expected required Idempotency-Key on {method.ToUpperInvariant()} {path}.");
+    }
+
+    private static void AssertNoIdempotencyKey(JsonElement paths, string path, string method)
+    {
+        var operation = paths.GetProperty(path).GetProperty(method);
+        if (!operation.TryGetProperty("parameters", out var parameters))
+        {
+            return;
+        }
+
+        Assert.DoesNotContain(parameters.EnumerateArray(), parameter =>
+            string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(parameter.GetProperty("in").GetString(), "header", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasRequiredIdempotencyKey(JsonElement operation)
+    {
+        if (!operation.TryGetProperty("parameters", out var parameters))
+        {
+            return false;
+        }
+
+        foreach (var parameter in parameters.EnumerateArray())
+        {
+            if (string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(parameter.GetProperty("in").GetString(), "header", StringComparison.OrdinalIgnoreCase)
+                && parameter.TryGetProperty("required", out var required)
+                && required.GetBoolean())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

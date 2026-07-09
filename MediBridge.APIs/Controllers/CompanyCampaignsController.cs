@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MediBridge.APIs.Config;
 using MediBridge.APIs.Contracts;
+using MediBridge.APIs.OpenApi;
 using MediBridge.APIs.Security;
 using MediBridge.Core.Enums;
 using MediBridge.Services.DTOs.Campaigns;
@@ -125,6 +126,7 @@ public sealed class CompanyCampaignsController : ControllerBase
     }
 
     [HttpPost("{campaignId}/submit")]
+    [RequireIdempotencyKey]
     [EnableRateLimiting(RateLimitPolicyNames.Phase5CampaignSubmission)]
     [ProducesResponseType(typeof(ApiEnvelope<CampaignSubmissionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]

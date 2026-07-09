@@ -382,10 +382,10 @@ public sealed class PostMergeBlockersExplorationTests
     }
 
     /// <summary>
-    /// Exploration Test: Idempotency-Key parameter NOT marked as required on mutation endpoints
+    /// Exploration Test: Idempotency-Key parameter NOT marked as required on replay-safe mutation endpoints
     /// 
-    /// EXPECTED ON UNFIXED CODE: POST /campaigns missing Idempotency-Key or not marked as required
-    /// EXPECTED ON FIXED CODE: Idempotency-Key present and marked as required
+    /// EXPECTED ON UNFIXED CODE: replay-safe mutations are missing Idempotency-Key or not marked as required
+    /// EXPECTED ON FIXED CODE: Idempotency-Key present only on endpoints that actually consume replay keys
     /// </summary>
     [Fact]
     public async Task P3_OpenApiDoc_IdempotencyKeyNotRequired_OnMutationEndpoints_CounterexampleFound()
@@ -399,33 +399,11 @@ public sealed class PostMergeBlockersExplorationTests
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
         var paths = document.RootElement.GetProperty("paths");
 
-        // Check POST /api/company/campaigns/drafts endpoint
-        bool hasRequiredIdempotencyKey = false;
-        if (paths.TryGetProperty("/api/company/campaigns/drafts", out var campaignPath))
-        {
-            if (campaignPath.TryGetProperty("post", out var postOperation))
-            {
-                if (postOperation.TryGetProperty("parameters", out var parameters))
-                {
-                    foreach (var param in parameters.EnumerateArray())
-                    {
-                        if (param.GetProperty("name").GetString() == "Idempotency-Key" &&
-                            param.GetProperty("in").GetString() == "header")
-                        {
-                            hasRequiredIdempotencyKey = param.TryGetProperty("required", out var required) && 
-                                                       required.GetBoolean();
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        // On UNFIXED code: hasRequiredIdempotencyKey should be FALSE
-        // On FIXED code: hasRequiredIdempotencyKey should be TRUE
-        Assert.True(hasRequiredIdempotencyKey, 
-            "COUNTEREXAMPLE: Idempotency-Key header is NOT documented as required on POST /api/company/campaigns/drafts. " +
-            "This confirms the OpenAPI documentation gap bug exists.");
+        AssertRequiredIdempotencyKey(paths, "/api/company/campaigns/{campaignId}/submit", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/admin/campaigns/{campaignId}/review", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/company/wallet/topup", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/company/wallet/mock-checkout", "post");
+        AssertNoIdempotencyKey(paths, "/api/company/campaigns/drafts", "post");
     }
 
     /// <summary>
@@ -580,6 +558,47 @@ public sealed class PostMergeBlockersExplorationTests
         string CampaignId,
         string WalletId,
         DateTime SubmittedAtUtc);
+
+    private static void AssertRequiredIdempotencyKey(JsonElement paths, string path, string method)
+    {
+        Assert.True(
+            HasRequiredIdempotencyKey(paths.GetProperty(path).GetProperty(method)),
+            $"COUNTEREXAMPLE: Idempotency-Key header is NOT documented as required on {method.ToUpperInvariant()} {path}.");
+    }
+
+    private static void AssertNoIdempotencyKey(JsonElement paths, string path, string method)
+    {
+        var operation = paths.GetProperty(path).GetProperty(method);
+        if (!operation.TryGetProperty("parameters", out var parameters))
+        {
+            return;
+        }
+
+        Assert.DoesNotContain(parameters.EnumerateArray(), parameter =>
+            string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(parameter.GetProperty("in").GetString(), "header", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasRequiredIdempotencyKey(JsonElement operation)
+    {
+        if (!operation.TryGetProperty("parameters", out var parameters))
+        {
+            return false;
+        }
+
+        foreach (var parameter in parameters.EnumerateArray())
+        {
+            if (string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(parameter.GetProperty("in").GetString(), "header", StringComparison.OrdinalIgnoreCase)
+                && parameter.TryGetProperty("required", out var required)
+                && required.GetBoolean())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     #endregion
 }

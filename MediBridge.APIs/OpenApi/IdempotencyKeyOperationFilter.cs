@@ -7,18 +7,15 @@ public sealed class IdempotencyKeyOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
-        // Identify mutation endpoints (POST, PUT, PATCH, DELETE)
-        var isMutation = context.ApiDescription.HttpMethod?.ToUpper() 
-            is "POST" or "PUT" or "PATCH" or "DELETE";
-        
-        if (!isMutation)
+        var requiresIdempotencyKey = context.ApiDescription.ActionDescriptor.EndpointMetadata
+            .OfType<RequireIdempotencyKeyAttribute>()
+            .Any();
+        if (!requiresIdempotencyKey)
         {
             return;
         }
 
         operation.Parameters ??= [];
-        
-        // Check if Idempotency-Key parameter already exists
         if (operation.Parameters.Any(parameter =>
                 string.Equals(parameter.Name, "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
                 && parameter.In == ParameterLocation.Header))
@@ -30,11 +27,13 @@ public sealed class IdempotencyKeyOperationFilter : IOperationFilter
         {
             Name = "Idempotency-Key",
             In = ParameterLocation.Header,
-            Description = "Unique identifier for idempotent request handling",
+            Description = "Required idempotency key for replay-safe request handling. Must be 8 to 128 characters.",
             Required = true,
             Schema = new OpenApiSchema
             {
-                Type = "string"
+                Type = "string",
+                MinLength = 8,
+                MaxLength = 128
             }
         });
     }

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MediBridge.APIs.Config;
 using MediBridge.APIs.Contracts;
+using MediBridge.APIs.OpenApi;
 using MediBridge.APIs.Security;
 using MediBridge.Services.DTOs.Wallets;
 using MediBridge.Services.DTOs.Payments;
@@ -37,6 +38,7 @@ public sealed class CompanyWalletController : ControllerBase
     }
 
     [HttpPost("topup")]
+    [RequireIdempotencyKey]
     [EnableRateLimiting(RateLimitPolicyNames.Phase5WalletTopUp)]
     public async Task<ActionResult<ApiEnvelope<TopUpCompanyWalletResultDto>>> TopUpCompanyWallet([FromBody] TopUpCompanyWalletRequestDto? request, CancellationToken cancellationToken)
     {
@@ -61,6 +63,7 @@ public sealed class CompanyWalletController : ControllerBase
     }
 
     [HttpPost("mock-checkout")]
+    [RequireIdempotencyKey]
     [EnableRateLimiting(RateLimitPolicyNames.Phase5WalletTopUp)]
     public async Task<ActionResult<ApiEnvelope<MockPaymentResultDto>>> CreateMockTopUp(
         [FromBody] MockTopUpRequestDto? request,

@@ -5,32 +5,19 @@ namespace MediBridge.APIs.OpenApi;
 
 public sealed class BearerSecurityDocumentFilter : IDocumentFilter
 {
+    public const string SchemeName = "Bearer";
+
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
-        swaggerDoc.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
+        swaggerDoc.Components ??= new OpenApiComponents();
+        swaggerDoc.Components.SecuritySchemes[SchemeName] = new OpenApiSecurityScheme
         {
             Name = "Authorization",
-            Description = "JWT Authorization header using the Bearer scheme. Enter your token in the text input below.",
+            Description = "JWT Authorization header using the Bearer scheme.",
             In = ParameterLocation.Header,
             Type = SecuritySchemeType.Http,
             Scheme = "bearer",
             BearerFormat = "JWT"
-        });
-        
-        // Add global security requirement
-        swaggerDoc.SecurityRequirements.Add(new OpenApiSecurityRequirement
-        {
-            {
-                new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                },
-                Array.Empty<string>()
-            }
-        });
+        };
     }
 }

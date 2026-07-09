@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/tests/" />
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/MediBridge.E2ETestRunner/MediBridge.E2ETestRunner.csproj" />
+  </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/MediBridge.UnitTests/MediBridge.UnitTests.csproj" />
   </Folder>

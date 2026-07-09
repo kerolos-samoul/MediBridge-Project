@@ -24,9 +24,17 @@ public sealed class AuthorizeOperationFilter : IOperationFilter
         operation.Responses.TryAdd("401", new OpenApiResponse { Description = "Unauthorized" });
         operation.Responses.TryAdd("403", new OpenApiResponse { Description = "Forbidden" });
 
-        var requirements = authAttributes
-            .SelectMany(auth => BuildRequirement(auth))
+        var requirementDescriptions = authAttributes
+            .Select(BuildRequirementDescription)
+            .Where(description => !string.IsNullOrWhiteSpace(description))
             .ToList();
+        if (requirementDescriptions.Count > 0)
+        {
+            var policyDescription = $"Authorization: {string.Join("; ", requirementDescriptions)}.";
+            operation.Description = string.IsNullOrWhiteSpace(operation.Description)
+                ? policyDescription
+                : $"{operation.Description}{Environment.NewLine}{Environment.NewLine}{policyDescription}";
+        }
 
         operation.Security.Add(new OpenApiSecurityRequirement
         {
@@ -35,33 +43,33 @@ public sealed class AuthorizeOperationFilter : IOperationFilter
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "bearerAuth"
+                    Id = BearerSecurityDocumentFilter.SchemeName
                 }
-            }] = requirements
+            }] = Array.Empty<string>()
         });
     }
 
-    private static string[] BuildRequirement(AuthorizeAttribute authorize)
+    private static string? BuildRequirementDescription(AuthorizeAttribute authorize)
     {
         var roles = SplitRoles(authorize.Roles);
         var policy = authorize.Policy;
 
         if (roles.Count > 0 && !string.IsNullOrWhiteSpace(policy))
         {
-            return [$"Policy: {policy}", $"Roles: {string.Join(", ", roles)}"];
+            return $"policy {policy}; roles {string.Join(", ", roles)}";
         }
 
         if (roles.Count > 0)
         {
-            return [$"Roles: {string.Join(", ", roles)}"];
+            return $"roles {string.Join(", ", roles)}";
         }
 
         if (!string.IsNullOrWhiteSpace(policy))
         {
-            return [$"Policy: {policy}"];
+            return $"policy {policy}";
         }
 
-        return [];
+        return null;
     }
 
     private static IReadOnlyList<string> SplitRoles(string? roles)
