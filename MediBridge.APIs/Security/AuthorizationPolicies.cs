@@ -18,4 +18,5 @@ public static class AuthorizationPolicies
     public const string Phase5CompanyDoctorSearch = "Phase5CompanyDoctorSearch";
     public const string Phase5CompanyCampaignAccess = "Phase5CompanyCampaignAccess";
     public const string Phase5CompanyWalletAccess = "Phase5CompanyWalletAccess";
+    public const string Phase7DoctorMessagesRead = "Phase7DoctorMessagesRead";
 }

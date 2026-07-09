@@ -390,19 +390,35 @@ public sealed class AuthService : IAuthService
             return;
         }
 
-        await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
-        {
-            var now = DateTime.UtcNow;
-            var (_, tokenHash) = authTokenService.CreateOneTimeToken();
-            await identityUnitOfWork.PasswordResetFlows.AddAsync(new PasswordResetFlow
+        var now = DateTime.UtcNow;
+        var (flow, plaintextToken) = await identityUnitOfWork.ExecuteInTransactionAsync(
+            async transactionCancellationToken =>
             {
-                UserId = user.Id,
-                TokenHash = tokenHash,
-                ExpiresAtUtc = now.AddHours(1),
-                CreatedAtUtc = now,
-                RequestCorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N")
-            }, transactionCancellationToken);
-        }, cancellationToken);
+                var tokenResult = authTokenService.CreateOneTimeToken();
+                var resetFlow = new PasswordResetFlow
+                {
+                    UserId = user.Id,
+                    TokenHash = tokenResult.TokenHash,
+                    ExpiresAtUtc = now.AddHours(1),
+                    CreatedAtUtc = now,
+                    RequestCorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N")
+                };
+                await identityUnitOfWork.PasswordResetFlows.AddAsync(resetFlow, transactionCancellationToken);
+                await identityUnitOfWork.AuthenticationAuditEvents.AddAsync(
+                    CreateAuditEvent(AuthAuditEventType.PasswordResetRequested, user, "Success", null, now),
+                    transactionCancellationToken);
+                return (resetFlow, tokenResult.PlaintextToken);
+            },
+            cancellationToken);
+
+        await SendPasswordResetTokenAsync(
+            user.Id,
+            user.Role,
+            user.Email,
+            plaintextToken,
+            flow.Id,
+            now,
+            cancellationToken);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
@@ -833,6 +849,80 @@ public sealed class AuthService : IAuthService
             {
                 EventType = AuthAuditEventType.ContactVerificationFailed,
                 ActorUserId = null,
+                TargetUserId = userId,
+                Role = role,
+                Outcome = "Denied",
+                Reason = "Email delivery failed.",
+                CorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N"),
+                CreatedAtUtc = DateTime.UtcNow
+            }, cancellationToken);
+        }
+    }
+
+    private async Task SendPasswordResetTokenAsync(
+        string userId,
+        UserRole role,
+        string registeredEmail,
+        string plaintextToken,
+        string flowId,
+        DateTime requestedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        logger.LogInformation(
+            "Password reset email delivery preparing. UserId: {UserId}, FlowId: {FlowId}, RegisteredEmail: {RegisteredEmail}",
+            userId,
+            flowId,
+            registeredEmail);
+
+        try
+        {
+            await emailSender.SendAsync(new EmailMessageDto
+            {
+                RecipientEmail = registeredEmail,
+                Subject = "MediBridge password reset",
+                Body = $"""
+                    A password reset was requested for your MediBridge account.
+
+                    Registered email: {registeredEmail}
+                    Requested at (UTC): {requestedAtUtc:O}
+
+                    Use the reset token below to set a new password. This token expires in 1 hour and can only be used once.
+
+                    {plaintextToken}
+                    """
+            }, cancellationToken);
+
+            await RecordAuditEventAsync(new AuthenticationAuditEvent
+            {
+                EventType = AuthAuditEventType.PasswordResetSent,
+                ActorUserId = userId,
+                TargetUserId = userId,
+                Role = role,
+                Outcome = "Success",
+                Reason = null,
+                CorrelationId = currentUserContext.CorrelationId ?? Guid.NewGuid().ToString("N"),
+                CreatedAtUtc = DateTime.UtcNow
+            }, cancellationToken);
+
+            logger.LogInformation(
+                "Password reset email delivery succeeded. UserId: {UserId}, FlowId: {FlowId}, RecipientEmail: {RecipientEmail}",
+                userId,
+                flowId,
+                registeredEmail);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Password reset email delivery failed. UserId: {UserId}, FlowId: {FlowId}, RegisteredEmail: {RegisteredEmail}",
+                userId,
+                flowId,
+                registeredEmail);
+
+            await RecordAuditEventAsync(new AuthenticationAuditEvent
+            {
+                EventType = AuthAuditEventType.PasswordResetSendFailed,
+                ActorUserId = userId,
                 TargetUserId = userId,
                 Role = role,
                 Outcome = "Denied",

@@ -1,5 +1,6 @@
 using MediBridge.Core.Entities.Campaigns;
 using MediBridge.Core.Enums;
+using MediBridge.Core.Interfaces.Messaging;
 
 namespace MediBridge.Core.Interfaces.Campaigns;
 
@@ -42,4 +43,5 @@ public interface ICampaignRepository
     Task<int> CountCampaignQueueItemsAsync(string campaignId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CampaignQueueRowReadModel>> ListCampaignQueueRowsAsync(string campaignId, CancellationToken cancellationToken = default);
     Task<string?> FindCampaignIdIncludingDeletedAsync(string campaignId, CancellationToken cancellationToken = default);
+    Task<LockedCampaignCompanyEligibilityReadModel?> FindDeliveryEligibilityForUpdateAsync(string campaignId, CancellationToken cancellationToken = default);
 }

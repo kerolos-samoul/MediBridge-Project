@@ -1,8 +1,14 @@
 using System.Net;
+using System.Reflection;
 using System.Text.Json;
+using MediBridge.APIs.Config;
+using MediBridge.APIs.Controllers;
+using MediBridge.APIs.Security;
 using MediBridge.IntegrationTests.TestHost;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.RateLimiting;
 using Xunit;
 
 namespace MediBridge.IntegrationTests;
@@ -54,5 +60,134 @@ public class SwaggerEnvironmentPolicyTests
         Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/assets/{assetId}").TryGetProperty("delete", out _));
         Assert.True(paths.GetProperty("/api/files/{fileId}").TryGetProperty("get", out _));
         Assert.True(paths.GetProperty("/api/admin/campaign-assets/{assetId}/review").TryGetProperty("post", out _));
+    }
+
+    [Fact]
+    public async Task Swagger_DocumentsOnlyTheSecuredPhase7DoctorRoutesAndContractedResponses()
+    {
+        await using var factory = new WebAppFactory();
+        using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
+
+        using var response = await client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var paths = document.RootElement.GetProperty("paths");
+        Assert.Equal(
+            ["/api/doctor/messages/today", "/api/doctor/messages/{deliveryId}/assets/{fileId}/access"],
+            paths.EnumerateObject()
+                .Select(path => path.Name)
+                .Where(path => path.StartsWith("/api/doctor/messages", StringComparison.Ordinal))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToArray());
+
+        var inbox = paths.GetProperty("/api/doctor/messages/today").GetProperty("get");
+        Assert.Equal(
+            ["PageSize", "Cursor"],
+            inbox.GetProperty("parameters").EnumerateArray()
+                .Select(parameter => parameter.GetProperty("name").GetString()!)
+                .ToArray());
+        AssertResponses(inbox, "200", "400", "401", "403", "429");
+
+        var asset = paths.GetProperty("/api/doctor/messages/{deliveryId}/assets/{fileId}/access").GetProperty("get");
+        AssertResponses(asset, "200", "401", "403", "404", "429", "503");
+
+        var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+        var inboxSchema = schemas.EnumerateObject().Single(schema => schema.Name.EndsWith("TodayInboxDto", StringComparison.Ordinal)).Value;
+        var nextCursor = inboxSchema.GetProperty("properties").GetProperty("NextCursor");
+        Assert.True(nextCursor.GetProperty("nullable").GetBoolean());
+
+        Assert.False(paths.TryGetProperty("/hangfire", out _));
+        Assert.DoesNotContain(paths.EnumerateObject(), path => path.Name.Contains("job", StringComparison.OrdinalIgnoreCase));
+
+        var authorize = typeof(DoctorMessagesController).GetCustomAttribute<AuthorizeAttribute>();
+        Assert.Equal(AuthorizationPolicies.Phase7DoctorMessagesRead, authorize?.Policy);
+        var rateLimit = typeof(DoctorMessagesController).GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, rateLimit?.PolicyName);
+    }
+
+    [Fact]
+    public async Task Swagger_DocumentsBearerSecurityAndRequiredIdempotencyForActualReplaySafeEndpoints()
+    {
+        await using var factory = new WebAppFactory();
+        var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
+
+        var response = await client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var root = document.RootElement;
+        var schemes = root.GetProperty("components").GetProperty("securitySchemes");
+        Assert.True(schemes.TryGetProperty("Bearer", out var bearer));
+        Assert.Equal("http", bearer.GetProperty("type").GetString());
+        Assert.Equal("bearer", bearer.GetProperty("scheme").GetString());
+
+        var paths = root.GetProperty("paths");
+        AssertOperationReferencesBearer(paths.GetProperty("/api/admin/campaigns/{campaignId}/review").GetProperty("post"));
+        AssertRequiredIdempotencyKey(paths, "/api/company/campaigns/{campaignId}/submit", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/admin/campaigns/{campaignId}/review", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/company/wallet/topup", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/company/wallet/mock-checkout", "post");
+        AssertNoIdempotencyKey(paths, "/api/company/campaigns/drafts", "post");
+        AssertNoIdempotencyKey(paths, "/api/auth/login", "post");
+    }
+
+    private static void AssertResponses(JsonElement operation, params string[] expectedStatusCodes)
+    {
+        var responses = operation.GetProperty("responses");
+        foreach (var statusCode in expectedStatusCodes)
+        {
+            Assert.True(responses.TryGetProperty(statusCode, out _), $"Response {statusCode} was not documented.");
+        }
+    }
+
+    private static void AssertOperationReferencesBearer(JsonElement operation)
+    {
+        var security = operation.GetProperty("security");
+        Assert.Contains(security.EnumerateArray(), requirement =>
+            requirement.TryGetProperty("Bearer", out var scopes)
+            && scopes.ValueKind == JsonValueKind.Array
+            && !scopes.EnumerateArray().Any());
+    }
+
+    private static void AssertRequiredIdempotencyKey(JsonElement paths, string path, string method)
+    {
+        Assert.True(
+            HasRequiredIdempotencyKey(paths.GetProperty(path).GetProperty(method)),
+            $"Expected required Idempotency-Key on {method.ToUpperInvariant()} {path}.");
+    }
+
+    private static void AssertNoIdempotencyKey(JsonElement paths, string path, string method)
+    {
+        var operation = paths.GetProperty(path).GetProperty(method);
+        if (!operation.TryGetProperty("parameters", out var parameters))
+        {
+            return;
+        }
+
+        Assert.DoesNotContain(parameters.EnumerateArray(), parameter =>
+            string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(parameter.GetProperty("in").GetString(), "header", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasRequiredIdempotencyKey(JsonElement operation)
+    {
+        if (!operation.TryGetProperty("parameters", out var parameters))
+        {
+            return false;
+        }
+
+        foreach (var parameter in parameters.EnumerateArray())
+        {
+            if (string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(parameter.GetProperty("in").GetString(), "header", StringComparison.OrdinalIgnoreCase)
+                && parameter.TryGetProperty("required", out var required)
+                && required.GetBoolean())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -1,0 +1,247 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 7 Doctor Delivery API
+  version: 1.0.0
+  description: >-
+    Doctor-only HTTP contract for current Egypt-day deliveries and audited,
+    delivery-scoped access to approved campaign assets. Background expiry and
+    injection jobs expose no public HTTP control surface.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /api/doctor/messages/today:
+    get:
+      summary: List the authenticated doctor's current Egypt-day deliveries
+      operationId: getDoctorTodayInbox
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: PageSize
+          in: query
+          required: false
+          description: Number of deliveries to return; defaults to 50 and is capped at 100.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: Cursor
+          in: query
+          required: false
+          description: Opaque Doctor- and Egypt-business-date-scoped keyset cursor from the prior page.
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Current-day inbox returned, including a successful empty result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeTodayInbox'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /api/doctor/messages/{deliveryId}/assets/{fileId}/access:
+    get:
+      summary: Create a short-lived access grant for an approved current-delivery asset
+      operationId: getDoctorDeliveryAssetAccess
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Audited ten-minute private access grant issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeAssetAccessGrant'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Page size or cursor is malformed, belongs to another Doctor, or is stale for the current Egypt business date.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Unauthorized:
+      description: Missing, expired, or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Forbidden:
+      description: Caller is not an approved active Doctor.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    NotFound:
+      description: Delivery or approved asset is absent, outside today, unrelated, or not visible to the caller.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    TooManyRequests:
+      description: Request rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    StorageUnavailable:
+      description: The private storage provider could not issue a safe grant.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+  schemas:
+    EnvelopeEmpty:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    EnvelopeTodayInbox:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/TodayInbox'
+    EnvelopeAssetAccessGrant:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/AssetAccessGrant'
+    TodayInbox:
+      type: object
+      required: [BusinessDateEgypt, Items, NextCursor]
+      properties:
+        BusinessDateEgypt:
+          type: string
+          format: date
+          example: '2026-07-02'
+        Items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/TodayMessage'
+        NextCursor:
+          type: string
+          nullable: true
+          description: Opaque continuation cursor; null when no later current-day delivery exists.
+    TodayMessage:
+      type: object
+      required:
+        - DeliveryId
+        - CampaignId
+        - Status
+        - DeliveryDateEgypt
+        - DeliveredAtUtc
+        - Title
+        - Description
+        - Assets
+      properties:
+        DeliveryId:
+          type: string
+        CampaignId:
+          type: string
+        Status:
+          type: string
+          enum: [Active, Accepted, Rejected]
+        DeliveryDateEgypt:
+          type: string
+          format: date
+        DeliveredAtUtc:
+          type: string
+          format: date-time
+        Title:
+          type: string
+        Description:
+          type: string
+        ClinicalResearchInfo:
+          type: string
+          nullable: true
+        Assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeliveryAsset'
+    DeliveryAsset:
+      type: object
+      required:
+        - FileId
+        - Purpose
+        - OriginalFileName
+        - ContentType
+        - SizeBytes
+        - ReviewStatus
+        - AccessPath
+      properties:
+        FileId:
+          type: string
+        Purpose:
+          type: string
+          enum: [CampaignMedia, VoiceNote, ClinicalResearchAttachment]
+        OriginalFileName:
+          type: string
+        ContentType:
+          type: string
+        SizeBytes:
+          type: integer
+          format: int64
+          minimum: 0
+        ReviewStatus:
+          type: string
+          enum: [Approved]
+        AccessPath:
+          type: string
+          description: Relative API path for a delivery-scoped access-grant request.
+          example: /api/doctor/messages/delivery-123/assets/file-456/access
+    AssetAccessGrant:
+      type: object
+      required: [AccessUrl, ExpiresAtUtc]
+      properties:
+        AccessUrl:
+          type: string
+          format: uri
+        ExpiresAtUtc:
+          type: string
+          format: date-time

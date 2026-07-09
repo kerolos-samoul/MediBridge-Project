@@ -8,7 +8,7 @@ work, JWT security, standard API envelope, and global exception handling).
 
 ### Time Boundary (Egypt)
 
-- Business time is Egypt timezone (UTC+2).
+- Business time uses the DST-aware `Africa/Cairo` time zone; it is not a fixed UTC offset.
 - Day starts at 00:00 and ends at 23:59:59 Egypt time.
 - Messages are visible only within their delivery day and expire at midnight.
 - Week starts Monday 00:00 Egypt time.
@@ -33,11 +33,14 @@ work, JWT security, standard API envelope, and global exception handling).
 
 ### Queue + Delivery Semantics
 
-- Queue is per-doctor FIFO (by queued time; tie-break by id) across all campaigns/companies.
+- Queue is per-doctor FIFO across all campaigns/companies by the campaign's immutable
+  submission snapshot, ordered by `(CampaignSubmittedAtUtc, Id)`. `QueuedAtUtc` is
+  operational metadata and never determines campaign priority.
 - A doctor's daily message limit applies across all companies combined, not per-company.
 - Daily delivery enforces `DailyMessageLimit` per doctor.
 - If reservation fails during daily injector due to insufficient company funds:
   - Skip that queued item and continue scanning next FIFO item to fill the doctor’s daily limit.
+- Permanently undeliverable queued items are cancelled; temporarily blocked items remain queued.
 - **Doctor Default Price**: Doctors with no `PricePerMessage` set (null or 0) are excluded from company filtering, campaign targeting, and queue injection. Admin must set the price before the doctor can receive any messages.
 
 ### Weekly Enforcement + Activity Score
@@ -169,9 +172,10 @@ Non-negotiables:
 
 - `DoctorMessageQueue`
   - `DoctorId`, `CampaignId` (or AdvertisementId)
+  - `CampaignSubmittedAtUtc` (immutable campaign-submission snapshot)
   - `QueuedAtUtc`
   - `Status`: Queued | Activated | Cancelled
-  - Ordering key: `(DoctorId, QueuedAtUtc, Id)`
+  - Ordering key: `(DoctorId, CampaignSubmittedAtUtc, Id)` for unresolved queued rows
 
 - `DoctorAdDelivery`
   - `DoctorId`, `CampaignId`
@@ -289,22 +293,32 @@ For company and admin dashboards, expose campaign analytics through queries or r
 All jobs must be idempotent and concurrency-safe.
 
 ### Job 2: Expiry Cleaner (00:00 Egypt) — RUNS FIRST
-This job must run first at midnight Egypt time to expire yesterday's uninteracted deliveries and release their funds back to the companies' wallets. This ensures that the released balances are available for the Daily Injector to activate new messages.
+This job is scheduled at midnight using the DST-aware `Africa/Cairo` time zone. It catches up
+every still-Active, uninteracted delivery whose Egypt delivery date is before the captured
+business date and releases its funds back to the owning company's wallet.
 
 **Process**:
-1. Select yesterday's `Active` deliveries with no interaction (`Status == Active`).
+1. Select all overdue `Active` deliveries with no interaction (`Status == Active` and
+   `DeliveryDateEgypt` before the captured Cairo business date), without a lookback limit.
 2. Update `Status = Expired` and `ReservationStatus = Released` using optimistic concurrency checking (`ConcurrencyToken` check).
 3. Settle transaction in ledger: deduct from Company Wallet `ReservedBalance` and add back to `AvailableBalance`.
 
 ### Job 1: Daily Injector (00:05 Egypt) — RUNS SECOND
-This job runs second, allowing a 5-minute gap for the Expiry Cleaner to release company funds safely.
+This job is eligible at 00:05 in the DST-aware `Africa/Cairo` time zone. A candidate activates
+only after required overdue expiry for its owning company has succeeded; unresolved expiry for
+one company does not block eligible candidates belonging to other companies.
 
 **Process**:
 For each doctor:
 1. Identify today’s `DeliveryDateEgypt` and check if the doctor already has activated deliveries for today.
-2. Select FIFO queue items for the doctor and attempt activation until reaching `DailyMessageLimit` (computed globally across all companies' approved campaigns targeting the doctor).
+2. Select FIFO queue items by immutable `(CampaignSubmittedAtUtc, Id)` and attempt activation
+   until reaching `DailyMessageLimit` (computed globally across all companies' approved campaigns
+   targeting the doctor).
 3. For each candidate queue item, ensure no duplicate delivery exists for the same `(DoctorId, DeliveryDateEgypt, CampaignId)` using a database unique constraint.
 4. Confirm the campaign is still eligible for delivery (`Approved`/deliverable and not `Paused`, `Cancelled`, `Rejected`, or `Completed`).
+   - Cancel the queue row when the campaign, company, or doctor is permanently undeliverable.
+   - Leave the queue row Queued when the block is temporary, including paused campaigns,
+     suspended/unapproved doctors, or a temporarily missing positive price.
 5. Attempt reservation against the targeted company's wallet:
    - Compute snapshotted fields: `PricePerMessageSnapshot` (doctor's price) and `PlatformFeePercentSnapshot` (active platform fee percentage).
    - Calculate platform fee (rounded to 2 decimals) and doctor's earnings.
@@ -484,7 +498,8 @@ Detailed tasks:
 - Implement wallet ledger primitives (see Core Data Model + State Machines).
 - Add audit/policy tables for price changes, platform fee policy history, campaign review, file review, authentication-sensitive events, and admin actions.
 - Add indexes/constraints:
-  - Queue ordering: `(DoctorId, Status, QueuedAtUtc, Id)`.
+  - Queue ordering: `(Status, DoctorId, CampaignSubmittedAtUtc, Id)` with an immutable,
+    authentic campaign-submission snapshot for every unresolved queued row.
   - Delivery uniqueness: `(DoctorId, DeliveryDateEgypt, CampaignId)`.
   - Campaign reporting: `(CompanyId, CreatedAtUtc)`.
   - Wallet ledger browsing: `(WalletId, CreatedAtUtc)`.
@@ -597,24 +612,32 @@ reservation of funds at activation.
 
 Detailed tasks:
 
-- Configure Hangfire (storage, server, dashboard access policy if used).
+- Configure Hangfire storage and the dedicated `delivery` worker queue without exposing an
+  application-mapped Dashboard or manual job-control endpoint.
 - Schedule the Expiry Cleaner to run at 00:00 Egypt time.
 - Schedule the Daily Injector to run at 00:05 Egypt time.
 - Implement Job 1 Daily Injector per Background Jobs (Hangfire).
 - Implement Job 2 Expiry Cleaner per Background Jobs (Hangfire).
 - Implement doctor “today inbox” endpoint using `DeliveryDateEgypt`.
+- Implement separate delivery-scoped access for Approved campaign assets; inbox responses expose
+  safe asset metadata and an access path, never storage credentials or raw storage locations.
 - Add idempotency guarantees for both jobs (no duplicate activation, reservation, expiry, or release).
+- Catch up all overdue Active deliveries, gate injection per company on successful required expiry,
+  cancel terminally undeliverable queue rows, and preserve temporarily blocked rows as Queued.
 
 Related components:
 
 - Jobs: Job 1 Daily Injector, Job 2 Expiry Cleaner
 - Entities: `DoctorMessageQueue`, `DoctorAdDelivery`, `Wallet`, `WalletTransaction`
-- APIs: Doctor today messages endpoint
+- APIs: Doctor today messages endpoint and separate delivery-asset access endpoint
 
 Exit criteria (Definition of Done):
 
-- At 00:00 Egypt, yesterday's uninteracted deliveries expire and release reserved funds.
+- At 00:00 `Africa/Cairo`, every overdue uninteracted Active delivery is eligible to expire and
+  release reserved funds, including missed-day catch-up.
 - At 00:05 Egypt, new deliveries become Active up to the doctor’s daily limit.
+- Injection is gated per owning company until its required overdue expiry succeeds; failures for
+  one company do not globally block others.
 - Activation reserves company funds and records transactions consistently.
 - At midnight, un-interacted Active deliveries expire and release reserved funds.
 - Doctor can only see messages for the current Egypt day.

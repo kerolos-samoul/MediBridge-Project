@@ -524,13 +524,15 @@ public sealed class CampaignWorkflowService : ICampaignWorkflowService
                 continue;
             }
 
+            var submittedAtUtc = campaign.SubmittedAtUtc
+                ?? throw new Phase5ConflictException("Approved campaign is missing its authentic submission timestamp.");
             var wasCreated = await domainUnitOfWork.MessageQueues.TryAddQueueItemAsync(new DoctorMessageQueue
             {
                 Id = Guid.NewGuid().ToString("N"),
                 CampaignId = normalizedCampaignId,
                 DoctorId = target.DoctorId,
                 QueuedAtUtc = queuedAtUtc,
-                CampaignSubmittedAtUtc = campaign.SubmittedAtUtc ?? campaign.CreatedAtUtc,
+                CampaignSubmittedAtUtc = submittedAtUtc,
                 Status = QueueItemStatus.Queued,
                 CreatedAtUtc = DateTime.UtcNow
             }, cancellationToken);

@@ -8,13 +8,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using MediBridge.Repository.Data;
 using MediBridge.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using MediBridge.TestInfrastructure;
 
 namespace MediBridge.ContractTests.TestHost;
 
 public class ContractWebAppFactory : WebApplicationFactory<Program>
 {
-    private readonly string databaseName = $"MediBridge.ContractTests_{Guid.NewGuid():N}";
+    private readonly LocalDbTestDatabase testDatabase = new("MediBridge.ContractTests");
     private readonly TestEnvironmentScope environmentScope;
+    private int asyncDisposalStarted;
 
     public ContractWebAppFactory()
     {
@@ -30,6 +32,7 @@ public class ContractWebAppFactory : WebApplicationFactory<Program>
             ["Email__Smtp__Password"] = "contract-test-smtp-password",
             ["Email__Smtp__FromEmail"] = "no-reply.contract@example.com",
             ["FileStorage__UploadsEnabled"] = "false",
+            ["DeliveryJobs__Enabled"] = "false",
             ["Identity__SeedDevelopmentAdmin"] = "false"
         });
     }
@@ -52,6 +55,7 @@ public class ContractWebAppFactory : WebApplicationFactory<Program>
                 ["Email:Smtp:Password"] = "contract-test-smtp-password",
                 ["Email:Smtp:FromEmail"] = "no-reply.contract@example.com",
                 ["FileStorage:UploadsEnabled"] = "false",
+                ["DeliveryJobs:Enabled"] = "false",
                 ["Identity:SeedDevelopmentAdmin"] = "false"
             });
         });
@@ -75,12 +79,45 @@ public class ContractWebAppFactory : WebApplicationFactory<Program>
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
+        try
         {
-            environmentScope.Dispose();
+            base.Dispose(disposing);
         }
+        finally
+        {
+            if (disposing && Volatile.Read(ref asyncDisposalStarted) == 0)
+            {
+                try
+                {
+                    testDatabase.Delete();
+                }
+                finally
+                {
+                    environmentScope.Dispose();
+                }
+            }
+        }
+    }
 
-        base.Dispose(disposing);
+    public override async ValueTask DisposeAsync()
+    {
+        Interlocked.Exchange(ref asyncDisposalStarted, 1);
+
+        try
+        {
+            await base.DisposeAsync();
+        }
+        finally
+        {
+            try
+            {
+                await testDatabase.DeleteAsync();
+            }
+            finally
+            {
+                environmentScope.Dispose();
+            }
+        }
     }
 
     protected override void ConfigureClient(HttpClient client)
@@ -88,7 +125,7 @@ public class ContractWebAppFactory : WebApplicationFactory<Program>
         client.BaseAddress = new Uri("https://localhost");
     }
 
-    private string ConnectionString => $"Server=(localdb)\\MSSQLLocalDB;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;";
+    private string ConnectionString => testDatabase.ConnectionString;
 
     protected virtual void ConfigureWebHostCore(IWebHostBuilder builder)
     {

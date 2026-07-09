@@ -55,7 +55,7 @@ internal static class Phase3DatabaseTestHelpers
         return new Phase3ProfileIds(adminUser.Id, doctorUser.Id, doctorProfile.Id, companyUser.Id, companyProfile.Id);
     }
 
-    public static async Task<string> AddCampaignAsync(IServiceProvider services, string companyProfileId, CampaignStatus status = CampaignStatus.Approved)
+    public static async Task<string> AddCampaignAsync(IServiceProvider services, string companyProfileId, CampaignStatus status = CampaignStatus.Approved, DateTime? submittedAtUtc = null)
     {
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
@@ -66,7 +66,8 @@ internal static class Phase3DatabaseTestHelpers
             CompanyId = companyProfileId,
             Title = "Phase 3 campaign",
             Description = "Phase 3 integration test campaign.",
-            Status = status
+            Status = status,
+            SubmittedAtUtc = submittedAtUtc
         });
         await context.SaveChangesAsync();
         return campaignId;

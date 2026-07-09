@@ -6,10 +6,12 @@ using MediBridge.Services.Config;
 using MediBridge.Services.Extensions;
 using MediBridge.Services.Interfaces;
 using MediBridge.Services.Services;
+using MediBridge.APIs.Config;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,12 +31,26 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.DocumentFilter<MediBridge.APIs.OpenApi.BearerSecurityDocumentFilter>();
+        options.OperationFilter<MediBridge.APIs.OpenApi.AuthorizeOperationFilter>();
+        options.OperationFilter<MediBridge.APIs.OpenApi.IdempotencyKeyOperationFilter>();
+        
+        // Include XML comments for API documentation
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (System.IO.File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
+        }
+    });
 }
 
 builder.Services.AddFoundationServices(builder.Configuration);
 builder.Services.AddMediBridgeRepository(builder.Configuration);
 builder.Services.AddMediBridgeIdentityServices(builder.Configuration);
+builder.Services.AddMediBridgeDeliveryJobs(builder.Configuration);
 builder.Services.AddScoped<IWeatherForecastQueryService, WeatherForecastQueryService>();
 builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 {
@@ -43,7 +59,16 @@ builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 });
 
 var app = builder.Build();
-Program.LogTemporaryStartupDiagnostics(app, builder.Configuration);
+
+var deliveryJobOptions = app.Services.GetRequiredService<IOptions<DeliveryJobOptions>>().Value;
+if (deliveryJobOptions.Enabled)
+{
+    app.Services.GetRequiredService<RecurringDeliveryJobRegistrar>().Register();
+    using var recoveryScope = app.Services.CreateScope();
+    await recoveryScope.ServiceProvider
+        .GetRequiredService<IDeliveryJobRecoveryCoordinator>()
+        .RecoverAsync(app.Lifetime.ApplicationStopping);
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -68,54 +93,4 @@ app.MapControllers();
 
 app.Run();
 
-public partial class Program
-{
-    public static void LogTemporaryStartupDiagnostics(WebApplication app, IConfiguration configuration)
-    {
-        var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("TemporaryStartupDiagnostics");
-
-        var smtp = new SmtpEmailOptions();
-        configuration.GetSection(SmtpEmailOptions.SectionName).Bind(smtp);
-        var contactVerification = new ContactVerificationOptions();
-        configuration.GetSection(ContactVerificationOptions.SectionName).Bind(contactVerification);
-        var fileStorage = new FileStorageOptions();
-        configuration.GetSection(FileStorageOptions.SectionName).Bind(fileStorage);
-        var cloudinary = new CloudinaryStorageOptions();
-        configuration.GetSection(CloudinaryStorageOptions.SectionName).Bind(cloudinary);
-
-        var cloudinaryUrl = cloudinary.ResolveCloudinaryUrl();
-        var cloudinaryUrlCloudName = TryReadCloudName(cloudinaryUrl);
-
-        logger.LogInformation(
-            "TEMP SMTP config bound. Host: {Host}, Port: {Port}, Username: {Username}, FromEmail: {FromEmail}, PasswordConfigured: {PasswordConfigured}",
-            smtp.Host,
-            smtp.Port,
-            smtp.Username,
-            smtp.FromEmail,
-            !string.IsNullOrWhiteSpace(smtp.Password));
-
-        logger.LogInformation(
-            "TEMP contact verification config bound. AllowOverrideRecipientEmail: {AllowOverrideRecipientEmail}, OverrideRecipientEmail: {OverrideRecipientEmail}",
-            contactVerification.AllowOverrideRecipientEmail,
-            contactVerification.OverrideRecipientEmail);
-
-        logger.LogInformation(
-            "TEMP Cloudinary config bound. UploadsEnabled: {UploadsEnabled}, ConfigCloudName: {ConfigCloudName}, CloudinaryUrlConfigured: {CloudinaryUrlConfigured}, CloudinaryUrlCloudName: {CloudinaryUrlCloudName}, UseSecureUrls: {UseSecureUrls}, FolderPrefix: {FolderPrefix}",
-            fileStorage.UploadsEnabled,
-            cloudinary.CloudName,
-            !string.IsNullOrWhiteSpace(cloudinaryUrl),
-            cloudinaryUrlCloudName,
-            cloudinary.UseSecureUrls,
-            cloudinary.FolderPrefix);
-    }
-
-    private static string? TryReadCloudName(string? cloudinaryUrl)
-    {
-        if (string.IsNullOrWhiteSpace(cloudinaryUrl) || !Uri.TryCreate(cloudinaryUrl, UriKind.Absolute, out var uri))
-        {
-            return null;
-        }
-
-        return uri.Host;
-    }
-}
+public partial class Program;

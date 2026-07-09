@@ -62,8 +62,10 @@ public sealed class WalletRepository : IWalletRepository
         WalletOwnerType ownerType,
         string ownerId,
         string? ownerUserId,
+        DateTime createdAtUtc,
         CancellationToken cancellationToken = default)
     {
+        EnsureUtc(createdAtUtc, nameof(createdAtUtc));
         var trackedWallet = context.Wallets.Local.FirstOrDefault(
             wallet => wallet.OwnerType == ownerType && wallet.OwnerId == ownerId && !wallet.IsDeleted);
         if (trackedWallet is not null)
@@ -95,7 +97,7 @@ public sealed class WalletRepository : IWalletRepository
             AvailableBalance = 0m,
             ReservedBalance = 0m,
             Currency = "EGP",
-            CreatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = createdAtUtc
         };
         await context.Wallets.AddAsync(wallet, cancellationToken);
         return wallet;
@@ -120,8 +122,9 @@ public sealed class WalletRepository : IWalletRepository
         return wallet is null ? null : (wallet.AvailableBalance, wallet.ReservedBalance);
     }
 
-    public async Task StageAvailableBalanceChangeAsync(string walletId, decimal amountDelta, CancellationToken cancellationToken = default)
+    public async Task StageAvailableBalanceChangeAsync(string walletId, decimal amountDelta, DateTime updatedAtUtc, CancellationToken cancellationToken = default)
     {
+        EnsureUtc(updatedAtUtc, nameof(updatedAtUtc));
         MoneyRules.EnsureValid(amountDelta, nameof(amountDelta), allowNegative: true);
         var wallet = context.Wallets.Local.FirstOrDefault(candidate => candidate.Id == walletId)
             ?? await context.Wallets.FirstOrDefaultAsync(candidate => candidate.Id == walletId, cancellationToken)
@@ -130,11 +133,12 @@ public sealed class WalletRepository : IWalletRepository
         var resultingBalance = wallet.AvailableBalance + amountDelta;
         MoneyRules.EnsureValid(resultingBalance, nameof(wallet.AvailableBalance));
         wallet.AvailableBalance = resultingBalance;
-        wallet.UpdatedAtUtc = DateTime.UtcNow;
+        wallet.UpdatedAtUtc = updatedAtUtc;
     }
 
-    public async Task StageReservedBalanceChangeAsync(string walletId, decimal amountDelta, CancellationToken cancellationToken = default)
+    public async Task StageReservedBalanceChangeAsync(string walletId, decimal amountDelta, DateTime updatedAtUtc, CancellationToken cancellationToken = default)
     {
+        EnsureUtc(updatedAtUtc, nameof(updatedAtUtc));
         MoneyRules.EnsureValid(amountDelta, nameof(amountDelta), allowNegative: true);
         var wallet = await context.Wallets.FirstOrDefaultAsync(candidate => candidate.Id == walletId, cancellationToken)
             ?? throw new InvalidOperationException($"Wallet '{walletId}' was not found.");
@@ -142,11 +146,19 @@ public sealed class WalletRepository : IWalletRepository
         var resultingBalance = wallet.ReservedBalance + amountDelta;
         MoneyRules.EnsureValid(resultingBalance, nameof(wallet.ReservedBalance));
         wallet.ReservedBalance = resultingBalance;
-        wallet.UpdatedAtUtc = DateTime.UtcNow;
+        wallet.UpdatedAtUtc = updatedAtUtc;
     }
 
     public Task<bool> ActiveWalletExistsAsync(WalletOwnerType ownerType, string ownerId, CancellationToken cancellationToken = default)
     {
         return context.Wallets.AnyAsync(wallet => wallet.OwnerType == ownerType && wallet.OwnerId == ownerId && !wallet.IsDeleted, cancellationToken);
+    }
+
+    private static void EnsureUtc(DateTime value, string parameterName)
+    {
+        if (value.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The wallet mutation timestamp must be UTC.", parameterName);
+        }
     }
 }

@@ -47,7 +47,7 @@ public sealed class Phase3WalletLedgerFlowTests
         Assert.Equal(10m, await Phase3DatabaseTestHelpers.GetAvailableBalanceAsync(factory.Services, platformWalletId));
         Assert.Equal(10, context.WalletLedgerEntries.Count());
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => unitOfWork.Wallets.StageAvailableBalanceChangeAsync(doctorWalletId, -26m));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => unitOfWork.Wallets.StageAvailableBalanceChangeAsync(doctorWalletId, -26m, DateTime.UtcNow));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => unitOfWork.WalletTransactions.AddTransactionAsync($"transaction-{Guid.NewGuid():N}", doctorWalletId, WalletTransactionType.Refund, $"invalid-{Guid.NewGuid():N}", 0m));
     }
 
@@ -64,14 +64,15 @@ public sealed class Phase3WalletLedgerFlowTests
         return unitOfWork.ExecuteInTransactionAsync(async cancellationToken =>
         {
             var transactionId = $"transaction-{Guid.NewGuid():N}";
+            var updatedAtUtc = DateTime.UtcNow;
             if (availableDelta != 0m)
             {
-                await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, availableDelta, cancellationToken);
+                await unitOfWork.Wallets.StageAvailableBalanceChangeAsync(walletId, availableDelta, updatedAtUtc, cancellationToken);
             }
 
             if (reservedDelta != 0m)
             {
-                await unitOfWork.Wallets.StageReservedBalanceChangeAsync(walletId, reservedDelta, cancellationToken);
+                await unitOfWork.Wallets.StageReservedBalanceChangeAsync(walletId, reservedDelta, updatedAtUtc, cancellationToken);
             }
 
             await unitOfWork.WalletTransactions.AddTransactionAsync(transactionId, walletId, operationType, $"{operationType}-{Guid.NewGuid():N}", amount, cancellationToken);

@@ -16,5 +16,8 @@ public enum AuthAuditEventType
     ContactVerificationSent = 12,
     ContactVerificationFailed = 13,
     ContactVerificationExpired = 14,
-    ContactVerificationMaxAttemptsReached = 15
+    ContactVerificationMaxAttemptsReached = 15,
+    PasswordResetRequested = 18,
+    PasswordResetSent = 19,
+    PasswordResetSendFailed = 20
 }

@@ -14,6 +14,8 @@ public interface IDomainUnitOfWork
     IProfileRepository Profiles { get; }
     IMessageQueueRepository MessageQueues { get; }
     IDeliveryRepository Deliveries { get; }
+    IDeliveryJobRunRepository DeliveryJobRuns { get; }
+    IDeliveryRecoveryDispatchRepository DeliveryRecoveryDispatches { get; }
     IWalletRepository Wallets { get; }
     IWalletTransactionRepository WalletTransactions { get; }
     IWalletLedgerEntryRepository WalletLedgerEntries { get; }
@@ -27,4 +29,12 @@ public interface IDomainUnitOfWork
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default);
     Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Executes one self-contained operation in a transaction and releases all persistence tracking
+    /// after completion. The operation must return only scalar, immutable, or otherwise detached data.
+    /// </summary>
+    Task<T> ExecuteIsolatedInTransactionAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken = default);
 }

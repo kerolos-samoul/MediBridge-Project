@@ -1,5 +1,6 @@
 using MediBridge.Core.Enums;
 using MediBridge.Services.DTOs.Files;
+using MediBridge.Services.DTOs.Messaging;
 
 namespace MediBridge.Services.Interfaces;
 
@@ -10,6 +11,7 @@ public interface IFileWorkflowService
     Task<FileDto> ReplaceCampaignFileAsync(string actorUserId, string campaignId, string storedFileId, FileWorkflowUpload upload, CancellationToken cancellationToken = default);
     Task<DeleteFileResultDto> DeleteCampaignFileAsync(string actorUserId, string campaignId, string storedFileId, CancellationToken cancellationToken = default);
     Task<FileAccessGrantDto> CreatePrivateAccessGrantAsync(string actorUserId, UserRole role, string storedFileId, CancellationToken cancellationToken = default);
+    Task<DeliveryAssetAccessGrantDto> CreateDeliveryAssetAccessGrantAsync(string actorUserId, string deliveryId, string fileId, CancellationToken cancellationToken = default);
     Task<FileReviewDto> ReviewFileAsync(string adminUserId, string storedFileId, FileReviewRequestDto request, CancellationToken cancellationToken = default);
     Task<FileDto> ReplaceFileAsync(string actorUserId, UserRole role, string storedFileId, FileWorkflowUpload upload, CancellationToken cancellationToken = default);
     Task<DeleteFileResultDto> DeleteFileAsync(string actorUserId, UserRole role, string storedFileId, CancellationToken cancellationToken = default);

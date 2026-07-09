@@ -759,6 +759,127 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("RefreshCredentials", (string)null);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryJobRun", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("ActivatedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("BusinessDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<int>("CancelledCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ExaminedCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ExpiredCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JobType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SafeFailureSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("SkippedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "StartedAtUtc");
+
+                    b.HasIndex("JobType", "BusinessDateEgypt", "StartedAtUtc");
+
+                    b.ToTable("DeliveryJobRuns", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DeliveryJobRuns_Counters_NonNegative", "[ExaminedCount] >= 0 AND [ActivatedCount] >= 0 AND [ExpiredCount] >= 0 AND [CancelledCount] >= 0 AND [SkippedCount] >= 0 AND [FailedCount] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryRecoveryDispatch", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateOnly>("BusinessDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("ClaimedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("DependsOnDispatchId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("EnqueuedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("JobType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SafeFailureSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("SchedulerJobId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DependsOnDispatchId");
+
+                    b.HasIndex("BusinessDateEgypt", "JobType")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "ClaimedAtUtc");
+
+                    b.ToTable("DeliveryRecoveryDispatches", (string)null);
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DoctorAdDelivery", b =>
                 {
                     b.Property<string>("Id")
@@ -794,6 +915,9 @@ namespace MediBridge.Repository.Migrations
                     b.Property<string>("DoctorId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ExpiredAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FeedbackCreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -845,6 +969,10 @@ namespace MediBridge.Repository.Migrations
                     b.HasIndex("DoctorId", "DeliveryDateEgypt", "CampaignId")
                         .IsUnique();
 
+                    b.HasIndex("DoctorId", "DeliveryDateEgypt", "DeliveredAtUtc", "Id");
+
+                    b.HasIndex("Status", "ReservationStatus", "DeliveryDateEgypt", "CompanyId", "Id");
+
                     b.ToTable("DoctorAdDeliveries", null, t =>
                         {
                             t.HasCheckConstraint("CK_DoctorAdDeliveries_Money_NonNegative", "[PricePerMessageSnapshot] > 0 AND [PlatformFeePercentSnapshot] > 0 AND [PlatformFeePercentSnapshot] <= 100 AND [PlatformFeeAmount] > 0 AND [DoctorEarnings] > 0 AND [ReservedAmount] > 0 AND [PlatformFeeAmount] + [DoctorEarnings] = [PricePerMessageSnapshot] AND [ReservedAmount] = [PricePerMessageSnapshot]");
@@ -862,6 +990,12 @@ namespace MediBridge.Repository.Migrations
 
                     b.Property<DateTime?>("CampaignSubmittedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -881,12 +1015,17 @@ namespace MediBridge.Repository.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DoctorId");
+
                     b.HasIndex("CampaignId", "DoctorId")
                         .IsUnique();
 
-                    b.HasIndex("DoctorId", "Status", "CampaignSubmittedAtUtc", "QueuedAtUtc", "Id");
+                    b.HasIndex("Status", "DoctorId", "CampaignSubmittedAtUtc", "Id");
 
-                    b.ToTable("DoctorMessageQueues", (string)null);
+                    b.ToTable("DoctorMessageQueues", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DoctorMessageQueues_QueuedCampaignSubmittedAtUtc", "[Status] <> 1 OR [CampaignSubmittedAtUtc] IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Payments.MockPaymentTransaction", b =>
@@ -1976,6 +2115,14 @@ namespace MediBridge.Repository.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryRecoveryDispatch", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Messaging.DeliveryRecoveryDispatch", null)
+                        .WithMany()
+                        .HasForeignKey("DependsOnDispatchId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DoctorAdDelivery", b =>

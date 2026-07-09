@@ -9,13 +9,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using MediBridge.Repository.Data;
 using MediBridge.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using MediBridge.TestInfrastructure;
 
 namespace MediBridge.IntegrationTests.TestHost;
 
 public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
 {
-    private readonly string databaseName = $"MediBridge.IntegrationTests_{Guid.NewGuid():N}";
+    private readonly LocalDbTestDatabase testDatabase = new("MediBridge.IntegrationTests");
     private readonly TestEnvironmentScope environmentScope;
+    private int asyncDisposalStarted;
 
     protected ConfiguredWebAppFactory()
     {
@@ -31,6 +33,7 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
             ["Email__Smtp__Password"] = "integration-test-smtp-password",
             ["Email__Smtp__FromEmail"] = "no-reply.integration@example.com",
             ["FileStorage__UploadsEnabled"] = "false",
+            ["DeliveryJobs__Enabled"] = "false",
             ["Identity__SeedDevelopmentAdmin"] = "false"
         });
     }
@@ -53,6 +56,7 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
                 ["Email:Smtp:Password"] = "integration-test-smtp-password",
                 ["Email:Smtp:FromEmail"] = "no-reply.integration@example.com",
                 ["FileStorage:UploadsEnabled"] = "false",
+                ["DeliveryJobs:Enabled"] = "false",
                 ["Identity:SeedDevelopmentAdmin"] = "false"
             });
         });
@@ -82,7 +86,7 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
         client.BaseAddress = new Uri("https://localhost");
     }
 
-    private string ConnectionString => $"Server=(localdb)\\MSSQLLocalDB;Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True;";
+    private string ConnectionString => testDatabase.ConnectionString;
 
     protected virtual void ConfigureWebHostCore(IWebHostBuilder builder)
     {
@@ -94,12 +98,45 @@ public abstract class ConfiguredWebAppFactory : WebApplicationFactory<Program>
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
+        try
         {
-            environmentScope.Dispose();
+            base.Dispose(disposing);
         }
+        finally
+        {
+            if (disposing && Volatile.Read(ref asyncDisposalStarted) == 0)
+            {
+                try
+                {
+                    testDatabase.Delete();
+                }
+                finally
+                {
+                    environmentScope.Dispose();
+                }
+            }
+        }
+    }
 
-        base.Dispose(disposing);
+    public override async ValueTask DisposeAsync()
+    {
+        Interlocked.Exchange(ref asyncDisposalStarted, 1);
+
+        try
+        {
+            await base.DisposeAsync();
+        }
+        finally
+        {
+            try
+            {
+                await testDatabase.DeleteAsync();
+            }
+            finally
+            {
+                environmentScope.Dispose();
+            }
+        }
     }
 
     private sealed class TestEnvironmentScope : IDisposable
