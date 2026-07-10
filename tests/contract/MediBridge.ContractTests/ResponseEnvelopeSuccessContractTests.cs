@@ -40,7 +40,7 @@ public sealed class ResponseEnvelopeSuccessContractTests
     }
 
     [Fact]
-    public void Phase7DoctorSuccessEnvelopes_KeepExactPascalCaseShapeAndNullableCursor()
+    public void DoctorMessageSuccessEnvelopes_KeepExactPascalCaseShapeAndNullableFields()
     {
         var inbox = new ApiEnvelope<TodayInboxDto>(
             200,
@@ -50,6 +50,26 @@ public sealed class ResponseEnvelopeSuccessContractTests
             200,
             "Asset access granted.",
             new DeliveryAssetAccessGrantDto("https://storage.example.test/grant", new DateTime(2026, 7, 4, 12, 10, 0, DateTimeKind.Utc)));
+        var read = new ApiEnvelope<MarkReadResultDto>(
+            200,
+            "Message read recorded.",
+            new MarkReadResultDto
+            {
+                DeliveryId = "delivery-123",
+                ReadAtUtc = new DateTime(2026, 7, 10, 10, 15, 0, DateTimeKind.Utc),
+                ReadStatus = "Created"
+            });
+        var interaction = new ApiEnvelope<InteractDeliveryResultDto>(
+            200,
+            "Message interaction settled.",
+            new InteractDeliveryResultDto
+            {
+                DeliveryId = "delivery-123",
+                Status = "Accepted",
+                InteractedAtUtc = new DateTime(2026, 7, 10, 10, 20, 0, DateTimeKind.Utc),
+                FeedbackText = null,
+                IdempotencyStatus = "Replayed"
+            });
 
         using var inboxDocument = JsonDocument.Parse(JsonSerializer.Serialize(inbox));
         Assert.Equal(["Code", "Message", "Data"], inboxDocument.RootElement.EnumerateObject().Select(property => property.Name));
@@ -62,5 +82,22 @@ public sealed class ResponseEnvelopeSuccessContractTests
         Assert.Equal(
             ["AccessUrl", "ExpiresAtUtc"],
             accessDocument.RootElement.GetProperty("Data").EnumerateObject().Select(property => property.Name));
+
+        using var readDocument = JsonDocument.Parse(JsonSerializer.Serialize(read));
+        Assert.Equal(["Code", "Message", "Data"], readDocument.RootElement.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(
+            ["DeliveryId", "ReadAtUtc", "ReadStatus"],
+            readDocument.RootElement.GetProperty("Data").EnumerateObject().Select(property => property.Name));
+
+        using var interactionDocument = JsonDocument.Parse(JsonSerializer.Serialize(interaction));
+        Assert.Equal(["Code", "Message", "Data"], interactionDocument.RootElement.EnumerateObject().Select(property => property.Name));
+        var interactionData = interactionDocument.RootElement.GetProperty("Data");
+        Assert.Equal(
+            ["DeliveryId", "Status", "InteractedAtUtc", "FeedbackText", "IdempotencyStatus"],
+            interactionData.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(JsonValueKind.Null, interactionData.GetProperty("FeedbackText").ValueKind);
+        Assert.DoesNotContain("Balance", interactionData.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Idempotency-Key", interactionData.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PlatformFee", interactionData.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 }
