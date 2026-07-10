@@ -1,5 +1,6 @@
 using MediBridge.APIs.Config;
 using MediBridge.APIs.Contracts;
+using MediBridge.APIs.OpenApi;
 using MediBridge.APIs.Security;
 using MediBridge.Core.Interfaces;
 using MediBridge.Services.DTOs.Messaging;
@@ -62,5 +63,47 @@ public sealed class DoctorMessagesController : ControllerBase
             fileId,
             cancellationToken);
         return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Asset access granted.", result));
+    }
+
+    [HttpPut("{deliveryId}/read")]
+    [EnableRateLimiting(RateLimitPolicyNames.Phase7DoctorMessagesRead)]
+    [ProducesResponseType(typeof(ApiEnvelope<MarkReadResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiEnvelope<MarkReadResultDto>>> MarkRead(
+        string deliveryId,
+        CancellationToken cancellationToken)
+    {
+        var result = await doctorMessageService.MarkDeliveryReadAsync(
+            currentUserContext.UserId ?? string.Empty,
+            deliveryId,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Message read recorded.", result));
+    }
+
+    [HttpPost("{deliveryId}/interact")]
+    [RequireIdempotencyKey]
+    [EnableRateLimiting(RateLimitPolicyNames.DoctorInteraction)]
+    [ProducesResponseType(typeof(ApiEnvelope<InteractDeliveryResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiEnvelope<InteractDeliveryResultDto>>> Interact(
+        string deliveryId,
+        [FromBody] InteractDeliveryRequestDto? request,
+        CancellationToken cancellationToken)
+    {
+        var result = await doctorMessageService.InteractWithDeliveryAsync(
+            currentUserContext.UserId ?? string.Empty,
+            deliveryId,
+            Request.Headers["Idempotency-Key"].FirstOrDefault(),
+            request,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Message interaction settled.", result));
     }
 }

@@ -15,4 +15,16 @@ public interface IDoctorMessageService
         string deliveryId,
         string fileId,
         CancellationToken cancellationToken = default);
+
+    Task<MarkReadResultDto> MarkDeliveryReadAsync(
+        string actorUserId,
+        string deliveryId,
+        CancellationToken cancellationToken = default);
+
+    Task<InteractDeliveryResultDto> InteractWithDeliveryAsync(
+        string actorUserId,
+        string deliveryId,
+        string? idempotencyKey,
+        InteractDeliveryRequestDto? request,
+        CancellationToken cancellationToken = default);
 }

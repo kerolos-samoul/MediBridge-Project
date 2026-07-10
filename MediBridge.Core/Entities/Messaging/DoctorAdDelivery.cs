@@ -74,4 +74,50 @@ public sealed class DoctorAdDelivery : IConcurrencyTrackedRecord
         ExpiredAtUtc = expiredAtUtc;
         UpdatedAtUtc = expiredAtUtc;
     }
+
+    public void MarkRead(DateTime readAtUtc)
+    {
+        if (readAtUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The read timestamp must be UTC.", nameof(readAtUtc));
+        }
+
+        if (ReadAtUtc is not null)
+        {
+            return;
+        }
+
+        ReadAtUtc = readAtUtc;
+        UpdatedAtUtc = readAtUtc;
+    }
+
+    public void MarkInteracted(DeliveryStatus finalStatus, DateTime interactedAtUtc, string? normalizedFeedbackText)
+    {
+        if (interactedAtUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The interaction timestamp must be UTC.", nameof(interactedAtUtc));
+        }
+
+        if (finalStatus is not (DeliveryStatus.Accepted or DeliveryStatus.Rejected))
+        {
+            throw new ArgumentOutOfRangeException(nameof(finalStatus), finalStatus, "Interaction status must be Accepted or Rejected.");
+        }
+
+        if (normalizedFeedbackText is { Length: > 1000 })
+        {
+            throw new ArgumentOutOfRangeException(nameof(normalizedFeedbackText), normalizedFeedbackText.Length, "Feedback text cannot exceed 1,000 characters.");
+        }
+
+        if (Status != DeliveryStatus.Active || ReservationStatus != ReservationStatus.Reserved || InteractedAtUtc is not null)
+        {
+            throw new InvalidOperationException($"Delivery in state '{Status}/{ReservationStatus}' cannot be interacted with.");
+        }
+
+        Status = finalStatus;
+        ReservationStatus = ReservationStatus.Charged;
+        InteractedAtUtc = interactedAtUtc;
+        FeedbackText = normalizedFeedbackText;
+        FeedbackCreatedAtUtc = normalizedFeedbackText is null ? null : interactedAtUtc;
+        UpdatedAtUtc = interactedAtUtc;
+    }
 }

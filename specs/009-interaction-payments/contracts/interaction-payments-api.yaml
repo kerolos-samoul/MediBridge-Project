@@ -1,0 +1,196 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 8 Interaction & Payments API
+  version: 1.0.0
+  description: >-
+    Doctor-only HTTP contract for read tracking and exactly-once Accept/Reject
+    settlement of current Egypt-day deliveries. Read tracking is non-financial;
+    interaction settlement requires an Idempotency-Key header.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /api/doctor/messages/{deliveryId}/read:
+    put:
+      summary: Mark a current-day delivery as read without settlement
+      operationId: markDoctorMessageRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: First read recorded or existing read replayed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeReadResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /api/doctor/messages/{deliveryId}/interact:
+    post:
+      summary: Accept or Reject a delivery and settle payment exactly once
+      operationId: interactWithDoctorMessage
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Required retry key for financial interaction settlement. Trimmed length must be 8-128 characters.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InteractRequest'
+      responses:
+        '200':
+          description: Interaction was settled or the same settled result was replayed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeInteractResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Request body, decision, feedback, or Idempotency-Key is malformed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Unauthorized:
+      description: Missing, expired, or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Forbidden:
+      description: Caller is not an approved active Doctor.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    NotFound:
+      description: Delivery is absent, outside the current Egypt business date, expired, invisible, or not owned by the caller.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Conflict:
+      description: Idempotency replay conflicts with the previously settled decision or payload, or the delivery is already settled differently.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    TooManyRequests:
+      description: Request rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+  schemas:
+    EnvelopeEmpty:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    EnvelopeReadResult:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/ReadResult'
+    EnvelopeInteractResult:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/InteractResult'
+    ReadResult:
+      type: object
+      required: [DeliveryId, ReadAtUtc, ReadStatus]
+      properties:
+        DeliveryId:
+          type: string
+        ReadAtUtc:
+          type: string
+          format: date-time
+        ReadStatus:
+          type: string
+          enum: [Created, Replayed]
+    InteractRequest:
+      type: object
+      required: [Decision]
+      properties:
+        Decision:
+          type: string
+          enum: [Accept, Reject]
+        FeedbackText:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Trimmed before storage; empty after trimming is treated as absent.
+    InteractResult:
+      type: object
+      required: [DeliveryId, Status, InteractedAtUtc, IdempotencyStatus]
+      properties:
+        DeliveryId:
+          type: string
+        Status:
+          type: string
+          enum: [Accepted, Rejected]
+        InteractedAtUtc:
+          type: string
+          format: date-time
+        FeedbackText:
+          type: string
+          nullable: true
+          maxLength: 1000
+        IdempotencyStatus:
+          type: string
+          enum: [Created, Replayed]

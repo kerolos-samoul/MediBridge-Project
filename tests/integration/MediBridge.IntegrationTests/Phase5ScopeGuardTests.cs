@@ -67,13 +67,14 @@ public sealed class Phase5ScopeGuardTests
         Assert.Equal(
             [
                 "api/doctor/messages/today",
-                "api/doctor/messages/{deliveryId}/assets/{fileId}/access"
+                "api/doctor/messages/{deliveryId}/assets/{fileId}/access",
+                "api/doctor/messages/{deliveryId}/interact",
+                "api/doctor/messages/{deliveryId}/read"
             ],
             routes
                 .Where(route => route.Contains("doctor/messages", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(route => route, StringComparer.Ordinal)
                 .ToArray());
-        Assert.DoesNotContain(routes, route => route.Contains("interact", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("settlement", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("analytics", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("withdraw", StringComparison.OrdinalIgnoreCase));

@@ -63,7 +63,7 @@ public class SwaggerEnvironmentPolicyTests
     }
 
     [Fact]
-    public async Task Swagger_DocumentsOnlyTheSecuredPhase7DoctorRoutesAndContractedResponses()
+    public async Task Swagger_DocumentsSecuredDoctorMessageRoutesAndPhase8InteractionContracts()
     {
         await using var factory = new WebAppFactory();
         using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
@@ -74,7 +74,12 @@ public class SwaggerEnvironmentPolicyTests
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
         var paths = document.RootElement.GetProperty("paths");
         Assert.Equal(
-            ["/api/doctor/messages/today", "/api/doctor/messages/{deliveryId}/assets/{fileId}/access"],
+            [
+                "/api/doctor/messages/today",
+                "/api/doctor/messages/{deliveryId}/assets/{fileId}/access",
+                "/api/doctor/messages/{deliveryId}/interact",
+                "/api/doctor/messages/{deliveryId}/read"
+            ],
             paths.EnumerateObject()
                 .Select(path => path.Name)
                 .Where(path => path.StartsWith("/api/doctor/messages", StringComparison.Ordinal))
@@ -92,6 +97,22 @@ public class SwaggerEnvironmentPolicyTests
         var asset = paths.GetProperty("/api/doctor/messages/{deliveryId}/assets/{fileId}/access").GetProperty("get");
         AssertResponses(asset, "200", "401", "403", "404", "429", "503");
 
+        var read = paths.GetProperty("/api/doctor/messages/{deliveryId}/read").GetProperty("put");
+        AssertResponses(read, "200", "401", "403", "404", "429");
+        Assert.DoesNotContain(
+            read.GetProperty("parameters").EnumerateArray(),
+            parameter => string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase));
+        AssertOperationHasBearerSecurity(read, AuthorizationPolicies.Phase7DoctorMessagesRead);
+
+        var interact = paths.GetProperty("/api/doctor/messages/{deliveryId}/interact").GetProperty("post");
+        AssertResponses(interact, "200", "400", "401", "403", "404", "409", "429");
+        var idempotencyKey = Assert.Single(
+            interact.GetProperty("parameters").EnumerateArray(),
+            parameter => string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase));
+        Assert.True(idempotencyKey.GetProperty("required").GetBoolean());
+        Assert.Equal("header", idempotencyKey.GetProperty("in").GetString());
+        AssertOperationHasBearerSecurity(interact, AuthorizationPolicies.Phase7DoctorMessagesRead);
+
         var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
         var inboxSchema = schemas.EnumerateObject().Single(schema => schema.Name.EndsWith("TodayInboxDto", StringComparison.Ordinal)).Value;
         var nextCursor = inboxSchema.GetProperty("properties").GetProperty("NextCursor");
@@ -104,6 +125,13 @@ public class SwaggerEnvironmentPolicyTests
         Assert.Equal(AuthorizationPolicies.Phase7DoctorMessagesRead, authorize?.Policy);
         var rateLimit = typeof(DoctorMessagesController).GetCustomAttribute<EnableRateLimitingAttribute>();
         Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, rateLimit?.PolicyName);
+
+        var markReadRateLimit = typeof(DoctorMessagesController).GetMethod("MarkRead")!
+            .GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, markReadRateLimit?.PolicyName);
+        var interactRateLimit = typeof(DoctorMessagesController).GetMethod("Interact")!
+            .GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.DoctorInteraction, interactRateLimit?.PolicyName);
     }
 
     private static void AssertResponses(JsonElement operation, params string[] expectedStatusCodes)
@@ -113,5 +141,15 @@ public class SwaggerEnvironmentPolicyTests
         {
             Assert.True(responses.TryGetProperty(statusCode, out _), $"Response {statusCode} was not documented.");
         }
+    }
+
+    private static void AssertOperationHasBearerSecurity(JsonElement operation, string policy)
+    {
+        var securityRequirement = Assert.Single(operation.GetProperty("security").EnumerateArray());
+        var bearer = Assert.Single(securityRequirement.EnumerateObject());
+        Assert.Equal("bearerAuth", bearer.Name);
+        Assert.Contains(
+            bearer.Value.EnumerateArray().Select(item => item.GetString()),
+            item => string.Equals(item, $"Policy: {policy}", StringComparison.Ordinal));
     }
 }

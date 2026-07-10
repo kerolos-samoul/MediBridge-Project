@@ -29,9 +29,9 @@ public sealed class GlobalExceptionMiddleware
             {
                 _logger.LogWarning("Storage unavailable while processing {Method} {Path} {CorrelationId}", context.Request.Method, context.Request.Path, correlationId);
             }
-            else if (ex is Phase7WorkflowException)
+            else if (ex is Phase7WorkflowException or Phase8InteractionException)
             {
-                _logger.LogInformation("Phase 7 request rejected with {ExceptionType} while processing {Method} {Path} {CorrelationId}", ex.GetType().Name, context.Request.Method, context.Request.Path, correlationId);
+                _logger.LogInformation("Safe workflow request rejected with {ExceptionType} while processing {Method} {Path} {CorrelationId}", ex.GetType().Name, context.Request.Method, context.Request.Path, correlationId);
             }
             else
             {
@@ -60,6 +60,11 @@ public sealed class GlobalExceptionMiddleware
                 Phase7NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
                 Phase7ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
                 Phase7StorageUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Storage unavailable."),
+                Phase8BadRequestException => (StatusCodes.Status400BadRequest, "Invalid request."),
+                Phase8ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden."),
+                Phase8NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
+                Phase8ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
+                Phase8ConsistencyException => (StatusCodes.Status500InternalServerError, "A settlement consistency error occurred."),
                 _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
             };
 
