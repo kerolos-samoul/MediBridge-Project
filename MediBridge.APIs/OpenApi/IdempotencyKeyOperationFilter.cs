@@ -16,10 +16,16 @@ public sealed class IdempotencyKeyOperationFilter : IOperationFilter
         }
 
         operation.Parameters ??= [];
-        if (operation.Parameters.Any(parameter =>
+        var existing = operation.Parameters.FirstOrDefault(parameter =>
                 string.Equals(parameter.Name, "Idempotency-Key", StringComparison.OrdinalIgnoreCase)
-                && parameter.In == ParameterLocation.Header))
+                && parameter.In == ParameterLocation.Header);
+        if (existing is not null)
         {
+            existing.Required = true;
+            existing.Description ??= "Required idempotency key for replay-safe request handling. Must be 8 to 128 characters.";
+            existing.Schema ??= new OpenApiSchema { Type = "string" };
+            existing.Schema.MinLength = 8;
+            existing.Schema.MaxLength = 128;
             return;
         }
 

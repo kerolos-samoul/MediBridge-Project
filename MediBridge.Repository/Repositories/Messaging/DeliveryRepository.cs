@@ -297,7 +297,7 @@ public sealed class DeliveryRepository : IDeliveryRepository
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public Task<DoctorAdDelivery?> FindCurrentOwnedForReadForUpdateAsync(
+    public Task<DoctorAdDelivery?> FindOwnedCurrentDayForReadAsync(
         string doctorId,
         string deliveryId,
         DateOnly businessDateEgypt,
@@ -315,7 +315,24 @@ public sealed class DeliveryRepository : IDeliveryRepository
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public Task<DoctorAdDelivery?> FindActiveReservedForInteractionForUpdateAsync(
+    public async Task<ReadTrackingReplayReadModel?> TryMarkReadAsync(
+        string deliveryId,
+        DateTime readAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var delivery = context.DoctorAdDeliveries.Local.FirstOrDefault(candidate => candidate.Id == deliveryId)
+            ?? await context.DoctorAdDeliveries.FirstOrDefaultAsync(candidate => candidate.Id == deliveryId, cancellationToken);
+        if (delivery is null)
+        {
+            return null;
+        }
+
+        var alreadyRead = delivery.ReadAtUtc is not null;
+        delivery.MarkRead(readAtUtc);
+        return new ReadTrackingReplayReadModel(delivery.Id, delivery.Status, delivery.ReadAtUtc!.Value, alreadyRead);
+    }
+
+    public Task<DoctorAdDelivery?> FindOwnedActiveReservedForInteractionAsync(
         string doctorId,
         string deliveryId,
         DateOnly businessDateEgypt,
@@ -334,48 +351,51 @@ public sealed class DeliveryRepository : IDeliveryRepository
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public Task<DeliveryInteractionSettlementResultReadModel?> FindSettledOwnedInteractionAsync(
+    public Task<InteractionReplayReadModel?> FindSettledInteractionReplayAsync(
         string doctorId,
         string deliveryId,
-        DateOnly businessDateEgypt,
         CancellationToken cancellationToken = default)
     {
-        return context.DoctorAdDeliveries
-            .AsNoTracking()
-            .Where(delivery => delivery.Id == deliveryId
+        return (
+            from delivery in context.DoctorAdDeliveries.AsNoTracking()
+            join interaction in context.DeliveryInteractions.AsNoTracking() on delivery.Id equals interaction.DeliveryId
+            where delivery.Id == deliveryId
                 && delivery.DoctorId == doctorId
-                && delivery.DeliveryDateEgypt == businessDateEgypt
+                && delivery.ReservationStatus == ReservationStatus.Charged
                 && (delivery.Status == DeliveryStatus.Accepted || delivery.Status == DeliveryStatus.Rejected)
-                && delivery.InteractedAtUtc != null)
-            .Select(delivery => new DeliveryInteractionSettlementResultReadModel(
+            select new InteractionReplayReadModel(
                 delivery.Id,
                 delivery.Status,
+                delivery.ReservationStatus,
                 delivery.InteractedAtUtc!.Value,
-                delivery.FeedbackText,
-                null,
-                null))
+                delivery.ReadAtUtc,
+                interaction.Outcome,
+                interaction.FeedbackText,
+                interaction.FeedbackQualifiesForScore,
+                delivery.ReservedAmount,
+                delivery.DoctorEarnings,
+                delivery.PlatformFeeAmount,
+                interaction.RequestFingerprint,
+                interaction.IdempotencyKeyHash))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public Task<MarkDeliveryReadRepositoryResult?> FindCurrentReadVisibilityAsync(
-        string doctorId,
+    public async Task<bool> TryMarkInteractedAndChargedAsync(
         string deliveryId,
-        DateOnly businessDateEgypt,
+        DeliveryInteractionOutcome outcome,
+        DateTime interactedAtUtc,
+        string? feedbackText,
+        FeedbackQualityStatus? feedbackQualityStatus,
         CancellationToken cancellationToken = default)
     {
-        return context.DoctorAdDeliveries
-            .AsNoTracking()
-            .Where(delivery => delivery.Id == deliveryId
-                && delivery.DoctorId == doctorId
-                && delivery.DeliveryDateEgypt == businessDateEgypt
-                && (delivery.Status == DeliveryStatus.Active
-                    || delivery.Status == DeliveryStatus.Accepted
-                    || delivery.Status == DeliveryStatus.Rejected)
-                && delivery.ReadAtUtc != null)
-            .Select(delivery => new MarkDeliveryReadRepositoryResult(
-                delivery.Id,
-                delivery.ReadAtUtc!.Value,
-                false))
-            .SingleOrDefaultAsync(cancellationToken);
+        var delivery = context.DoctorAdDeliveries.Local.FirstOrDefault(candidate => candidate.Id == deliveryId)
+            ?? await context.DoctorAdDeliveries.FirstOrDefaultAsync(candidate => candidate.Id == deliveryId, cancellationToken);
+        if (delivery is null)
+        {
+            return false;
+        }
+
+        delivery.MarkInteractedAndCharged(outcome, interactedAtUtc, feedbackText, feedbackQualityStatus);
+        return true;
     }
 }

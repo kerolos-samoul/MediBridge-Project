@@ -48,19 +48,6 @@ public enum DeliveryStatus
     Expired = 4
 }
 
-public enum DeliveryInteractionDecision
-{
-    Accept = 1,
-    Reject = 2
-}
-
-public enum DeliveryInteractionOperationStatus
-{
-    Created = 1,
-    Succeeded = 2,
-    Failed = 3
-}
-
 public enum ReservationStatus
 {
     Reserved = 1,
@@ -97,6 +84,12 @@ public enum FeedbackQualityStatus
     Pending = 1,
     Accepted = 2,
     Flagged = 3
+}
+
+public enum DeliveryInteractionOutcome
+{
+    Accept = 1,
+    Reject = 2
 }
 
 public enum WalletOwnerType

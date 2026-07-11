@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using MediBridge.Core.Entities.Campaigns;
 using MediBridge.Core.Enums;
 using MediBridge.IntegrationTests.TestHost;
 using MediBridge.Repository.Data;
@@ -14,243 +15,206 @@ namespace MediBridge.IntegrationTests;
 
 public sealed class Phase8ReadTrackingIntegrationTests
 {
-    private static readonly DateTime UtcNow = new(2026, 7, 10, 10, 0, 0, DateTimeKind.Utc);
-    private static readonly DateOnly TodayEgypt = new(2026, 7, 10);
+    private static readonly DateTime UtcNow = new(2026, 7, 11, 10, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task MarkRead_FirstReadSetsTimestamp_SecondReadReplays_AndFinancialStateIsUnchanged()
+    public async Task ReadTracking_RecordsFirstReadOnce_AndCreatesNoFinancialMutation()
     {
         await using var factory = new FixedClockFactory(UtcNow);
         await factory.InitializeDatabaseAsync();
-        var seed = await SeedReadScenarioAsync(factory, "idempotent-read");
+        var fixture = await SeedPhase8FixtureAsync(factory.Services, "read");
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Doctor", fixture.DoctorUserId));
 
-        using var client = CreateClient(factory, "Doctor", seed.DoctorUserId);
-        var before = await SnapshotAsync(factory, seed.DeliveryId, seed.CompanyWalletId, seed.DoctorWalletId);
-
-        using var firstResponse = await client.PutAsync($"/api/doctor/messages/{seed.DeliveryId}/read", content: null);
-        using var secondResponse = await client.PutAsync($"/api/doctor/messages/{seed.DeliveryId}/read", content: null);
+        var before = await SnapshotFinancialCountsAsync(factory.Services, fixture.DeliveryId);
+        using var firstResponse = await client.PutAsync($"/api/doctor/messages/{fixture.DeliveryId}/read", null);
+        using var secondResponse = await client.PutAsync($"/api/doctor/messages/{fixture.DeliveryId}/read", null);
+        var after = await SnapshotFinancialCountsAsync(factory.Services, fixture.DeliveryId);
 
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+        using var firstDocument = JsonDocument.Parse(await firstResponse.Content.ReadAsStringAsync());
+        using var secondDocument = JsonDocument.Parse(await secondResponse.Content.ReadAsStringAsync());
+        var firstData = firstDocument.RootElement.GetProperty("Data");
+        var secondData = secondDocument.RootElement.GetProperty("Data");
+        Assert.False(firstData.GetProperty("AlreadyRead").GetBoolean());
+        Assert.True(secondData.GetProperty("AlreadyRead").GetBoolean());
+        Assert.Equal(firstData.GetProperty("ReadAtUtc").GetString(), secondData.GetProperty("ReadAtUtc").GetString());
+        Assert.Equal(before, after);
 
-        var firstData = await ReadDataAsync(firstResponse);
-        var secondData = await ReadDataAsync(secondResponse);
-        Assert.Equal(seed.DeliveryId, firstData.GetProperty("DeliveryId").GetString());
-        Assert.Equal(seed.DeliveryId, secondData.GetProperty("DeliveryId").GetString());
-        Assert.Equal("Created", firstData.GetProperty("ReadStatus").GetString());
-        Assert.Equal("Replayed", secondData.GetProperty("ReadStatus").GetString());
-        Assert.Equal(
-            firstData.GetProperty("ReadAtUtc").GetDateTime(),
-            secondData.GetProperty("ReadAtUtc").GetDateTime());
-
-        var after = await SnapshotAsync(factory, seed.DeliveryId, seed.CompanyWalletId, seed.DoctorWalletId);
-        Assert.Equal(firstData.GetProperty("ReadAtUtc").GetDateTime(), after.ReadAtUtc);
-        Assert.Equal(before.Status, after.Status);
-        Assert.Equal(before.ReservationStatus, after.ReservationStatus);
-        Assert.Equal(before.CompanyAvailableBalance, after.CompanyAvailableBalance);
-        Assert.Equal(before.CompanyReservedBalance, after.CompanyReservedBalance);
-        Assert.Equal(before.DoctorAvailableBalance, after.DoctorAvailableBalance);
-        Assert.Equal(before.DoctorReservedBalance, after.DoctorReservedBalance);
-        Assert.Equal(before.WalletTransactionCount, after.WalletTransactionCount);
-        Assert.Equal(before.WalletLedgerEntryCount, after.WalletLedgerEntryCount);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var delivery = await db.DoctorAdDeliveries.AsNoTracking().SingleAsync(delivery => delivery.Id == fixture.DeliveryId);
+        Assert.Equal(DeliveryStatus.Active, delivery.Status);
+        Assert.Equal(ReservationStatus.Reserved, delivery.ReservationStatus);
+        Assert.NotNull(delivery.ReadAtUtc);
     }
 
-    [Fact]
-    public async Task MarkRead_DeniesUnauthenticatedWrongRolesAndOtherDoctors_WithSafeEnvelopes()
+    [Theory]
+    [InlineData(DeliveryStatus.Accepted)]
+    [InlineData(DeliveryStatus.Rejected)]
+    public async Task ReadTracking_AllowsAlreadySettledCurrentDayDelivery_WithoutChangingOutcomeOrFinancialState(DeliveryStatus settledStatus)
     {
         await using var factory = new FixedClockFactory(UtcNow);
         await factory.InitializeDatabaseAsync();
-        var seed = await SeedReadScenarioAsync(factory, "authorization");
+        var fixture = await SeedPhase8FixtureAsync(factory.Services, $"read-settled-{settledStatus}");
+        await SetDeliveryStatusAsync(factory.Services, fixture.DeliveryId, settledStatus, ReservationStatus.Charged);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Doctor", fixture.DoctorUserId));
 
-        using var unauthenticatedClient = factory.CreateClient();
-        using var unauthenticated = await unauthenticatedClient.PutAsync($"/api/doctor/messages/{seed.DeliveryId}/read", content: null);
-        Assert.Equal(HttpStatusCode.Unauthorized, unauthenticated.StatusCode);
+        var before = await SnapshotFinancialCountsAsync(factory.Services, fixture.DeliveryId);
+        using var response = await client.PutAsync($"/api/doctor/messages/{fixture.DeliveryId}/read", null);
+        var after = await SnapshotFinancialCountsAsync(factory.Services, fixture.DeliveryId);
 
-        using var companyClient = CreateClient(factory, "Company", seed.CompanyUserId);
-        using var company = await companyClient.PutAsync($"/api/doctor/messages/{seed.DeliveryId}/read", content: null);
-        await AssertSafeEmptyEnvelopeAsync(company, HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(before, after);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var data = document.RootElement.GetProperty("Data");
+        Assert.Equal(settledStatus.ToString(), data.GetProperty("Status").GetString());
+        Assert.False(data.GetProperty("AlreadyRead").GetBoolean());
 
-        using var adminClient = CreateClient(factory, "Admin", $"admin-{seed.Suffix}");
-        using var admin = await adminClient.PutAsync($"/api/doctor/messages/{seed.DeliveryId}/read", content: null);
-        await AssertSafeEmptyEnvelopeAsync(admin, HttpStatusCode.Forbidden);
-
-        var otherDoctor = await Phase8InteractionTestHelpers.SeedApprovedActiveDoctorAsync(
-            factory.Services,
-            $"other-doctor-user-{seed.Suffix}",
-            $"other-doctor-{seed.Suffix}",
-            $"other-doctor-{seed.Suffix}@example.test",
-            50m,
-            10,
-            UtcNow.AddDays(-10));
-        using var otherDoctorClient = CreateClient(factory, "Doctor", otherDoctor.UserId);
-        using var otherDoctorResponse = await otherDoctorClient.PutAsync($"/api/doctor/messages/{seed.DeliveryId}/read", content: null);
-        await AssertSafeEmptyEnvelopeAsync(otherDoctorResponse, HttpStatusCode.NotFound);
-
-        var after = await SnapshotAsync(factory, seed.DeliveryId, seed.CompanyWalletId, seed.DoctorWalletId);
-        Assert.Null(after.ReadAtUtc);
-        Assert.Equal(0, after.WalletTransactionCount);
-        Assert.Equal(0, after.WalletLedgerEntryCount);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var delivery = await db.DoctorAdDeliveries.AsNoTracking().SingleAsync(delivery => delivery.Id == fixture.DeliveryId);
+        Assert.Equal(settledStatus, delivery.Status);
+        Assert.Equal(ReservationStatus.Charged, delivery.ReservationStatus);
+        Assert.NotNull(delivery.ReadAtUtc);
     }
 
-    private static async Task<ReadScenarioSeed> SeedReadScenarioAsync(ConfiguredWebAppFactory factory, string label)
+    [Fact]
+    public async Task ReadTracking_DeniesPriorDayAndCrossDoctorDeliveries_WithoutMutationOrDisclosure()
     {
-        var suffix = $"{label}-{Guid.NewGuid():N}";
-        var doctor = await Phase8InteractionTestHelpers.SeedApprovedActiveDoctorAsync(
+        await using var factory = new FixedClockFactory(UtcNow);
+        await factory.InitializeDatabaseAsync();
+        var fixture = await SeedPhase8FixtureAsync(factory.Services, "read-deny");
+        var otherDoctor = await Phase7DeliveryTestHelpers.SeedApprovedDoctorAsync(
             factory.Services,
-            $"doctor-user-{suffix}",
-            $"doctor-{suffix}",
-            $"doctor-{suffix}@example.test",
-            50m,
+            $"other-doctor-user-{Guid.NewGuid():N}",
+            $"other-doctor-{Guid.NewGuid():N}",
+            $"other-doctor-{Guid.NewGuid():N}@example.test",
+            100m,
             10,
-            UtcNow.AddDays(-10));
-        var company = await Phase8InteractionTestHelpers.SeedApprovedCompanyAsync(
+            UtcNow.AddDays(-5));
+        var priorDayDeliveryId = $"prior-day-{Guid.NewGuid():N}";
+        var crossDoctorDeliveryId = $"cross-doctor-{Guid.NewGuid():N}";
+        await Phase7DeliveryTestHelpers.SeedPhase8ActiveReservedDeliveryAsync(
             factory.Services,
-            $"company-user-{suffix}",
-            $"company-{suffix}",
-            $"company-{suffix}@example.test",
-            UtcNow.AddDays(-10));
+            priorDayDeliveryId,
+            fixture.DoctorId,
+            fixture.CampaignId,
+            fixture.CompanyId,
+            new DateOnly(2026, 7, 10),
+            UtcNow.AddDays(-1),
+            100m,
+            12.345m,
+            12.35m,
+            87.65m);
+        await Phase7DeliveryTestHelpers.SeedPhase8ActiveReservedDeliveryAsync(
+            factory.Services,
+            crossDoctorDeliveryId,
+            otherDoctor.DoctorId,
+            fixture.CampaignId,
+            fixture.CompanyId,
+            new DateOnly(2026, 7, 11),
+            UtcNow.AddMinutes(-20),
+            100m,
+            12.345m,
+            12.35m,
+            87.65m);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Doctor", fixture.DoctorUserId));
+
+        var priorBefore = await SnapshotFinancialCountsAsync(factory.Services, priorDayDeliveryId);
+        var crossBefore = await SnapshotFinancialCountsAsync(factory.Services, crossDoctorDeliveryId);
+        using var priorResponse = await client.PutAsync($"/api/doctor/messages/{priorDayDeliveryId}/read", null);
+        using var crossResponse = await client.PutAsync($"/api/doctor/messages/{crossDoctorDeliveryId}/read", null);
+        var priorAfter = await SnapshotFinancialCountsAsync(factory.Services, priorDayDeliveryId);
+        var crossAfter = await SnapshotFinancialCountsAsync(factory.Services, crossDoctorDeliveryId);
+
+        Assert.Equal(HttpStatusCode.NotFound, priorResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, crossResponse.StatusCode);
+        Assert.Equal(priorBefore, priorAfter);
+        Assert.Equal(crossBefore, crossAfter);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var deliveries = await db.DoctorAdDeliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.Id == priorDayDeliveryId || delivery.Id == crossDoctorDeliveryId)
+            .ToDictionaryAsync(delivery => delivery.Id);
+        Assert.Null(deliveries[priorDayDeliveryId].ReadAtUtc);
+        Assert.Null(deliveries[crossDoctorDeliveryId].ReadAtUtc);
+    }
+
+    private static async Task<FinancialCounts> SnapshotFinancialCountsAsync(IServiceProvider services, string deliveryId)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        return new FinancialCounts(
+            await db.WalletTransactions.CountAsync(transaction => transaction.RelatedDeliveryId == deliveryId),
+            await db.WalletLedgerEntries.CountAsync(entry => entry.MessageDeliveryId == deliveryId),
+            await db.DeliveryInteractions.CountAsync(interaction => interaction.DeliveryId == deliveryId),
+            await db.AuditEvents.CountAsync(audit => audit.TargetId == deliveryId));
+    }
+
+    private static async Task SetDeliveryStatusAsync(
+        IServiceProvider services,
+        string deliveryId,
+        DeliveryStatus status,
+        ReservationStatus reservationStatus)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var delivery = await db.DoctorAdDeliveries.SingleAsync(delivery => delivery.Id == deliveryId);
+        delivery.Status = status;
+        delivery.ReservationStatus = reservationStatus;
+        delivery.InteractedAtUtc = UtcNow.AddMinutes(-5);
+        await db.SaveChangesAsync();
+    }
+
+    internal static async Task<Phase8Fixture> SeedPhase8FixtureAsync(IServiceProvider services, string suffixPrefix)
+    {
+        var suffix = $"{suffixPrefix}-{Guid.NewGuid():N}";
+        var doctor = await Phase7DeliveryTestHelpers.SeedApprovedDoctorAsync(
+            services, $"doctor-user-{suffix}", $"doctor-{suffix}", $"doctor-{suffix}@example.test", 100m, 10, UtcNow.AddDays(-5));
+        var company = await Phase7DeliveryTestHelpers.SeedApprovedCompanyAsync(
+            services, $"company-user-{suffix}", $"company-{suffix}", $"company-{suffix}@example.test", UtcNow.AddDays(-5));
         var campaignId = $"campaign-{suffix}";
         var deliveryId = $"delivery-{suffix}";
-        var companyWalletId = $"company-wallet-{suffix}";
-        var doctorWalletId = $"doctor-wallet-{suffix}";
-
         await Phase7DeliveryTestHelpers.SeedCampaignAsync(
-            factory.Services,
-            campaignId,
-            company.CompanyId,
-            CampaignStatus.Approved,
-            UtcNow.AddDays(-2),
-            UtcNow.AddDays(-3),
-            false,
-            null);
-        await Phase8InteractionTestHelpers.SeedCompanyWalletAsync(
-            factory.Services,
-            companyWalletId,
-            company.CompanyId,
-            company.UserId,
-            availableBalance: 200m,
-            reservedBalance: 50m,
-            UtcNow.AddDays(-2));
-        await Phase8InteractionTestHelpers.SeedDoctorWalletAsync(
-            factory.Services,
-            doctorWalletId,
-            doctor.DoctorId,
-            doctor.UserId,
-            availableBalance: 25m,
-            reservedBalance: 0m,
-            UtcNow.AddDays(-2));
-        await Phase8InteractionTestHelpers.SeedCurrentEgyptDateDeliveryAsync(
-            factory.Services,
-            deliveryId,
-            doctor.DoctorId,
-            campaignId,
-            company.CompanyId,
-            TodayEgypt,
-            UtcNow.AddMinutes(-30),
-            pricePerMessageSnapshot: 50m,
-            platformFeePercentSnapshot: 20m,
-            platformFeeAmount: 10m,
-            doctorEarnings: 40m,
-            reservedAmount: 50m,
-            UtcNow.AddMinutes(-30));
-
-        return new ReadScenarioSeed(
-            suffix,
-            doctor.UserId,
-            company.UserId,
-            deliveryId,
-            companyWalletId,
-            doctorWalletId);
+            services, campaignId, company.CompanyId, CampaignStatus.Approved, UtcNow.AddDays(-2), UtcNow.AddDays(-3), false, null);
+        await Phase7DeliveryTestHelpers.SeedCompanyWalletAsync(
+            services, $"company-wallet-{suffix}", company.CompanyId, company.UserId, availableBalance: 0m, reservedBalance: 100m, UtcNow.AddDays(-1));
+        await Phase7DeliveryTestHelpers.SeedDoctorWalletAsync(
+            services, $"doctor-wallet-{suffix}", doctor.DoctorId, doctor.UserId, availableBalance: 5m, reservedBalance: 0m, UtcNow.AddDays(-1));
+        await Phase7DeliveryTestHelpers.SeedPhase8ActiveReservedDeliveryAsync(
+            services, deliveryId, doctor.DoctorId, campaignId, company.CompanyId, new DateOnly(2026, 7, 11), UtcNow.AddMinutes(-30),
+            price: 100m, platformFeePercent: 12.345m, platformFee: 12.35m, doctorEarnings: 87.65m);
+        return new Phase8Fixture(doctor.UserId, doctor.DoctorId, company.CompanyId, campaignId, deliveryId);
     }
 
-    private static HttpClient CreateClient(ConfiguredWebAppFactory factory, string role, string userId)
+    private sealed record FinancialCounts(int Transactions, int LedgerEntries, int Interactions, int Audits);
+
+    internal sealed record Phase8Fixture(string DoctorUserId, string DoctorId, string CompanyId, string CampaignId, string DeliveryId);
+
+    internal sealed class FixedClockFactory(DateTime utcNow) : ConfiguredWebAppFactory
     {
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken(role, userId));
-        return client;
-    }
-
-    private static async Task<JsonElement> ReadDataAsync(HttpResponseMessage response)
-    {
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(200, document.RootElement.GetProperty("Code").GetInt32());
-        Assert.Equal("Message read recorded.", document.RootElement.GetProperty("Message").GetString());
-        return document.RootElement.GetProperty("Data").Clone();
-    }
-
-    private static async Task AssertSafeEmptyEnvelopeAsync(HttpResponseMessage response, HttpStatusCode expectedStatusCode)
-    {
-        Assert.Equal(expectedStatusCode, response.StatusCode);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal((int)expectedStatusCode, document.RootElement.GetProperty("Code").GetInt32());
-        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("Data").ValueKind);
-        var body = document.RootElement.ToString();
-        Assert.DoesNotContain("company-wallet", body, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("doctor-wallet", body, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("Campaign", body, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static async Task<ReadStateSnapshot> SnapshotAsync(
-        ConfiguredWebAppFactory factory,
-        string deliveryId,
-        string companyWalletId,
-        string doctorWalletId)
-    {
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
-        var delivery = await context.DoctorAdDeliveries.AsNoTracking().SingleAsync(item => item.Id == deliveryId);
-        var companyWallet = await context.Wallets.AsNoTracking().SingleAsync(item => item.Id == companyWalletId);
-        var doctorWallet = await context.Wallets.AsNoTracking().SingleAsync(item => item.Id == doctorWalletId);
-
-        return new ReadStateSnapshot(
-            delivery.ReadAtUtc,
-            delivery.Status,
-            delivery.ReservationStatus,
-            companyWallet.AvailableBalance,
-            companyWallet.ReservedBalance,
-            doctorWallet.AvailableBalance,
-            doctorWallet.ReservedBalance,
-            await context.WalletTransactions.CountAsync(),
-            await context.WalletLedgerEntries.CountAsync());
-    }
-
-    private sealed record ReadScenarioSeed(
-        string Suffix,
-        string DoctorUserId,
-        string CompanyUserId,
-        string DeliveryId,
-        string CompanyWalletId,
-        string DoctorWalletId);
-
-    private sealed record ReadStateSnapshot(
-        DateTime? ReadAtUtc,
-        DeliveryStatus Status,
-        ReservationStatus ReservationStatus,
-        decimal CompanyAvailableBalance,
-        decimal CompanyReservedBalance,
-        decimal DoctorAvailableBalance,
-        decimal DoctorReservedBalance,
-        int WalletTransactionCount,
-        int WalletLedgerEntryCount);
-
-    private sealed class FixedClockFactory(DateTime utcNow) : ConfiguredWebAppFactory
-    {
-        private readonly AdjustableTimeProvider clock = new(utcNow);
+        public AdjustableTimeProvider Clock { get; } = new(utcNow);
 
         protected override void ConfigureWebHostCore(IWebHostBuilder builder)
         {
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<TimeProvider>();
-                services.AddSingleton<TimeProvider>(clock);
+                services.AddSingleton<TimeProvider>(Clock);
             });
         }
     }
 
-    private sealed class AdjustableTimeProvider(DateTime utcNow) : TimeProvider
+    internal sealed class AdjustableTimeProvider(DateTime utcNow) : TimeProvider
     {
-        private readonly DateTime utcNow = DateTime.SpecifyKind(utcNow, DateTimeKind.Utc);
-
-        public override DateTimeOffset GetUtcNow() => new(utcNow);
+        private DateTime currentUtc = utcNow;
+        public override DateTimeOffset GetUtcNow() => new(currentUtc);
+        public void SetUtcNow(DateTime value) => currentUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
     }
 }

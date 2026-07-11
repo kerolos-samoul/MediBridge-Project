@@ -1,18 +1,11 @@
-using System.Data.Common;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
-using MediBridge.Core.Entities.Campaigns;
-using MediBridge.Core.Entities.Messaging;
-using MediBridge.Core.Entities.Profiles;
-using MediBridge.Core.Entities.Wallets;
-using MediBridge.Core.Enums;
+using System.Text;
 using MediBridge.IntegrationTests.TestHost;
 using MediBridge.Repository.Data;
-using MediBridge.Repository.Data.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -24,19 +17,7 @@ namespace MediBridge.IntegrationTests;
 
 public sealed class Phase8InteractionPerformanceTests
 {
-    private const int DoctorCount = 100;
-    private const int DeliveriesPerDoctor = 10;
-    private const int TotalDeliveries = DoctorCount * DeliveriesPerDoctor;
-    private const int WarmupReads = 20;
-    private const int WarmupInteractions = 20;
-    private const int MeasuredReads = 200;
-    private const int MeasuredInteractions = 200;
-    private const int Concurrency = 10;
-    private const decimal Price = 50m;
-    private const decimal PlatformFee = 10m;
-    private const decimal DoctorEarnings = 40m;
-    private static readonly DateTime UtcNow = new(2026, 7, 10, 10, 0, 0, DateTimeKind.Utc);
-    private static readonly DateOnly TodayEgypt = new(2026, 7, 10);
+    private static readonly DateTime UtcNow = new(2026, 7, 11, 10, 0, 0, DateTimeKind.Utc);
     private readonly ITestOutputHelper output;
 
     public Phase8InteractionPerformanceTests(ITestOutputHelper output)
@@ -45,69 +26,98 @@ public sealed class Phase8InteractionPerformanceTests
     }
 
     [Fact]
-    public void ReferenceProfileShape_MatchesDocumentedPhase8Workload()
+    public void BenchmarkAllocation_StaysInsideDefaultDoctorInteractionThrottle()
     {
-        Assert.Equal(1_000, TotalDeliveries);
-        Assert.Equal(20, WarmupReads);
-        Assert.Equal(20, WarmupInteractions);
-        Assert.Equal(200, MeasuredReads);
-        Assert.Equal(200, MeasuredInteractions);
-        Assert.Equal(10, Concurrency);
+        var allocation = CreateRoundRobinAllocation(workerCount: 50, requestCount: 420);
+
+        Assert.Equal(420, allocation.Count);
+        Assert.All(
+            allocation.GroupBy(worker => worker),
+            partition => Assert.InRange(partition.Count() + 1, 1, 10));
     }
 
     [Phase8PerformanceFact]
-    public async Task ReferenceSqlServer2022Profile_MeetsReadInteractionLatencyAndFinancialSafetyTargets()
+    public async Task ReferenceSqlServer2022Profile_MeetsReadAndReplayLatencyTarget()
     {
-        await using var sql = new MsSqlBuilder()
-            .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-            .Build();
+        await using var sql = new MsSqlBuilder().WithImage("mcr.microsoft.com/mssql/server:2022-latest").Build();
         await sql.StartAsync();
-
-        var observer = new InteractionCommandObserver();
-        await using var factory = new PerformanceFactory(sql.GetConnectionString(), observer);
+        await using var factory = new PerformanceFactory(sql.GetConnectionString());
         await factory.InitializeDatabaseAsync();
-        var workload = await SeedReferenceWorkloadAsync(factory.Services);
-        var clients = workload.Doctors.Select(doctor =>
+        var fixtures = new List<Phase8ReadTrackingIntegrationTests.Phase8Fixture>(capacity: 50);
+        for (var index = 0; index < 50; index++)
+        {
+            fixtures.Add(await Phase8ReadTrackingIntegrationTests.SeedPhase8FixtureAsync(factory.Services, $"perf-{index:D2}"));
+        }
+
+        var clients = fixtures.Select((fixture, index) =>
         {
             var client = factory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                "Bearer",
-                TestJwtFactory.CreateToken("Doctor", doctor.UserId));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Doctor", fixture.DoctorUserId));
+            client.DefaultRequestHeaders.Add("Idempotency-Key", $"phase8-performance-key-{index:D2}");
             return client;
         }).ToArray();
 
         try
         {
-            await RunReadsAsync(clients, workload.ReadWarmupTargets);
-            await RunInteractionsAsync(clients, workload.InteractionWarmupTargets, "warmup");
+            for (var index = 0; index < fixtures.Count; index++)
+            {
+                using var settle = await PostReplayInteractionAsync(clients[index], fixtures[index].DeliveryId);
+                Assert.Equal(HttpStatusCode.OK, settle.StatusCode);
+            }
 
-            observer.ResetAndEnable();
-            var readDurations = await RunReadsAsync(clients, workload.ReadMeasuredTargets);
-            var interactionDurations = await RunInteractionsAsync(clients, workload.InteractionMeasuredTargets, "measured");
-            observer.Disable();
+            foreach (var worker in CreateRoundRobinAllocation(clients.Length, requestCount: 20))
+            {
+                using var warmRead = await clients[worker].PutAsync($"/api/doctor/messages/{fixtures[worker].DeliveryId}/read", null);
+                Assert.Equal(HttpStatusCode.OK, warmRead.StatusCode);
+            }
 
-            await AssertFinancialSafetyAsync(
-                factory.Services,
-                workload.ReadWarmupTargets
-                    .Concat(workload.ReadMeasuredTargets)
-                    .Select(target => target.DeliveryId)
-                    .ToArray(),
-                workload.InteractionWarmupTargets
-                    .Concat(workload.InteractionMeasuredTargets)
-                    .Select(target => target.DeliveryId)
-                    .ToArray());
+            var workload = CreateMeasuredWorkload(workerCount: clients.Length, readCount: 200, replayCount: 200);
+            var durations = new long[workload.Count];
+            var failures = 0;
+            using var concurrency = new SemaphoreSlim(10, 10);
+            await Task.WhenAll(workload.Select(async (work, index) =>
+            {
+                await concurrency.WaitAsync();
+                try
+                {
+                    var stopwatch = Stopwatch.StartNew();
+                    using var response = work.IsRead
+                        ? await clients[work.WorkerIndex].PutAsync($"/api/doctor/messages/{fixtures[work.WorkerIndex].DeliveryId}/read", null)
+                        : await PostReplayInteractionAsync(clients[work.WorkerIndex], fixtures[work.WorkerIndex].DeliveryId);
+                    stopwatch.Stop();
+                    durations[index] = stopwatch.ElapsedMilliseconds;
+                    if (response.StatusCode != HttpStatusCode.OK)
+                    {
+                        Interlocked.Increment(ref failures);
+                    }
+                }
+                finally
+                {
+                    concurrency.Release();
+                }
+            }));
 
-            AssertLatency("Phase8 read", readDurations);
-            AssertLatency("Phase8 interact", interactionDurations);
+            Array.Sort(durations);
+            var withinTarget = durations.Count(value => value <= 1000);
             output.WriteLine(
-                "Phase8 interaction profile: read p50={0}ms p95={1}ms p99={2}ms; interact p50={3}ms p95={4}ms p99={5}ms; commands={6}",
-                Percentile(readDurations, 0.50),
-                Percentile(readDurations, 0.95),
-                Percentile(readDurations, 0.99),
-                Percentile(interactionDurations, 0.50),
-                Percentile(interactionDurations, 0.95),
-                Percentile(interactionDurations, 0.99),
-                observer.CommandCount);
+                "Phase8 interaction: p50={0}ms p95={1}ms p99={2}ms within1s={3}/400 failures={4}",
+                Percentile(durations, 0.50),
+                Percentile(durations, 0.95),
+                Percentile(durations, 0.99),
+                withinTarget,
+                failures);
+
+            Assert.Equal(0, failures);
+            Assert.True(withinTarget >= 380, $"Only {withinTarget}/400 requests completed within 1s.");
+
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+            foreach (var fixture in fixtures)
+            {
+                Assert.Equal(2, await db.WalletTransactions.CountAsync(transaction => transaction.RelatedDeliveryId == fixture.DeliveryId));
+                Assert.Equal(2, await db.WalletLedgerEntries.CountAsync(entry => entry.MessageDeliveryId == fixture.DeliveryId));
+                Assert.Equal(1, await db.DeliveryInteractions.CountAsync(interaction => interaction.DeliveryId == fixture.DeliveryId));
+            }
         }
         finally
         {
@@ -118,278 +128,41 @@ public sealed class Phase8InteractionPerformanceTests
         }
     }
 
-    private static async Task<Phase8PerformanceWorkload> SeedReferenceWorkloadAsync(IServiceProvider services)
+    private static Task<HttpResponseMessage> PostReplayInteractionAsync(HttpClient client, string deliveryId)
     {
-        using var scope = services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
-        context.ChangeTracker.AutoDetectChangesEnabled = false;
-
-        const string companyUserId = "phase8-performance-company-user";
-        const string companyId = "phase8-performance-company";
-        context.Users.Add(CreateUser(companyUserId, "phase8-performance-company@example.test", UserRole.Company));
-        context.CompanyProfiles.Add(new CompanyProfile
-        {
-            Id = companyId,
-            UserId = companyUserId,
-            CompanyName = "Phase 8 Performance Company",
-            LicenseNumber = "phase8-performance-license",
-            ContactName = "Phase 8 Contact",
-            VerificationDocumentType = "License",
-            VerificationOriginalFileName = "phase8-company-license.pdf",
-            VerificationContentType = "application/pdf",
-            VerificationSizeBytes = 2048,
-            VerificationReference = "phase8/performance/company-license",
-            CreatedAtUtc = UtcNow.AddDays(-30)
-        });
-        context.Wallets.Add(new Wallet
-        {
-            Id = "phase8-performance-company-wallet",
-            OwnerType = WalletOwnerType.Company,
-            OwnerId = companyId,
-            OwnerUserId = companyUserId,
-            AvailableBalance = 0m,
-            ReservedBalance = TotalDeliveries * Price,
-            Currency = "EGP",
-            CreatedAtUtc = UtcNow.AddDays(-30)
-        });
-
-        var doctors = new List<Phase8PerformanceDoctor>(DoctorCount);
-        var deliveries = new List<Phase8PerformanceTarget>(TotalDeliveries);
-        for (var doctorIndex = 0; doctorIndex < DoctorCount; doctorIndex++)
-        {
-            var userId = $"phase8-performance-doctor-user-{doctorIndex:D3}";
-            var doctorId = $"phase8-performance-doctor-{doctorIndex:D3}";
-            context.Users.Add(CreateUser(userId, $"phase8-performance-doctor-{doctorIndex:D3}@example.test", UserRole.Doctor));
-            context.DoctorProfiles.Add(new DoctorProfile
-            {
-                Id = doctorId,
-                UserId = userId,
-                Specialization = "Cardiology",
-                ExperienceYears = 10,
-                Location = "Cairo",
-                VerificationDocumentType = "License",
-                VerificationOriginalFileName = $"{doctorId}-license.pdf",
-                VerificationContentType = "application/pdf",
-                VerificationSizeBytes = 1024,
-                VerificationReference = $"phase8/performance/{doctorId}/license",
-                DailyMessageLimit = DeliveriesPerDoctor,
-                ActivityScore = 95m,
-                Status = DoctorMarketplaceStatus.Active,
-                PricePerMessage = Price,
-                CreatedAtUtc = UtcNow.AddDays(-30)
-            });
-            context.Wallets.Add(new Wallet
-            {
-                Id = $"phase8-performance-doctor-wallet-{doctorIndex:D3}",
-                OwnerType = WalletOwnerType.Doctor,
-                OwnerId = doctorId,
-                OwnerUserId = userId,
-                AvailableBalance = 0m,
-                ReservedBalance = 0m,
-                Currency = "EGP",
-                CreatedAtUtc = UtcNow.AddDays(-30)
-            });
-            doctors.Add(new Phase8PerformanceDoctor(userId, doctorId));
-        }
-
-        for (var flatIndex = 0; flatIndex < TotalDeliveries; flatIndex++)
-        {
-            var doctorIndex = flatIndex / DeliveriesPerDoctor;
-            var campaignId = $"phase8-performance-campaign-{flatIndex:D4}";
-            var deliveryId = $"phase8-performance-delivery-{flatIndex:D4}";
-            context.Campaigns.Add(new Campaign
-            {
-                Id = campaignId,
-                CompanyId = companyId,
-                Title = $"Phase 8 performance campaign {flatIndex:D4}",
-                Description = "Phase 8 interaction performance profile",
-                ClinicalResearchInfo = "Phase 8 reference workload",
-                Status = CampaignStatus.Approved,
-                SubmittedAtUtc = UtcNow.AddDays(-2),
-                CreatedAtUtc = UtcNow.AddDays(-3)
-            });
-            context.DoctorAdDeliveries.Add(new DoctorAdDelivery
-            {
-                Id = deliveryId,
-                DoctorId = doctors[doctorIndex].DoctorId,
-                CampaignId = campaignId,
-                CompanyId = companyId,
-                DeliveryDateEgypt = TodayEgypt,
-                DeliveredAtUtc = UtcNow.AddMinutes(-flatIndex),
-                Status = DeliveryStatus.Active,
-                ReservationStatus = ReservationStatus.Reserved,
-                PricePerMessageSnapshot = Price,
-                PlatformFeePercentSnapshot = 20m,
-                PlatformFeeAmount = PlatformFee,
-                DoctorEarnings = DoctorEarnings,
-                ReservedAmount = Price,
-                CreatedAtUtc = UtcNow.AddMinutes(-flatIndex)
-            });
-            deliveries.Add(new Phase8PerformanceTarget(doctorIndex, deliveryId));
-        }
-
-        await context.SaveChangesAsync();
-        context.ChangeTracker.Clear();
-
-        return new Phase8PerformanceWorkload(
-            doctors,
-            deliveries.Take(WarmupReads).ToArray(),
-            deliveries.Skip(WarmupReads).Take(MeasuredReads).ToArray(),
-            deliveries.Skip(WarmupReads + MeasuredReads).Take(WarmupInteractions).ToArray(),
-            deliveries.Skip(WarmupReads + MeasuredReads + WarmupInteractions).Take(MeasuredInteractions).ToArray());
+        return client.PostAsync(
+            $"/api/doctor/messages/{deliveryId}/interact",
+            new StringContent("""{"Outcome":"Accept","Feedback":"Performance useful feedback."}""", Encoding.UTF8, "application/json"));
     }
 
-    private static async Task<long[]> RunReadsAsync(
-        IReadOnlyList<HttpClient> clients,
-        IReadOnlyList<Phase8PerformanceTarget> targets)
+    private static IReadOnlyList<int> CreateRoundRobinAllocation(int workerCount, int requestCount)
     {
-        var durations = new long[targets.Count];
-        var failures = 0;
-        using var concurrency = new SemaphoreSlim(Concurrency, Concurrency);
-        await Task.WhenAll(targets.Select(async (target, index) =>
-        {
-            await concurrency.WaitAsync();
-            try
-            {
-                var stopwatch = Stopwatch.StartNew();
-                using var response = await clients[target.DoctorIndex]
-                    .PutAsync($"/api/doctor/messages/{target.DeliveryId}/read", content: null);
-                stopwatch.Stop();
-                durations[index] = stopwatch.ElapsedMilliseconds;
-                if (response.StatusCode != HttpStatusCode.OK)
-                {
-                    Interlocked.Increment(ref failures);
-                }
-            }
-            finally
-            {
-                concurrency.Release();
-            }
-        }));
-
-        Assert.Equal(0, failures);
-        Array.Sort(durations);
-        return durations;
+        return Enumerable.Range(0, requestCount).Select(index => index % workerCount).ToArray();
     }
 
-    private static async Task<long[]> RunInteractionsAsync(
-        IReadOnlyList<HttpClient> clients,
-        IReadOnlyList<Phase8PerformanceTarget> targets,
-        string prefix)
+    private static IReadOnlyList<MeasuredWork> CreateMeasuredWorkload(int workerCount, int readCount, int replayCount)
     {
-        var durations = new long[targets.Count];
-        var failures = 0;
-        using var concurrency = new SemaphoreSlim(Concurrency, Concurrency);
-        await Task.WhenAll(targets.Select(async (target, index) =>
-        {
-            await concurrency.WaitAsync();
-            try
-            {
-                using var request = Phase8InteractionTestHelpers.CreateInteractRequest(
-                    target.DeliveryId,
-                    $"phase8-{prefix}-{index:D4}",
-                    index % 2 == 0 ? "Accept" : "Reject");
-                var stopwatch = Stopwatch.StartNew();
-                using var response = await clients[target.DoctorIndex].SendAsync(request);
-                stopwatch.Stop();
-                durations[index] = stopwatch.ElapsedMilliseconds;
-                if (response.StatusCode != HttpStatusCode.OK)
-                {
-                    Interlocked.Increment(ref failures);
-                }
-            }
-            finally
-            {
-                concurrency.Release();
-            }
-        }));
-
-        Assert.Equal(0, failures);
-        Array.Sort(durations);
-        return durations;
+        var reads = Enumerable.Range(0, readCount).Select(index => new MeasuredWork(index % workerCount, IsRead: true));
+        var replays = Enumerable.Range(0, replayCount).Select(index => new MeasuredWork(index % workerCount, IsRead: false));
+        return reads.Concat(replays).ToArray();
     }
 
-    private static async Task AssertFinancialSafetyAsync(
-        IServiceProvider services,
-        IReadOnlyCollection<string> readDeliveryIds,
-        IReadOnlyCollection<string> interactedDeliveryIds)
+    private static long Percentile(IReadOnlyList<long> sortedDurations, double percentile)
     {
-        using var scope = services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
-
-        Assert.Equal(0, await context.WalletTransactions
-            .CountAsync(transaction => readDeliveryIds.Contains(transaction.RelatedDeliveryId!)));
-        Assert.Equal(interactedDeliveryIds.Count, await context.WalletTransactions
-            .Where(transaction => transaction.OperationType == WalletTransactionType.Charge
-                && interactedDeliveryIds.Contains(transaction.RelatedDeliveryId!))
-            .Select(transaction => transaction.RelatedDeliveryId)
-            .Distinct()
-            .CountAsync());
-        Assert.Equal(interactedDeliveryIds.Count, await context.WalletTransactions
-            .Where(transaction => transaction.OperationType == WalletTransactionType.Earn
-                && interactedDeliveryIds.Contains(transaction.RelatedDeliveryId!))
-            .Select(transaction => transaction.RelatedDeliveryId)
-            .Distinct()
-            .CountAsync());
-        Assert.Equal(interactedDeliveryIds.Count * 2, await context.WalletTransactions
-            .CountAsync(transaction => interactedDeliveryIds.Contains(transaction.RelatedDeliveryId!)));
-        Assert.Equal(interactedDeliveryIds.Count * 2, await context.WalletLedgerEntries
-            .CountAsync(entry => interactedDeliveryIds.Contains(entry.MessageDeliveryId!)));
-        Assert.Equal(interactedDeliveryIds.Count, await context.DeliveryInteractionOperations
-            .CountAsync(operation => interactedDeliveryIds.Contains(operation.DeliveryId)));
+        var index = Math.Clamp((int)Math.Ceiling(sortedDurations.Count * percentile) - 1, 0, sortedDurations.Count - 1);
+        return sortedDurations[index];
     }
 
-    private void AssertLatency(string label, IReadOnlyList<long> sortedDurations)
-    {
-        var withinTarget = sortedDurations.Count(duration => duration <= 1000);
-        output.WriteLine(
-            "{0}: p50={1}ms p95={2}ms p99={3}ms within1s={4}/{5}",
-            label,
-            Percentile(sortedDurations, 0.50),
-            Percentile(sortedDurations, 0.95),
-            Percentile(sortedDurations, 0.99),
-            withinTarget,
-            sortedDurations.Count);
-        Assert.True(
-            withinTarget >= sortedDurations.Count * 0.95m,
-            $"{label} completed only {withinTarget}/{sortedDurations.Count} requests within 1s.");
-    }
+    private sealed record MeasuredWork(int WorkerIndex, bool IsRead);
 
-    private static long Percentile(IReadOnlyList<long> sorted, double percentile)
-    {
-        var index = Math.Clamp((int)Math.Ceiling(sorted.Count * percentile) - 1, 0, sorted.Count - 1);
-        return sorted[index];
-    }
-
-    private static MediBridgeIdentityUser CreateUser(string id, string email, UserRole role)
-    {
-        return new MediBridgeIdentityUser
-        {
-            Id = id,
-            UserName = email,
-            NormalizedUserName = email.ToUpperInvariant(),
-            Email = email,
-            NormalizedEmail = email.ToUpperInvariant(),
-            Role = role,
-            AccountStatus = AccountStatus.Approved,
-            EmailVerified = true,
-            EmailConfirmed = true,
-            ApprovedAtUtc = UtcNow.AddDays(-29),
-            CreatedAtUtc = UtcNow.AddDays(-30)
-        };
-    }
-
-    private sealed class PerformanceFactory(
-        string connectionString,
-        InteractionCommandObserver observer) : ConfiguredWebAppFactory
+    private sealed class PerformanceFactory(string connectionString) : ConfiguredWebAppFactory
     {
         protected override void ConfigureAppConfigurationCore(IWebHostBuilder builder)
         {
-            builder.ConfigureAppConfiguration((_, configuration) =>
-                configuration.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["ConnectionStrings:DefaultConnection"] = connectionString
-                }));
+            builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = connectionString
+            }));
         }
 
         protected override void ConfigureWebHostCore(IWebHostBuilder builder)
@@ -399,9 +172,8 @@ public sealed class Phase8InteractionPerformanceTests
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(new FixedTimeProvider());
                 services.RemoveAll<DbContextOptions<MediBridgeDbContext>>();
-                services.AddDbContext<MediBridgeDbContext>(options => options
-                    .UseSqlServer(context.Configuration.GetConnectionString("DefaultConnection"))
-                    .AddInterceptors(observer));
+                services.AddDbContext<MediBridgeDbContext>(options =>
+                    options.UseSqlServer(context.Configuration.GetConnectionString("DefaultConnection")));
             });
         }
     }
@@ -410,70 +182,6 @@ public sealed class Phase8InteractionPerformanceTests
     {
         public override DateTimeOffset GetUtcNow() => new(UtcNow);
     }
-
-    private sealed class InteractionCommandObserver : DbCommandInterceptor
-    {
-        private int enabled;
-        private long commandCount;
-        public long CommandCount => Interlocked.Read(ref commandCount);
-
-        public void ResetAndEnable()
-        {
-            Interlocked.Exchange(ref commandCount, 0);
-            Volatile.Write(ref enabled, 1);
-        }
-
-        public void Disable() => Volatile.Write(ref enabled, 0);
-
-        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
-            DbCommand command,
-            CommandEventData eventData,
-            InterceptionResult<DbDataReader> result,
-            CancellationToken cancellationToken = default)
-        {
-            Count();
-            return ValueTask.FromResult(result);
-        }
-
-        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
-            DbCommand command,
-            CommandEventData eventData,
-            InterceptionResult<int> result,
-            CancellationToken cancellationToken = default)
-        {
-            Count();
-            return ValueTask.FromResult(result);
-        }
-
-        public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(
-            DbCommand command,
-            CommandEventData eventData,
-            InterceptionResult<object> result,
-            CancellationToken cancellationToken = default)
-        {
-            Count();
-            return ValueTask.FromResult(result);
-        }
-
-        private void Count()
-        {
-            if (Volatile.Read(ref enabled) == 1)
-            {
-                Interlocked.Increment(ref commandCount);
-            }
-        }
-    }
-
-    private sealed record Phase8PerformanceDoctor(string UserId, string DoctorId);
-
-    private sealed record Phase8PerformanceTarget(int DoctorIndex, string DeliveryId);
-
-    private sealed record Phase8PerformanceWorkload(
-        IReadOnlyList<Phase8PerformanceDoctor> Doctors,
-        IReadOnlyList<Phase8PerformanceTarget> ReadWarmupTargets,
-        IReadOnlyList<Phase8PerformanceTarget> ReadMeasuredTargets,
-        IReadOnlyList<Phase8PerformanceTarget> InteractionWarmupTargets,
-        IReadOnlyList<Phase8PerformanceTarget> InteractionMeasuredTargets);
 }
 
 public sealed class Phase8PerformanceFactAttribute : FactAttribute

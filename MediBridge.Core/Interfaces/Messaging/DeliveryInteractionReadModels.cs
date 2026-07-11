@@ -2,23 +2,37 @@ using MediBridge.Core.Enums;
 
 namespace MediBridge.Core.Interfaces.Messaging;
 
-public sealed record MarkDeliveryReadRepositoryResult(
+public sealed record ReadTrackingReplayReadModel(
     string DeliveryId,
+    DeliveryStatus Status,
     DateTime ReadAtUtc,
-    bool Created);
+    bool AlreadyRead);
 
-public sealed record DeliveryInteractionReplayEvidenceReadModel(
-    string OperationId,
+public sealed record InteractionReplayReadModel(
     string DeliveryId,
-    DeliveryInteractionDecision Decision,
+    DeliveryStatus Status,
+    ReservationStatus ReservationStatus,
+    DateTime InteractedAtUtc,
+    DateTime? ReadAtUtc,
+    DeliveryInteractionOutcome Outcome,
     string? FeedbackText,
-    DeliveryInteractionOperationStatus Status,
-    string? ChargeTransactionId,
-    string? EarnTransactionId,
-    DateTime CreatedAtUtc,
-    DateTime? CompletedAtUtc);
+    bool FeedbackQualifiesForScore,
+    decimal ChargeAmount,
+    decimal DoctorEarnings,
+    decimal PlatformFeeAmount,
+    string RequestFingerprint,
+    string IdempotencyKeyHash);
 
-public sealed record LockedInteractionDeliverySnapshot(
+public enum InteractionConflictClassification
+{
+    None = 0,
+    MatchingReplay = 1,
+    IdempotencyKeyConflict = 2,
+    SettledDeliveryConflict = 3,
+    ReservationOrSnapshotAnomaly = 4
+}
+
+public sealed record LockedSettlementDeliveryReadModel(
     string DeliveryId,
     string DoctorId,
     string CampaignId,
@@ -27,17 +41,21 @@ public sealed record LockedInteractionDeliverySnapshot(
     DeliveryStatus Status,
     ReservationStatus ReservationStatus,
     DateTime? ReadAtUtc,
-    DateTime? InteractedAtUtc,
-    string? FeedbackText,
     decimal PricePerMessageSnapshot,
+    decimal PlatformFeePercentSnapshot,
     decimal PlatformFeeAmount,
     decimal DoctorEarnings,
     decimal ReservedAmount);
 
-public sealed record DeliveryInteractionSettlementResultReadModel(
+public sealed record DoctorSafeInteractionResultProjection(
     string DeliveryId,
     DeliveryStatus Status,
+    ReservationStatus ReservationStatus,
     DateTime InteractedAtUtc,
-    string? FeedbackText,
-    string? ChargeTransactionId,
-    string? EarnTransactionId);
+    DateTime? ReadAtUtc,
+    bool FeedbackAccepted,
+    bool FeedbackQualifiesForScore,
+    decimal ChargeAmount,
+    decimal DoctorEarnings,
+    decimal PlatformFeeAmount,
+    bool Replayed);

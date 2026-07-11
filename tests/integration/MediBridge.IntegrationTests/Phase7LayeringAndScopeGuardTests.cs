@@ -107,7 +107,7 @@ public sealed class Phase7LayeringAndScopeGuardTests
     }
 
     [Fact]
-    public void Production_exposes_only_contracted_doctor_message_routes_and_no_future_or_job_control_surface()
+    public void Production_exposes_only_the_phase7_and_phase8_doctor_message_routes_and_no_job_control_surface()
     {
         using var factory = new ProductionWebAppFactory();
         var routes = factory.Services.GetRequiredService<IEnumerable<EndpointDataSource>>()
@@ -129,7 +129,7 @@ public sealed class Phase7LayeringAndScopeGuardTests
 
         var forbiddenRouteMarkers = new[]
         {
-            "hangfire", "/jobs", "job-control", "charge", "earn",
+            "hangfire", "/jobs", "job-control",
             "weekly", "activity", "notification", "analytics"
         };
         Assert.DoesNotContain(routes, route => forbiddenRouteMarkers.Any(marker =>
@@ -137,8 +137,7 @@ public sealed class Phase7LayeringAndScopeGuardTests
 
         var forbiddenServiceMarkers = new[]
         {
-            "WeeklyEnforcement", "ActivityScore",
-            "Notification", "Analytics"
+            "WeeklyEnforcement", "ActivityScore", "Notification", "Analytics"
         };
         var serviceTypeNames = typeof(DeliveryExpiryService).Assembly.GetTypes()
             .Where(type => type.Namespace == "MediBridge.Services.Services")
