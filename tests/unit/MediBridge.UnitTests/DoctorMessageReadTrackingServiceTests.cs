@@ -269,6 +269,7 @@ public sealed class DoctorMessageReadTrackingServiceTests
 
         public Task AddDoctorProfileAsync(DoctorProfile profile, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task AddCompanyProfileAsync(CompanyProfile profile, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<DoctorProfile?> FindDoctorProfileByIdAsync(string doctorId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<DoctorProfile?> FindDoctorProfileByIdForUpdateAsync(string doctorId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<CompanyProfile?> FindCompanyProfileByUserIdAsync(string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<CompanyProfile?> FindCompanyProfileByIdAsync(string companyId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
