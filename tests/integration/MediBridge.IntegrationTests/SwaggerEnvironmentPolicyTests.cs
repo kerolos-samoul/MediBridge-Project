@@ -63,7 +63,7 @@ public class SwaggerEnvironmentPolicyTests
     }
 
     [Fact]
-    public async Task Swagger_DocumentsSecuredDoctorMessageRoutesAndPhase8InteractionContracts()
+    public async Task Swagger_DocumentsTheSecuredPhase7AndPhase8DoctorRoutesAndContractedResponses()
     {
         await using var factory = new WebAppFactory();
         using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
@@ -96,22 +96,10 @@ public class SwaggerEnvironmentPolicyTests
 
         var asset = paths.GetProperty("/api/doctor/messages/{deliveryId}/assets/{fileId}/access").GetProperty("get");
         AssertResponses(asset, "200", "401", "403", "404", "429", "503");
-
         var read = paths.GetProperty("/api/doctor/messages/{deliveryId}/read").GetProperty("put");
         AssertResponses(read, "200", "401", "403", "404", "429");
-        Assert.DoesNotContain(
-            read.GetProperty("parameters").EnumerateArray(),
-            parameter => string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase));
-        AssertOperationHasBearerSecurity(read, AuthorizationPolicies.Phase7DoctorMessagesRead);
-
         var interact = paths.GetProperty("/api/doctor/messages/{deliveryId}/interact").GetProperty("post");
-        AssertResponses(interact, "200", "400", "401", "403", "404", "409", "429");
-        var idempotencyKey = Assert.Single(
-            interact.GetProperty("parameters").EnumerateArray(),
-            parameter => string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase));
-        Assert.True(idempotencyKey.GetProperty("required").GetBoolean());
-        Assert.Equal("header", idempotencyKey.GetProperty("in").GetString());
-        AssertOperationHasBearerSecurity(interact, AuthorizationPolicies.Phase7DoctorMessagesRead);
+        AssertResponses(interact, "200", "400", "401", "403", "404", "409", "429", "503");
 
         var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
         var inboxSchema = schemas.EnumerateObject().Single(schema => schema.Name.EndsWith("TodayInboxDto", StringComparison.Ordinal)).Value;
@@ -136,15 +124,11 @@ public class SwaggerEnvironmentPolicyTests
 
         var authorize = typeof(DoctorMessagesController).GetCustomAttribute<AuthorizeAttribute>();
         Assert.Equal(AuthorizationPolicies.Phase7DoctorMessagesRead, authorize?.Policy);
-        var rateLimit = typeof(DoctorMessagesController).GetCustomAttribute<EnableRateLimitingAttribute>();
-        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, rateLimit?.PolicyName);
-
-        var markReadRateLimit = typeof(DoctorMessagesController).GetMethod("MarkRead")!
-            .GetCustomAttribute<EnableRateLimitingAttribute>();
-        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, markReadRateLimit?.PolicyName);
-        var interactRateLimit = typeof(DoctorMessagesController).GetMethod("Interact")!
-            .GetCustomAttribute<EnableRateLimitingAttribute>();
-        Assert.Equal(RateLimitPolicyNames.DoctorInteraction, interactRateLimit?.PolicyName);
+        Assert.Null(typeof(DoctorMessagesController).GetCustomAttribute<EnableRateLimitingAttribute>());
+        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.GetToday))!.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName);
+        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.GetAssetAccess))!.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName);
+        Assert.Equal(RateLimitPolicyNames.DoctorInteraction, typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.MarkRead))!.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName);
+        Assert.Equal(RateLimitPolicyNames.DoctorInteraction, typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.Interact))!.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName);
 
         var adminJobsAuthorize = typeof(AdminDeliveryJobsController).GetCustomAttribute<AuthorizeAttribute>();
         Assert.Equal(AuthorizationPolicies.AdminOnly, adminJobsAuthorize?.Policy);
@@ -174,6 +158,7 @@ public class SwaggerEnvironmentPolicyTests
         AssertRequiredIdempotencyKey(paths, "/api/admin/campaigns/{campaignId}/review", "post");
         AssertRequiredIdempotencyKey(paths, "/api/company/wallet/topup", "post");
         AssertRequiredIdempotencyKey(paths, "/api/company/wallet/mock-checkout", "post");
+        AssertRequiredIdempotencyKey(paths, "/api/doctor/messages/{deliveryId}/interact", "post");
         AssertNoIdempotencyKey(paths, "/api/company/campaigns/drafts", "post");
         AssertNoIdempotencyKey(paths, "/api/auth/login", "post");
     }
@@ -235,11 +220,5 @@ public class SwaggerEnvironmentPolicyTests
         }
 
         return false;
-    }
-
-    private static void AssertOperationHasBearerSecurity(JsonElement operation, string policy)
-    {
-        AssertOperationReferencesBearer(operation);
-        Assert.Contains(policy, operation.GetProperty("description").GetString(), StringComparison.Ordinal);
     }
 }

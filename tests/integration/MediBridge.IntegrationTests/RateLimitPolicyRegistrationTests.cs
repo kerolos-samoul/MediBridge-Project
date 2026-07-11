@@ -1,6 +1,10 @@
 using System.Net;
+using System.Reflection;
+using MediBridge.APIs.Config;
+using MediBridge.APIs.Controllers;
 using MediBridge.IntegrationTests.TestHost;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.RateLimiting;
 using Xunit;
 
 namespace MediBridge.IntegrationTests;
@@ -22,5 +26,20 @@ public sealed class RateLimitPolicyRegistrationTests
         using var response = await client.GetAsync(path);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public void DoctorPhase8InteractionEndpoints_UseDoctorInteractionRateLimitPolicy()
+    {
+        var read = typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.MarkRead))!;
+        var interact = typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.Interact))!;
+        var today = typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.GetToday))!;
+        var asset = typeof(DoctorMessagesController).GetMethod(nameof(DoctorMessagesController.GetAssetAccess))!;
+
+        Assert.Null(typeof(DoctorMessagesController).GetCustomAttribute<EnableRateLimitingAttribute>());
+        Assert.Equal(RateLimitPolicyNames.DoctorInteraction, read.GetCustomAttribute<EnableRateLimitingAttribute>()!.PolicyName);
+        Assert.Equal(RateLimitPolicyNames.DoctorInteraction, interact.GetCustomAttribute<EnableRateLimitingAttribute>()!.PolicyName);
+        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, today.GetCustomAttribute<EnableRateLimitingAttribute>()!.PolicyName);
+        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, asset.GetCustomAttribute<EnableRateLimitingAttribute>()!.PolicyName);
     }
 }

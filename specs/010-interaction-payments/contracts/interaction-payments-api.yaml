@@ -1,0 +1,237 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 8 Doctor Interaction API
+  version: 1.0.0
+  description: >-
+    Doctor-only HTTP contract for read tracking and billable Accept/Reject
+    interaction settlement on current Egypt-day deliveries.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /api/doctor/messages/{deliveryId}/read:
+    put:
+      summary: Mark a current-day delivery as read without billing
+      description: Uses RateLimitPolicyNames.DoctorInteraction and may record or replay ReadAtUtc for Active, Accepted, or Rejected current-day deliveries without changing settlement, balances, transactions, ledger entries, or outcome state.
+      operationId: markDoctorMessageRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: First read time recorded or already present.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeReadTracking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /api/doctor/messages/{deliveryId}/interact:
+    post:
+      summary: Accept or reject a current-day delivery and settle payment exactly once
+      description: Uses RateLimitPolicyNames.DoctorInteraction. The raw Idempotency-Key is transient request input only; services persist/log/audit only normalized hashes or fingerprints.
+      operationId: interactWithDoctorMessage
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client retry key. Same key and same normalized content replays; same key with different content conflicts. Raw key values must never be stored, logged, audited, or returned.
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoctorInteractionRequest'
+      responses:
+        '200':
+          description: Interaction settled or idempotent replay returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeInteractionResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '503':
+          $ref: '#/components/responses/SettlementUnavailable'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Request body, feedback, idempotency header, or current-day action state is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Unauthorized:
+      description: Missing, expired, or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Forbidden:
+      description: Caller is not an approved active Doctor.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    NotFound:
+      description: Delivery is absent, outside current Egypt day, not Active when required, or not visible to the caller.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Conflict:
+      description: Idempotency key or already-settled delivery conflicts with the submitted outcome or feedback.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    TooManyRequests:
+      description: Doctor interaction rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    SettlementUnavailable:
+      description: Settlement could not proceed because reservation, snapshot, wallet, or persistence state is anomalous; no financial mutation was committed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+  schemas:
+    EnvelopeEmpty:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    EnvelopeReadTracking:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/ReadTrackingResult'
+    EnvelopeInteractionResult:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/DoctorInteractionResult'
+    ReadTrackingResult:
+      type: object
+      required: [DeliveryId, Status, ReadAtUtc, AlreadyRead]
+      properties:
+        DeliveryId:
+          type: string
+        Status:
+          type: string
+          enum: [Active, Accepted, Rejected]
+        ReadAtUtc:
+          type: string
+          format: date-time
+        AlreadyRead:
+          type: boolean
+    DoctorInteractionRequest:
+      type: object
+      required: [Outcome]
+      properties:
+        Outcome:
+          type: string
+          enum: [Accept, Reject]
+        Feedback:
+          type: string
+          nullable: true
+          maxLength: 2000
+          description: Optional plain text trimmed before validation; omitted, empty, and whitespace-only values are allowed. Reject values containing literal < or >, encoded &lt; or &gt; in any casing, Markdown links/images, javascript: URIs, or data: URIs.
+    DoctorInteractionResult:
+      type: object
+      required:
+        - DeliveryId
+        - Status
+        - ReservationStatus
+        - InteractedAtUtc
+        - FeedbackAccepted
+        - FeedbackQualifiesForScore
+        - ChargeAmount
+        - DoctorEarnings
+        - PlatformFeeAmount
+        - Replayed
+      properties:
+        DeliveryId:
+          type: string
+        Status:
+          type: string
+          enum: [Accepted, Rejected]
+        ReservationStatus:
+          type: string
+          enum: [Charged]
+        InteractedAtUtc:
+          type: string
+          format: date-time
+        ReadAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        FeedbackAccepted:
+          type: boolean
+        FeedbackQualifiesForScore:
+          type: boolean
+        ChargeAmount:
+          type: number
+          format: decimal
+          minimum: 0
+        DoctorEarnings:
+          type: number
+          format: decimal
+          minimum: 0
+        PlatformFeeAmount:
+          type: number
+          format: decimal
+          minimum: 0
+        Replayed:
+          type: boolean

@@ -759,16 +759,23 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("RefreshCredentials", (string)null);
                 });
 
-            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryInteractionOperation", b =>
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryInteraction", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ChargeTransactionId")
+                    b.Property<string>("ActorUserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("CompletedAtUtc")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("AuditEventId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ChargeTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<byte[]>("ConcurrencyToken")
                         .IsConcurrencyToken()
@@ -779,9 +786,6 @@ namespace MediBridge.Repository.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Decision")
-                        .HasColumnType("int");
-
                     b.Property<string>("DeliveryId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -791,36 +795,49 @@ namespace MediBridge.Repository.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("EarnTransactionId")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("FeedbackQualifiesForScore")
+                        .HasColumnType("bit");
 
                     b.Property<string>("FeedbackText")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
-                    b.Property<string>("IdempotencyKey")
+                    b.Property<string>("IdempotencyKeyHash")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<string>("SafeFailureSummary")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("Status")
+                    b.Property<int>("Outcome")
                         .HasColumnType("int");
+
+                    b.Property<string>("RequestFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DeliveryId", "Decision");
+                    b.HasIndex("AuditEventId");
 
-                    b.HasIndex("DoctorId", "DeliveryId", "IdempotencyKey")
+                    b.HasIndex("ChargeTransactionId");
+
+                    b.HasIndex("DeliveryId")
                         .IsUnique();
 
-                    b.ToTable("DeliveryInteractionOperations", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_DeliveryInteractionOperations_FeedbackText_Length", "[FeedbackText] IS NULL OR LEN([FeedbackText]) <= 1000");
+                    b.HasIndex("EarnTransactionId");
 
-                            t.HasCheckConstraint("CK_DeliveryInteractionOperations_IdempotencyKey_Length", "LEN([IdempotencyKey]) BETWEEN 8 AND 128");
+                    b.HasIndex("DoctorId", "IdempotencyKeyHash")
+                        .IsUnique();
+
+                    b.ToTable("DeliveryInteractions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DeliveryInteractions_Feedback_Length", "[FeedbackText] IS NULL OR LEN([FeedbackText]) <= 2000");
+
+                            t.HasCheckConstraint("CK_DeliveryInteractions_Outcome", "[Outcome] IN (1, 2)");
                         });
                 });
 
@@ -1002,8 +1019,8 @@ namespace MediBridge.Repository.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("PlatformFeePercentSnapshot")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasPrecision(7, 3)
+                        .HasColumnType("decimal(7,3)");
 
                     b.Property<decimal>("PricePerMessageSnapshot")
                         .HasPrecision(18, 2)
@@ -1037,6 +1054,8 @@ namespace MediBridge.Repository.Migrations
                     b.HasIndex("DoctorId", "DeliveryDateEgypt", "Id");
 
                     b.HasIndex("DoctorId", "DeliveryDateEgypt", "DeliveredAtUtc", "Id");
+
+                    b.HasIndex("DoctorId", "DeliveryDateEgypt", "Status", "ReservationStatus", "Id");
 
                     b.HasIndex("Status", "ReservationStatus", "DeliveryDateEgypt", "CompanyId", "Id");
 
@@ -2184,11 +2203,34 @@ namespace MediBridge.Repository.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryInteractionOperation", b =>
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryInteraction", b =>
                 {
+                    b.HasOne("MediBridge.Core.Entities.Policies.AuditEvent", null)
+                        .WithMany()
+                        .HasForeignKey("AuditEventId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MediBridge.Core.Entities.Wallets.WalletTransaction", null)
+                        .WithMany()
+                        .HasForeignKey("ChargeTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MediBridge.Core.Entities.Messaging.DoctorAdDelivery", null)
                         .WithMany()
                         .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Profiles.DoctorProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Wallets.WalletTransaction", null)
+                        .WithMany()
+                        .HasForeignKey("EarnTransactionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

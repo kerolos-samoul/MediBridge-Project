@@ -14,7 +14,7 @@ public interface IDomainUnitOfWork
     IProfileRepository Profiles { get; }
     IMessageQueueRepository MessageQueues { get; }
     IDeliveryRepository Deliveries { get; }
-    IDeliveryInteractionOperationRepository DeliveryInteractionOperations { get; }
+    IDeliveryInteractionRepository DeliveryInteractions { get; }
     IDeliveryJobRunRepository DeliveryJobRuns { get; }
     IDeliveryRecoveryDispatchRepository DeliveryRecoveryDispatches { get; }
     IWalletRepository Wallets { get; }

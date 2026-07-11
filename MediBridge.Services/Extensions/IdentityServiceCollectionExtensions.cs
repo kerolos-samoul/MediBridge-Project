@@ -82,6 +82,8 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<DeliveryJobRunTracker>();
         services.AddScoped<IDeliveryJobRecoveryCoordinator, DeliveryJobRecoveryCoordinator>();
         services.AddScoped<IDeliveryExpiryService, DeliveryExpiryService>();
+        services.AddScoped<Validators.Messaging.DoctorInteractionRequestValidator>();
+        services.AddSingleton<DoctorInteractionIdempotency>();
         services.AddScoped<IDoctorMessageService, DoctorMessageService>();
         services.AddSingleton<DeliverySettlementSnapshotCalculator>();
         services.AddSingleton<DeliveryCandidateEligibilityPolicy>();

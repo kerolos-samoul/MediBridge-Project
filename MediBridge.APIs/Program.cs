@@ -36,7 +36,6 @@ if (builder.Environment.IsDevelopment())
         options.DocumentFilter<MediBridge.APIs.OpenApi.BearerSecurityDocumentFilter>();
         options.OperationFilter<MediBridge.APIs.OpenApi.AuthorizeOperationFilter>();
         options.OperationFilter<MediBridge.APIs.OpenApi.IdempotencyKeyOperationFilter>();
-        options.SchemaFilter<MediBridge.APIs.OpenApi.InteractionPaymentSchemaFilter>();
         
         // Include XML comments for API documentation
         var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";

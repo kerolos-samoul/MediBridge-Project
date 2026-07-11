@@ -16,15 +16,15 @@ public interface IDoctorMessageService
         string fileId,
         CancellationToken cancellationToken = default);
 
-    Task<MarkReadResultDto> MarkDeliveryReadAsync(
+    Task<ReadTrackingResultDto> MarkReadAsync(
         string actorUserId,
         string deliveryId,
         CancellationToken cancellationToken = default);
 
-    Task<InteractDeliveryResultDto> InteractWithDeliveryAsync(
+    Task<DoctorInteractionResultDto> InteractAsync(
         string actorUserId,
         string deliveryId,
         string? idempotencyKey,
-        InteractDeliveryRequestDto? request,
+        DoctorInteractionRequestDto request,
         CancellationToken cancellationToken = default);
 }

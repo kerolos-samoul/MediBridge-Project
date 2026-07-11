@@ -146,7 +146,7 @@ public static class ServiceCollectionExtensions
             foreach (var policyName in RateLimitPolicyNames.All)
             {
                 var policy = options.GetPolicy(policyName);
-                if (policyName is RateLimitPolicyNames.FileUpload or RateLimitPolicyNames.Phase5CampaignSubmission or RateLimitPolicyNames.Phase5WalletTopUp or RateLimitPolicyNames.Phase7DoctorMessagesRead)
+                if (policyName is RateLimitPolicyNames.FileUpload or RateLimitPolicyNames.Phase5CampaignSubmission or RateLimitPolicyNames.Phase5WalletTopUp or RateLimitPolicyNames.Phase7DoctorMessagesRead or RateLimitPolicyNames.DoctorInteraction)
                 {
                     rateLimiterOptions.AddPolicy(policyName, context =>
                     {

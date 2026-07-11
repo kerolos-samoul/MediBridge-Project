@@ -75,49 +75,55 @@ public sealed class DoctorAdDelivery : IConcurrencyTrackedRecord
         UpdatedAtUtc = expiredAtUtc;
     }
 
-    public void MarkRead(DateTime readAtUtc)
+    public bool MarkRead(DateTime readAtUtc)
     {
         if (readAtUtc.Kind != DateTimeKind.Utc)
         {
             throw new ArgumentException("The read timestamp must be UTC.", nameof(readAtUtc));
         }
 
+        if (Status is not (DeliveryStatus.Active or DeliveryStatus.Accepted or DeliveryStatus.Rejected))
+        {
+            throw new InvalidOperationException($"Delivery in state '{Status}' cannot be marked as read.");
+        }
+
         if (ReadAtUtc is not null)
         {
-            return;
+            return false;
         }
 
         ReadAtUtc = readAtUtc;
         UpdatedAtUtc = readAtUtc;
+        return true;
     }
 
-    public void MarkInteracted(DeliveryStatus finalStatus, DateTime interactedAtUtc, string? normalizedFeedbackText)
+    public void MarkInteractedAndCharged(
+        DeliveryInteractionOutcome outcome,
+        DateTime interactedAtUtc,
+        string? feedbackText,
+        FeedbackQualityStatus? feedbackQualityStatus)
     {
         if (interactedAtUtc.Kind != DateTimeKind.Utc)
         {
             throw new ArgumentException("The interaction timestamp must be UTC.", nameof(interactedAtUtc));
         }
 
-        if (finalStatus is not (DeliveryStatus.Accepted or DeliveryStatus.Rejected))
+        if (Status != DeliveryStatus.Active || ReservationStatus != ReservationStatus.Reserved)
         {
-            throw new ArgumentOutOfRangeException(nameof(finalStatus), finalStatus, "Interaction status must be Accepted or Rejected.");
+            throw new InvalidOperationException($"Delivery in state '{Status}/{ReservationStatus}' cannot be interacted and charged.");
         }
 
-        if (normalizedFeedbackText is { Length: > 1000 })
+        Status = outcome switch
         {
-            throw new ArgumentOutOfRangeException(nameof(normalizedFeedbackText), normalizedFeedbackText.Length, "Feedback text cannot exceed 1,000 characters.");
-        }
-
-        if (Status != DeliveryStatus.Active || ReservationStatus != ReservationStatus.Reserved || InteractedAtUtc is not null)
-        {
-            throw new InvalidOperationException($"Delivery in state '{Status}/{ReservationStatus}' cannot be interacted with.");
-        }
-
-        Status = finalStatus;
+            DeliveryInteractionOutcome.Accept => DeliveryStatus.Accepted,
+            DeliveryInteractionOutcome.Reject => DeliveryStatus.Rejected,
+            _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "Interaction outcome is invalid.")
+        };
         ReservationStatus = ReservationStatus.Charged;
         InteractedAtUtc = interactedAtUtc;
-        FeedbackText = normalizedFeedbackText;
-        FeedbackCreatedAtUtc = normalizedFeedbackText is null ? null : interactedAtUtc;
+        FeedbackText = string.IsNullOrEmpty(feedbackText) ? null : feedbackText;
+        FeedbackCreatedAtUtc = FeedbackText is null ? null : interactedAtUtc;
+        FeedbackQualityStatus = FeedbackText is null ? null : feedbackQualityStatus;
         UpdatedAtUtc = interactedAtUtc;
     }
 }
