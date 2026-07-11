@@ -1,0 +1,641 @@
+[
+  {
+    "timestamp": "2026-07-10T21:39:38.0297827Z",
+    "scenario": "initial GET /",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": null,
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 210,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:38.2168313Z",
+    "scenario": "initial GET /swagger",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/swagger",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": null,
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 163,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:38.3785358Z",
+    "scenario": "initial GET /swagger/index.html",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/swagger/index.html",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": null,
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 159,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:38.5411779Z",
+    "scenario": "initial GET /swagger/v1/swagger.json",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/swagger/v1/swagger.json",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": null,
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 161,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:38.7039865Z",
+    "scenario": "initial GET /WeatherForecast?count=1",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/WeatherForecast?count=1",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":[{\"Date\":\"2026-07-11\",\"TemperatureC\":21,\"TemperatureF\":69,\"Summary\":\"Bracing\"}]}",
+    "durationMs": 161,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:39.0522447Z",
+    "scenario": "admin valid login",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/login",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": "{\"Password\":\"[MASKED]\",\"Username\":\"admin@medibridge.local\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"AccessToken\":\"eyJhbGci...ol1i0E\",\"RefreshToken\":\"[MASKED]\",\"Role\":\"Admin\",\"ExpiresAtUtc\":\"2026-07-10T22:39:38.8868958Z\"}}",
+    "durationMs": 346,
+    "pass": true,
+    "databaseEffect": "RefreshCredentials insert; AuthenticationAuditEvents insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:39.0704356Z",
+    "scenario": "resume existing OTP-gated accounts",
+    "method": "N/A",
+    "url": "local-state:D:\\My Project\\MediBridge Project\\MediBridge\\e2e-test-data-20260711-003501.json",
+    "safeHeaders": {},
+    "role": "Local",
+    "requestBody": null,
+    "httpStatus": 0,
+    "responseBody": "Resumed existing generated accounts",
+    "durationMs": 0,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:41.0648952Z",
+    "scenario": "doctor wrong otp rejected",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/verify-contact",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": "{\"Email\":\"doctor-20260711003503-3bd8d919@medibridge.local\",\"Channel\":\"Email\",\"Otp\":\"[MASKED]\"}",
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 201,
+    "pass": true,
+    "databaseEffect": "ContactVerificationFlows failed-attempt increment; AuthenticationAuditEvents insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:41.2395198Z",
+    "scenario": "doctor otp verification",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/verify-contact",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": "{\"Email\":\"doctor-20260711003503-3bd8d919@medibridge.local\",\"Channel\":\"Email\",\"Otp\":\"[MASKED]\"}",
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 171,
+    "pass": false,
+    "databaseEffect": "Users.EmailVerified update; ContactVerificationFlows consumed",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:41.4213913Z",
+    "scenario": "company otp verification",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/verify-contact",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": "{\"Email\":\"company-20260711003503-3bd8d919@medibridge.local\",\"Channel\":\"Email\",\"Otp\":\"[MASKED]\"}",
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 175,
+    "pass": false,
+    "databaseEffect": "Users.EmailVerified update; ContactVerificationFlows consumed",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:41.6678336Z",
+    "scenario": "admin list pending accounts",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/admin/pending-accounts?pageNumber=1&pageSize=20",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"Items\":[{\"UserId\":\"136fb765c6f54c5c999dcdbfa0ec4d65\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-09T23:15:28.7176699\",\"VerificationMetadata\":{\"DocumentType\":\"TradeLicense\",\"OriginalFileName\":\"company-license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":4096,\"Reference\":\"lic-comp-ref-9f72eec1\"}},{\"UserId\":\"5d22cb9edf8241268c8fc9a21e9d2270\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-09T23:15:24.0747485\",\"VerificationMetadata\":{\"DocumentType\":\"License\",\"OriginalFileName\":\"doctor-license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"lic-doc-9f72eec1\"}},{\"UserId\":\"9b211da61cf5412e8eb3900dabdd7a5e\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T12:36:56.3206547\",\"VerificationMetadata\":{\"DocumentType\":\"BusinessLicense\",\"OriginalFileName\":\"license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"https://example.com/co-license-950456.pdf\"}},{\"UserId\":\"28c41bc5c08d4b8986d1ecfb10c5bb43\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T12:33:12.5982228\",\"VerificationMetadata\":{\"DocumentType\":\"BusinessLicense\",\"OriginalFileName\":\"lic2.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":1024,\"Reference\":\"https://example.com/co2-license-272373.pdf\"}},{\"UserId\":\"c61e3b83723f41bba174bc6a95264545\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T12:33:00.202115\",\"VerificationMetadata\":{\"DocumentType\":\"MedicalLicense\",\"OriginalFileName\":\"lic2.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":512,\"Reference\":\"https://example.com/doc2-272373.pdf\"}},{\"UserId\":\"a23a086dd150459593b2d8c108a78dc2\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T12:32:37.2301809\",\"VerificationMetadata\":{\"DocumentType\":\"BusinessLicense\",\"OriginalFileName\":\"license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"https://example.com/co-license-272373.pdf\"}},{\"UserId\":\"3db4510f4294458d89420c5f19423cda\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:07:38.9070882\",\"VerificationMetadata\":{\"DocumentType\":\"TradeLicense\",\"OriginalFileName\":\"company-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":4096,\"Reference\":\"lic-e2e-comp-ref-kalqitdr\"}},{\"UserId\":\"49f0375cc1464a2aa37de323645a50d8\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:07:33.5971083\",\"VerificationMetadata\":{\"DocumentType\":\"License\",\"OriginalFileName\":\"doctor-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"lic-e2e-doc-kalqitdr\"}},{\"UserId\":\"7137a87fcdf34344a3b6db62f9aa5ce4\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:06:14.5802992\",\"VerificationMetadata\":{\"DocumentType\":\"TradeLicense\",\"OriginalFileName\":\"company-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":4096,\"Reference\":\"lic-e2e-comp-ref-az7ju0if\"}},{\"UserId\":\"6cad6eae34284df2af12684f69639484\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:06:10.1147616\",\"VerificationMetadata\":{\"DocumentType\":\"License\",\"OriginalFileName\":\"doctor-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"lic-e2e-doc-az7ju0if\"}},{\"UserId\":\"05f4a4b83e45462a94c8921968e1b042\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:03:15.4290126\",\"VerificationMetadata\":{\"DocumentType\":\"TradeLicense\",\"OriginalFileName\":\"company-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":4096,\"Reference\":\"lic-e2e-comp-ref-nzq08vom\"}},{\"UserId\":\"9b4cdedd012a45359bb91e2ab7a4f196\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:03:10.9658663\",\"VerificationMetadata\":{\"DocumentType\":\"License\",\"OriginalFileName\":\"doctor-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"lic-e2e-doc-nzq08vom\"}},{\"UserId\":\"6d8dc95bc4e64a2eb2604858dec01bff\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:01:59.8625331\",\"VerificationMetadata\":{\"DocumentType\":\"TradeLicense\",\"OriginalFileName\":\"company-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":4096,\"Reference\":\"lic-e2e-comp-ref-dfzt5lua\"}},{\"UserId\":\"31780d60d13e4a4c82eb9addc4493306\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-06T00:01:55.2616023\",\"VerificationMetadata\":{\"DocumentType\":\"License\",\"OriginalFileName\":\"doctor-license-e2e.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"lic-e2e-doc-dfzt5lua\"}},{\"UserId\":\"f17c07deeb1f4f798661a4cfd15f25a1\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-05T23:40:59.535611\",\"VerificationMetadata\":{\"DocumentType\":\"TradeLicense\",\"OriginalFileName\":\"company-license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":4096,\"Reference\":\"lic-comp-ref-295672b7\"}},{\"UserId\":\"36ec4f28c95047d2b2f9d715aee925b2\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-05T23:40:55.8263862\",\"VerificationMetadata\":{\"DocumentType\":\"License\",\"OriginalFileName\":\"doctor-license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"lic-doc-295672b7\"}},{\"UserId\":\"9b2f51d5e0394c75821500ec4aef2ae0\",\"Role\":\"Company\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-05T23:35:25.4596016\",\"VerificationMetadata\":{\"DocumentType\":\"TradeLicense\",\"OriginalFileName\":\"company-license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":4096,\"Reference\":\"lic-comp-ref-215e5d37\"}},{\"UserId\":\"b53a3326983847d28e4f62b80498cabf\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-05T23:35:21.290709\",\"VerificationMetadata\":{\"DocumentType\":\"License\",\"OriginalFileName\":\"doctor-license.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":2048,\"Reference\":\"lic-doc-215e5d37\"}},{\"UserId\":\"87d6b3addb3541b28edb0706eb3e85b3\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-07-04T18:43:41.2817108\",\"VerificationMetadata\":{\"DocumentType\":\"MedicalLicense\",\"OriginalFileName\":\"resubmitted-license-20260704212749.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":256,\"Reference\":\"e2e-resubmit-20260704212749\"}},{\"UserId\":\"7edb634b487d4c2ebd871dc4a656de58\",\"Role\":\"Doctor\",\"AccountStatus\":\"Pending\",\"SubmittedAtUtc\":\"2026-06-30T21:24:40.6407226\",\"VerificationMetadata\":{\"DocumentType\":\"ProfessionalLicense\",\"OriginalFileName\":\"MediBridge Document.pdf\",\"ContentType\":\"application/pdf\",\"SizeBytes\":187904,\"Reference\":\"e2e-registration-20260701002436\"}}],\"PageNumber\":1,\"PageSize\":20,\"TotalCount\":210}}",
+    "durationMs": 241,
+    "pass": true,
+    "databaseEffect": "read Users/Profiles",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:43.3926834Z",
+    "scenario": "skip account approvals already complete",
+    "method": "N/A",
+    "url": "sql:Users.AccountStatus",
+    "safeHeaders": {},
+    "role": "Local",
+    "requestBody": null,
+    "httpStatus": 0,
+    "responseBody": "Both generated users already approved",
+    "durationMs": 0,
+    "pass": true,
+    "databaseEffect": "read Users",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:46.3201833Z",
+    "scenario": "admin set doctor price",
+    "method": "PUT",
+    "url": "http://medibridge-project.runasp.net/api/admin/doctors/14b3a97429f84540a0cf6491ee759817/price",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": "{\"PricePerMessage\":75.0,\"Reason\":\"E2E pricing setup\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"doctorId\":\"14b3a97429f84540a0cf6491ee759817\",\"pricePerMessage\":75.0,\"currency\":\"EGP\"}}",
+    "durationMs": 197,
+    "pass": true,
+    "databaseEffect": "DoctorProfiles/DoctorPriceHistories update",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:46.6557357Z",
+    "scenario": "doctor login after approval",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/login",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": "{\"Password\":\"[MASKED]\",\"Username\":\"doctor-20260711003503-3bd8d919@medibridge.local\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"AccessToken\":\"eyJhbGci...0yCR5Q\",\"RefreshToken\":\"[MASKED]\",\"Role\":\"Doctor\",\"ExpiresAtUtc\":\"2026-07-10T22:39:46.5007377Z\"}}",
+    "durationMs": 333,
+    "pass": true,
+    "databaseEffect": "RefreshCredentials insert; AuthenticationAuditEvents insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:46.9693038Z",
+    "scenario": "company login after approval",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/login",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": "{\"Password\":\"[MASKED]\",\"Username\":\"company-20260711003503-3bd8d919@medibridge.local\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"AccessToken\":\"eyJhbGci...qKDzz0\",\"RefreshToken\":\"[MASKED]\",\"Role\":\"Company\",\"ExpiresAtUtc\":\"2026-07-10T22:39:46.8321085Z\"}}",
+    "durationMs": 312,
+    "pass": true,
+    "databaseEffect": "RefreshCredentials insert; AuthenticationAuditEvents insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:47.1339795Z",
+    "scenario": "anonymous company wallet rejected",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/company/wallet",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": null,
+    "httpStatus": 401,
+    "responseBody": "{\"Code\":401,\"Message\":\"Unauthorized.\",\"Data\":null}",
+    "durationMs": 162,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:47.2969853Z",
+    "scenario": "doctor wrong-role company wallet rejected",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/company/wallet",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Doctor",
+    "requestBody": null,
+    "httpStatus": 403,
+    "responseBody": "{\"Code\":403,\"Message\":\"Forbidden.\",\"Data\":null}",
+    "durationMs": 162,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:47.4933924Z",
+    "scenario": "company wallet query",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/company/wallet",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"WalletId\":\"4c033d9515d74d4aa08dc95d8262f866\",\"AvailableBalance\":1000.00,\"ReservedBalance\":0.00,\"Currency\":\"EGP\",\"Transactions\":{\"Page\":{\"PageNumber\":1,\"PageSize\":20,\"TotalCount\":1},\"Items\":[{\"TransactionId\":\"c4290f897ffa45139802f9e03800e848\",\"OperationType\":\"TopUp\",\"Amount\":1000.00,\"Currency\":\"EGP\",\"CreatedAtUtc\":\"2026-07-10T21:38:46.8862652\",\"Description\":\"Mock checkout top-up\"}]}}}",
+    "durationMs": 195,
+    "pass": true,
+    "databaseEffect": "read Wallets/WalletTransactions",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:47.7073141Z",
+    "scenario": "company mock topup",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/wallet/mock-checkout",
+    "safeHeaders": {
+      "Idempotency-Key": "topup-3837dd96-2e31-4a71-8843-a74a57175fad",
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": "{\"currency\":\"EGP\",\"amount\":1000.0}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"paymentId\":\"bd23dbff284e4a5db3cc28e99fec3b9d\",\"companyId\":\"4deb8dbb5da0472e9084a92d852cb847\",\"amount\":1000.0,\"status\":\"Succeeded\",\"createdAtUtc\":\"2026-07-10T21:39:47.6877908Z\",\"transactionReference\":\"MOCK-9ff31109055f40939863933f0149e268\",\"walletBalanceBefore\":1000.00,\"walletBalanceAfter\":2000.00}}",
+    "durationMs": 203,
+    "pass": true,
+    "databaseEffect": "Wallets balance credit; WalletTransactions/WalletLedgerEntries/MockPaymentTransactions insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:47.8851254Z",
+    "scenario": "company mock topup replay same key",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/wallet/mock-checkout",
+    "safeHeaders": {
+      "Idempotency-Key": "topup-3837dd96-2e31-4a71-8843-a74a57175fad",
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": "{\"currency\":\"EGP\",\"amount\":1000.0}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"paymentId\":\"bd23dbff284e4a5db3cc28e99fec3b9d\",\"companyId\":\"4deb8dbb5da0472e9084a92d852cb847\",\"amount\":1000.00,\"status\":\"Succeeded\",\"createdAtUtc\":\"2026-07-10T21:39:47.6877908\",\"transactionReference\":\"MOCK-9ff31109055f40939863933f0149e268\",\"walletBalanceBefore\":1000.00,\"walletBalanceAfter\":2000.00}}",
+    "durationMs": 175,
+    "pass": true,
+    "databaseEffect": "idempotent replay; no duplicate financial effect",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:48.0505885Z",
+    "scenario": "company invalid topup amount",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/wallet/mock-checkout",
+    "safeHeaders": {
+      "Idempotency-Key": "bad-1f142b10-1862-4b69-b4f0-9425d905d724",
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": "{\"currency\":\"EGP\",\"amount\":50.0}",
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 163,
+    "pass": true,
+    "databaseEffect": "none",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:48.2948900Z",
+    "scenario": "doctor upload verification document",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/files/verification-documents",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Doctor",
+    "requestBody": null,
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 221,
+    "pass": false,
+    "databaseEffect": "StoredFiles insert; Cloudinary upload",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:48.4849019Z",
+    "scenario": "admin review doctor verification file",
+    "method": "PUT",
+    "url": "http://medibridge-project.runasp.net/api/admin/files//review",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": "{\"Decision\":\"Approved\",\"Notes\":\"E2E verification approved\"}",
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 178,
+    "pass": false,
+    "databaseEffect": "FileReviews insert; StoredFiles review status update",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:48.6562995Z",
+    "scenario": "doctor get signed file access",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/files//access",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Doctor",
+    "requestBody": null,
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 169,
+    "pass": false,
+    "databaseEffect": "FileAccessGrantAudits insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:48.8805640Z",
+    "scenario": "company create campaign draft",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/drafts",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": "{\"Title\":\"E2E Campaign 20260711003503-3bd8d919\",\"Description\":\"A cardiology campaign created by deployed E2E smoke test.\",\"ClinicalResearchInfo\":\"E2E clinical info\"}",
+    "httpStatus": 201,
+    "responseBody": "{\"Code\":201,\"Message\":\"Success\",\"Data\":{\"CampaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"CompanyId\":\"4deb8dbb5da0472e9084a92d852cb847\",\"Title\":\"E2E Campaign 20260711003503-3bd8d919\",\"Description\":\"A cardiology campaign created by deployed E2E smoke test.\",\"ClinicalResearchInfo\":\"E2E clinical info\",\"Status\":\"Draft\"}}",
+    "durationMs": 221,
+    "pass": true,
+    "databaseEffect": "Campaigns insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:49.1174862Z",
+    "scenario": "company list campaigns",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"Page\":{\"PageNumber\":1,\"PageSize\":20,\"TotalCount\":1,\"TotalPages\":1,\"HasPreviousPage\":false,\"HasNextPage\":false},\"Items\":[{\"CampaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"Title\":\"E2E Campaign 20260711003503-3bd8d919\",\"Status\":\"Draft\",\"TargetCount\":0,\"SubmittedAtUtc\":\"2026-07-10T21:39:48.8583219\"}]}}",
+    "durationMs": 232,
+    "pass": true,
+    "databaseEffect": "read Campaigns",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:49.3524916Z",
+    "scenario": "company campaign detail",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/c70a2aaba67e4ffcae251c86c88367cd",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"CampaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"Title\":\"E2E Campaign 20260711003503-3bd8d919\",\"Status\":\"Draft\",\"TargetCount\":0,\"SubmittedAtUtc\":\"2026-07-10T21:39:48.8583219\",\"Description\":\"A cardiology campaign created by deployed E2E smoke test.\",\"ClinicalResearchInfo\":\"E2E clinical info\",\"Assets\":[],\"Targets\":[]}}",
+    "durationMs": 233,
+    "pass": true,
+    "databaseEffect": "read Campaigns/StoredFiles",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:49.6001744Z",
+    "scenario": "company upload campaign asset",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/c70a2aaba67e4ffcae251c86c88367cd/assets",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": null,
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 245,
+    "pass": false,
+    "databaseEffect": "StoredFiles insert; Cloudinary upload",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:50.6123985Z",
+    "scenario": "admin review campaign asset",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaign-assets//review",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": "{\"Decision\":\"Approved\",\"Notes\":\"E2E asset approved\"}",
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 172,
+    "pass": false,
+    "databaseEffect": "FileReviews insert; StoredFiles review status update",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:50.8544693Z",
+    "scenario": "company target preview",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/c70a2aaba67e4ffcae251c86c88367cd/target-preview",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"eligibleDoctorCount\":8,\"estimatedTotalCost\":477.50,\"currency\":\"EGP\"}}",
+    "durationMs": 241,
+    "pass": true,
+    "databaseEffect": "read eligible doctors",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:51.0988219Z",
+    "scenario": "company submit campaign",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/c70a2aaba67e4ffcae251c86c88367cd/submit",
+    "safeHeaders": {
+      "Idempotency-Key": "submit-101a87c2-e206-4798-90fc-f1164b98ce63",
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": null,
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 243,
+    "pass": false,
+    "databaseEffect": "CampaignSubmissionRequests insert; Campaign status PendingReview",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:51.2807927Z",
+    "scenario": "company duplicate submit invalid state",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/c70a2aaba67e4ffcae251c86c88367cd/submit",
+    "safeHeaders": {
+      "Idempotency-Key": "submit-dup-1cb821f8-86d2-40aa-9416-7e69140ec352",
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Company",
+    "requestBody": null,
+    "httpStatus": 400,
+    "responseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+    "durationMs": 180,
+    "pass": false,
+    "databaseEffect": "no state change",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:51.5189020Z",
+    "scenario": "admin list pending campaigns",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaigns/pending-review",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"items\":[{\"campaignId\":\"ecafe932ade8400d88ba3bd0ed22da40\",\"companyId\":\"c57841fd446149689e0522acbfdf99e5\",\"companyName\":\"E2E Pharma 20260626-150048\",\"title\":\"Legacy source 20260701-003209\",\"descriptionSummary\":\"Disposable source draft for the direct submission endpoint.\",\"status\":\"PendingReview\",\"submittedAtUtc\":\"2026-06-30T22:57:50.0912\",\"targetCount\":2,\"hasApprovedMedia\":true,\"reviewReadinessIssues\":[]},{\"campaignId\":\"fe0460f42ea645428b398788e6b23047\",\"companyId\":\"96562f5393e94d92831e87df2af9dca6\",\"companyName\":\"MediBridge E2E Company 20260704212749\",\"title\":\"E2E Clinical Campaign 20260704212749 Updated\",\"descriptionSummary\":\"Updated through real HTTP API\",\"status\":\"PendingReview\",\"submittedAtUtc\":\"2026-07-04T18:40:21.0425242\",\"targetCount\":4,\"hasApprovedMedia\":true,\"reviewReadinessIssues\":[]}],\"pageNumber\":1,\"pageSize\":20,\"totalCount\":2}}",
+    "durationMs": 237,
+    "pass": true,
+    "databaseEffect": "read Campaigns",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:51.7187023Z",
+    "scenario": "admin campaign review detail",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaigns/c70a2aaba67e4ffcae251c86c88367cd/review-detail",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": null,
+    "httpStatus": 404,
+    "responseBody": "{\"Code\":404,\"Message\":\"Not found.\",\"Data\":null}",
+    "durationMs": 198,
+    "pass": false,
+    "databaseEffect": "read Campaigns/Files",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:51.8863767Z",
+    "scenario": "admin approve campaign",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaigns/c70a2aaba67e4ffcae251c86c88367cd/review",
+    "safeHeaders": {
+      "Idempotency-Key": "review-475bf064-eb26-4e3d-9094-d709d3468eb5",
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": "{\"decision\":\"Approved\",\"reason\":null,\"notes\":\"E2E approved campaign\"}",
+    "httpStatus": 429,
+    "responseBody": "{\"Code\":429,\"Message\":\"Too many requests.\",\"Data\":null}",
+    "durationMs": 166,
+    "pass": false,
+    "databaseEffect": "Campaigns approved; CampaignTargets/DoctorMessageQueues rows created",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:52.0490070Z",
+    "scenario": "admin campaign queue rows",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaigns/c70a2aaba67e4ffcae251c86c88367cd/queue",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": null,
+    "httpStatus": 429,
+    "responseBody": "{\"Code\":429,\"Message\":\"Too many requests.\",\"Data\":null}",
+    "durationMs": 161,
+    "pass": false,
+    "databaseEffect": "read DoctorMessageQueues",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:52.2788692Z",
+    "scenario": "doctor today inbox",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/doctor/messages/today?PageSize=20",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Doctor",
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Today's messages retrieved.\",\"Data\":{\"BusinessDateEgypt\":\"2026-07-11\",\"Items\":[],\"NextCursor\":null}}",
+    "durationMs": 229,
+    "pass": true,
+    "databaseEffect": "read DoctorAdDeliveries/DoctorMessageQueues",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:54.2716318Z",
+    "scenario": "admin logout",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/logout",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "role": "Admin",
+    "requestBody": "{\"RefreshToken\":\"[MASKED]\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":null}",
+    "durationMs": 200,
+    "pass": true,
+    "databaseEffect": "RefreshCredentials family revoked",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:39:54.4523694Z",
+    "scenario": "refresh after logout denied",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/auth/refresh",
+    "safeHeaders": {},
+    "role": "Anonymous",
+    "requestBody": "{\"RefreshToken\":\"[MASKED]\"}",
+    "httpStatus": 409,
+    "responseBody": "{\"Code\":409,\"Message\":\"Refresh reuse detected.\",\"Data\":null}",
+    "durationMs": 179,
+    "pass": true,
+    "databaseEffect": "revoked token/session rejected",
+    "correlationId": null
+  }
+]

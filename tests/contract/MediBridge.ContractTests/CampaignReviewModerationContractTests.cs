@@ -170,7 +170,8 @@ public sealed class CampaignReviewModerationContractTests
             VerificationReference = $"doctor-verification/{suffix}",
             ActivityScore = 90m,
             Status = DoctorMarketplaceStatus.Active,
-            PricePerMessage = 50m
+            PricePerMessage = 50m,
+            DailyMessageLimit = 10
         };
         var submittedAtUtc = DateTime.UtcNow.AddMinutes(-10);
         var campaign = new Campaign

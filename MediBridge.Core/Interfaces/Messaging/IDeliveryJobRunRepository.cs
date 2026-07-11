@@ -17,4 +17,5 @@ public interface IDeliveryJobRunRepository
     Task AddRunningAsync(DeliveryJobRun run, CancellationToken cancellationToken = default);
     Task<bool> CompleteAsync(string runId, DeliveryJobRunStatus terminalStatus, DeliveryJobRunCounters counters, DateTime completedAtUtc, string? safeFailureSummary, CancellationToken cancellationToken = default);
     Task<bool> HasCurrentDateCoverageAsync(DeliveryJobType jobType, DateOnly businessDateEgypt, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DeliveryJobRun>> ListRecentAsync(int take, CancellationToken cancellationToken = default);
 }

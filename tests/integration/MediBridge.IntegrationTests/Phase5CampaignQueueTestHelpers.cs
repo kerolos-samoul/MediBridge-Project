@@ -41,24 +41,33 @@ public static class Phase5CampaignQueueTestHelpers
         return new Phase5CompanySeed(user.Id, profile.Id);
     }
 
-    public static async Task<Phase5DoctorSeed> SeedApprovedDoctorAsync(IServiceProvider services, decimal pricePerMessage = 50m, decimal activityScore = 95m)
+    public static async Task<Phase5DoctorSeed> SeedApprovedDoctorAsync(
+        IServiceProvider services,
+        decimal pricePerMessage = 50m,
+        decimal activityScore = 95m,
+        int dailyMessageLimit = 10)
     {
-        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Active, isDeleted: false, pricePerMessage, activityScore);
+        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Active, isDeleted: false, pricePerMessage, activityScore, dailyMessageLimit);
     }
 
     public static async Task<Phase5DoctorSeed> SeedSuspendedDoctorAsync(IServiceProvider services)
     {
-        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Suspended, isDeleted: false, 50m, 20m);
+        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Suspended, isDeleted: false, 50m, 20m, 10);
     }
 
     public static async Task<Phase5DoctorSeed> SeedSoftDeletedDoctorAsync(IServiceProvider services)
     {
-        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Active, isDeleted: true, 50m, 20m);
+        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Active, isDeleted: true, 50m, 20m, 10);
     }
 
     public static async Task<Phase5DoctorSeed> SeedZeroPriceDoctorAsync(IServiceProvider services)
     {
-        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Active, isDeleted: false, 0m, 20m);
+        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Active, isDeleted: false, 0m, 20m, 10);
+    }
+
+    public static async Task<Phase5DoctorSeed> SeedZeroDailyLimitDoctorAsync(IServiceProvider services)
+    {
+        return await SeedDoctorAsync(services, AccountStatus.Approved, DoctorMarketplaceStatus.Active, isDeleted: false, 50m, 20m, 0);
     }
 
     public static async Task<string> SeedApprovedCampaignAssetAsync(IServiceProvider services, string companyId, string? campaignId = null)
@@ -188,7 +197,8 @@ public static class Phase5CampaignQueueTestHelpers
         DoctorMarketplaceStatus marketplaceStatus,
         bool isDeleted,
         decimal pricePerMessage,
-        decimal activityScore)
+        decimal activityScore,
+        int dailyMessageLimit)
     {
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
@@ -209,6 +219,7 @@ public static class Phase5CampaignQueueTestHelpers
             ActivityScore = activityScore,
             Status = marketplaceStatus,
             PricePerMessage = pricePerMessage,
+            DailyMessageLimit = dailyMessageLimit,
             IsDeleted = isDeleted,
             DeletedAtUtc = isDeleted ? DateTime.UtcNow : null
         };

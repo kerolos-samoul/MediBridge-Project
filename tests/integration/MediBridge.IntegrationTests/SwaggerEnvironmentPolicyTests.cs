@@ -119,7 +119,20 @@ public class SwaggerEnvironmentPolicyTests
         Assert.True(nextCursor.GetProperty("nullable").GetBoolean());
 
         Assert.False(paths.TryGetProperty("/hangfire", out _));
-        Assert.DoesNotContain(paths.EnumerateObject(), path => path.Name.Contains("job", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(
+            [
+                "/api/admin/delivery-jobs/run-expiry",
+                "/api/admin/delivery-jobs/run-injector",
+                "/api/admin/delivery-jobs/status"
+            ],
+            paths.EnumerateObject()
+                .Select(path => path.Name)
+                .Where(path => path.Contains("delivery-jobs", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToArray());
+        Assert.DoesNotContain(paths.EnumerateObject(), path =>
+            path.Name.Contains("jobs/retry", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path.Name, "/jobs", StringComparison.OrdinalIgnoreCase));
 
         var authorize = typeof(DoctorMessagesController).GetCustomAttribute<AuthorizeAttribute>();
         Assert.Equal(AuthorizationPolicies.Phase7DoctorMessagesRead, authorize?.Policy);
@@ -132,6 +145,11 @@ public class SwaggerEnvironmentPolicyTests
         var interactRateLimit = typeof(DoctorMessagesController).GetMethod("Interact")!
             .GetCustomAttribute<EnableRateLimitingAttribute>();
         Assert.Equal(RateLimitPolicyNames.DoctorInteraction, interactRateLimit?.PolicyName);
+
+        var adminJobsAuthorize = typeof(AdminDeliveryJobsController).GetCustomAttribute<AuthorizeAttribute>();
+        Assert.Equal(AuthorizationPolicies.AdminOnly, adminJobsAuthorize?.Policy);
+        var adminJobsRateLimit = typeof(AdminDeliveryJobsController).GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.Envelope, adminJobsRateLimit?.PolicyName);
     }
 
     [Fact]
