@@ -1,0 +1,68 @@
+{
+  "feature": "010-interaction-payments",
+  "timestampLocal": "2026-07-11T17:10:21+03:00",
+  "redactionPolicy": "No passwords, OTPs, bearer tokens, connection strings, raw idempotency keys, Cloudinary secrets, or real wallet balances are recorded.",
+  "implementationSummary": {
+    "readTracking": "PUT /api/doctor/messages/{deliveryId}/read records first ReadAtUtc for owned current-day Active, Accepted, or Rejected deliveries without financial mutation.",
+    "interactionSettlement": "POST /api/doctor/messages/{deliveryId}/interact requires Idempotency-Key, validates Accept/Reject plus feedback, atomically charges company Reserved funds, credits Doctor Available earnings, records interaction evidence, and writes safe audit evidence.",
+    "idempotency": "Same-key same-content and different-key matching settled requests replay; conflicting same-key/different-key requests return safe conflict without duplicate settlement.",
+    "replayVerification": "Settled replay requires matching Charge/Earn transactions and matching ledger entries; partial replay evidence is treated as a safe settlement anomaly.",
+    "negativeFlows": "Expired, released, stale-date, cross-owner, unauthorized, invalid snapshot, and invalid wallet states return safe envelopes and do not mutate settlement state."
+  },
+  "generatedTestData": {
+    "deliveryIds": "Generated with prefixes such as read-, settle-, idem-, race-, audit-, business-date-, and perf- plus GUID suffixes.",
+    "idempotencyKeys": "Synthetic non-secret keys only; raw values are not persisted by production code.",
+    "testWallets": "Synthetic EGP wallets seeded with deterministic test balances for local/integration verification only.",
+    "feedback": "Synthetic plain-text and unsafe-pattern samples used to verify normalization and rejection."
+  },
+  "safeHttpTraceShapes": [
+    {
+      "method": "PUT",
+      "path": "/api/doctor/messages/{deliveryId}/read",
+      "expectedSuccess": {
+        "status": 200,
+        "message": "Message read recorded.",
+        "dataFields": ["DeliveryId", "Status", "ReadAtUtc", "AlreadyRead"]
+      },
+      "safeFailuresCovered": [401, 403, 404, 429]
+    },
+    {
+      "method": "POST",
+      "path": "/api/doctor/messages/{deliveryId}/interact",
+      "headers": ["Authorization", "Idempotency-Key (redacted)"],
+      "expectedSuccess": {
+        "status": 200,
+        "message": "Message interaction recorded.",
+        "dataFields": ["DeliveryId", "Status", "ReservationStatus", "InteractedAtUtc", "ReadAtUtc", "FeedbackAccepted", "FeedbackQualifiesForScore", "ChargeAmount", "DoctorEarnings", "PlatformFeeAmount", "Replayed"]
+      },
+      "safeFailuresCovered": [400, 401, 403, 404, 409, 429, 503]
+    }
+  ],
+  "verification": {
+    "unit": "dotnet test .\\tests\\unit\\MediBridge.UnitTests\\MediBridge.UnitTests.csproj --filter \"ReadTracking\" passed 6/6; --filter \"Idempotency|InteractionSettlement\" passed 18/18; full solution unit lane passed 148/148.",
+    "contract": "DoctorMessageInteraction and DoctorMessageInteractionAuthorization filters passed 16/16; full solution contract lane passed 139/139.",
+    "integration": "US1/US2/US3/US4 focused filters passed; full solution integration lane passed 422/426 with 4 opt-in skips.",
+    "build": "dotnet build .\\MediBridge.slnx succeeded with 0 warnings and 0 errors.",
+    "diffCheck": "git diff --check reported no whitespace errors; CRLF normalization warnings only."
+  },
+  "optInSkips": [
+    "Phase7 SQL Server 2022 reference workload performance profile",
+    "Phase7 today inbox SQL Server 2022 performance profile",
+    "Phase8 SQL Server 2022 migration rollback/reapply constraint profile",
+    "Phase8 SQL Server 2022 interaction performance profile"
+  ],
+  "migration": {
+    "name": "20260711130805_AddPhase8InteractionPayments",
+    "status": "Generated and applied to the configured SQL Server after setting ConnectionStrings__DefaultConnection for the EF design-time factory.",
+    "historyVerification": "The configured SQL Server __EFMigrationsHistory contains 20260711130805_AddPhase8InteractionPayments. It also contains a pre-existing 20260710095601_AddPhase8InteractionPayments row that was preserved.",
+    "schemaVerification": "DeliveryInteractions exists with the expected delivery uniqueness, doctor/idempotency uniqueness, outcome check, and feedback length check.",
+    "remainingOptInEvidence": "Full SQL Server 2022 Testcontainers migration constraint/rollback test remains skipped unless MEDIBRIDGE_PHASE8_SQLSERVER_MIGRATION=1 and a working Docker endpoint are available."
+  },
+  "externalBlockers": [
+    "No MonsterASP publish profile or deployment script was discovered in the repository.",
+    "Required E2E admin credentials were not present in process environment.",
+    "Cloudinary runtime environment variables were not present in process environment; checked-in configuration values, if any, are intentionally not copied here.",
+    "OTP retrieval from connected browser/email was not executed because the E2E credential/deployment prerequisites were unavailable."
+  ],
+  "verdict": "Ready with caveats for local code/test/migration implementation; not ready for deployment sign-off until external E2E/deployment prerequisites are supplied."
+}

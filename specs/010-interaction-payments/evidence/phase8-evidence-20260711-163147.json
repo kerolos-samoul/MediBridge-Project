@@ -1,0 +1,64 @@
+{
+  "timestamp": "20260711-163147",
+  "feature": "010-interaction-payments",
+  "safe": true,
+  "redactionPolicy": "No passwords, OTPs, bearer tokens, connection strings, raw Idempotency-Key values, or wallet balances from real users are recorded.",
+  "implementationSummary": {
+    "readTracking": "PUT /api/doctor/messages/{deliveryId}/read records first read time for owned current-day deliveries without financial mutation.",
+    "interactionSettlement": "POST /api/doctor/messages/{deliveryId}/interact requires Idempotency-Key, validates feedback, settles Accept/Reject atomically, stores interaction evidence, writes Charge/Earn transactions and ledger entries, and records safe audit evidence.",
+    "migration": "20260711130805_AddPhase8InteractionPayments creates DeliveryInteractions, widens DoctorAdDeliveries.PlatformFeePercentSnapshot to decimal(7,3), adds lookup indexes and restrict FKs."
+  },
+  "generatedTestDataPatterns": {
+    "doctors": "doctor-user-{suffix}, doctor-{suffix}",
+    "companies": "company-user-{suffix}, company-{suffix}",
+    "campaigns": "campaign-{suffix}",
+    "deliveries": "delivery-{suffix}",
+    "idempotencyEvidence": "Only normalized SHA-256 hashes/fingerprints are persisted by Phase 8 code."
+  },
+  "verification": [
+    {
+      "command": "dotnet test .\\tests\\unit\\MediBridge.UnitTests\\MediBridge.UnitTests.csproj --filter \"Interaction|Read|Settlement|Feedback|Idempotency\"",
+      "result": "Passed: 39, Failed: 0, Skipped: 0"
+    },
+    {
+      "command": "dotnet test .\\tests\\contract\\MediBridge.ContractTests\\MediBridge.ContractTests.csproj --filter \"DoctorMessage|Interaction\"",
+      "result": "Passed: 8, Failed: 0, Skipped: 0"
+    },
+    {
+      "command": "dotnet test .\\tests\\integration\\MediBridge.IntegrationTests\\MediBridge.IntegrationTests.csproj --filter \"Interaction|Settlement|RateLimit|Phase8\"",
+      "result": "Passed: 17, Failed: 0, Skipped: 0"
+    },
+    {
+      "command": "dotnet test .\\MediBridge.slnx",
+      "result": "Unit Passed: 130/130; Contract Passed: 129/129; Integration Passed: 373/375 with 2 opt-in performance skips"
+    },
+    {
+      "command": "dotnet build .\\MediBridge.slnx",
+      "result": "Succeeded: 0 warnings, 0 errors"
+    },
+    {
+      "command": "dotnet ef database update --project .\\MediBridge.Repository\\MediBridge.Repository.csproj --startup-project .\\MediBridge.APIs\\MediBridge.APIs.csproj",
+      "result": "Succeeded; applied 20260711130805_AddPhase8InteractionPayments"
+    },
+    {
+      "command": "dotnet ef migrations list --project .\\MediBridge.Repository\\MediBridge.Repository.csproj --startup-project .\\MediBridge.APIs\\MediBridge.APIs.csproj",
+      "result": "20260711130805_AddPhase8InteractionPayments present in applied migration list"
+    },
+    {
+      "command": "git diff --check",
+      "result": "No whitespace errors; Git reported CRLF normalization warnings only"
+    },
+    {
+      "command": "Invoke-WebRequest http://medibridge-project.runasp.net",
+      "result": "Reachable host returned HTTP 404 at root path; no deployment was performed"
+    }
+  ],
+  "externalBlockers": [
+    "MEDIBRIDGE_E2E_ADMIN_PASSWORD was not present in the process environment, so the existing real E2E runner cannot complete admin approval/login.",
+    "Cloudinary URL was not present in the process environment; appsettings may contain deployment config, but secrets are intentionally not recorded here.",
+    "No checked-in MonsterASP publish profile or deployment script was found.",
+    "Connected inbox/OTP retrieval was not executed; no browser or Gmail OTP extraction was completed in this run.",
+    "Published Phase 8 E2E was not executed because deployment was not performed."
+  ],
+  "finalLocalVerdict": "Local implementation and configured database migration are green; deployment/E2E remains blocked by missing operational credentials and publish method."
+}

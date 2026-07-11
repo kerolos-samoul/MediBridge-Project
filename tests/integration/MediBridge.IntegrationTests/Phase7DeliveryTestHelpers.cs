@@ -7,7 +7,9 @@ using MediBridge.Core.Entities.Wallets;
 using MediBridge.Core.Enums;
 using MediBridge.Repository.Data;
 using MediBridge.Repository.Data.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 
 namespace MediBridge.IntegrationTests;
 
@@ -303,6 +305,85 @@ public static class Phase7DeliveryTestHelpers
             CreatedAtUtc = createdAtUtc
         }, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public static async Task SeedDoctorWalletAsync(
+        IServiceProvider services,
+        string walletId,
+        string doctorId,
+        string doctorUserId,
+        decimal availableBalance,
+        decimal reservedBalance,
+        DateTime createdAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        await context.Wallets.AddAsync(new Wallet
+        {
+            Id = walletId,
+            OwnerType = WalletOwnerType.Doctor,
+            OwnerId = doctorId,
+            OwnerUserId = doctorUserId,
+            AvailableBalance = availableBalance,
+            ReservedBalance = reservedBalance,
+            Currency = "EGP",
+            CreatedAtUtc = createdAtUtc
+        }, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public static Task SeedPhase8ActiveReservedDeliveryAsync(
+        IServiceProvider services,
+        string deliveryId,
+        string doctorId,
+        string campaignId,
+        string companyId,
+        DateOnly deliveryDateEgypt,
+        DateTime deliveredAtUtc,
+        decimal price,
+        decimal platformFeePercent,
+        decimal platformFee,
+        decimal doctorEarnings,
+        CancellationToken cancellationToken = default)
+    {
+        return SeedDeliveryAsync(
+            services,
+            deliveryId,
+            doctorId,
+            campaignId,
+            companyId,
+            deliveryDateEgypt,
+            deliveredAtUtc,
+            DeliveryStatus.Active,
+            ReservationStatus.Reserved,
+            price,
+            platformFeePercent,
+            platformFee,
+            doctorEarnings,
+            price,
+            deliveredAtUtc,
+            cancellationToken);
+    }
+
+    public static async Task AssertPhase8SettledDeliveryAsync(
+        IServiceProvider services,
+        string deliveryId,
+        DeliveryStatus expectedStatus,
+        decimal expectedCharge,
+        decimal expectedEarn,
+        decimal expectedFee,
+        CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        var delivery = await context.DoctorAdDeliveries.SingleAsync(delivery => delivery.Id == deliveryId, cancellationToken);
+        Assert.Equal(expectedStatus, delivery.Status);
+        Assert.Equal(ReservationStatus.Charged, delivery.ReservationStatus);
+        Assert.Equal(expectedCharge, delivery.ReservedAmount);
+        Assert.Equal(expectedEarn, delivery.DoctorEarnings);
+        Assert.Equal(expectedFee, delivery.PlatformFeeAmount);
+        Assert.NotNull(delivery.InteractedAtUtc);
     }
 
     public static async Task SeedDeliveryAsync(

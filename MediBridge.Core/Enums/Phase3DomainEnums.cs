@@ -86,6 +86,12 @@ public enum FeedbackQualityStatus
     Flagged = 3
 }
 
+public enum DeliveryInteractionOutcome
+{
+    Accept = 1,
+    Reject = 2
+}
+
 public enum WalletOwnerType
 {
     Doctor = 1,

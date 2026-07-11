@@ -21,6 +21,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         IProfileRepository profiles,
         IMessageQueueRepository messageQueues,
         IDeliveryRepository deliveries,
+        IDeliveryInteractionRepository deliveryInteractions,
         IDeliveryJobRunRepository deliveryJobRuns,
         IDeliveryRecoveryDispatchRepository deliveryRecoveryDispatches,
         IWalletRepository wallets,
@@ -38,6 +39,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         Profiles = profiles;
         MessageQueues = messageQueues;
         Deliveries = deliveries;
+        DeliveryInteractions = deliveryInteractions;
         DeliveryJobRuns = deliveryJobRuns;
         DeliveryRecoveryDispatches = deliveryRecoveryDispatches;
         Wallets = wallets;
@@ -55,6 +57,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     public IProfileRepository Profiles { get; }
     public IMessageQueueRepository MessageQueues { get; }
     public IDeliveryRepository Deliveries { get; }
+    public IDeliveryInteractionRepository DeliveryInteractions { get; }
     public IDeliveryJobRunRepository DeliveryJobRuns { get; }
     public IDeliveryRecoveryDispatchRepository DeliveryRecoveryDispatches { get; }
     public IWalletRepository Wallets { get; }

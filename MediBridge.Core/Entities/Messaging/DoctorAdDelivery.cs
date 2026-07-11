@@ -74,4 +74,56 @@ public sealed class DoctorAdDelivery : IConcurrencyTrackedRecord
         ExpiredAtUtc = expiredAtUtc;
         UpdatedAtUtc = expiredAtUtc;
     }
+
+    public bool MarkRead(DateTime readAtUtc)
+    {
+        if (readAtUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The read timestamp must be UTC.", nameof(readAtUtc));
+        }
+
+        if (Status is not (DeliveryStatus.Active or DeliveryStatus.Accepted or DeliveryStatus.Rejected))
+        {
+            throw new InvalidOperationException($"Delivery in state '{Status}' cannot be marked as read.");
+        }
+
+        if (ReadAtUtc is not null)
+        {
+            return false;
+        }
+
+        ReadAtUtc = readAtUtc;
+        UpdatedAtUtc = readAtUtc;
+        return true;
+    }
+
+    public void MarkInteractedAndCharged(
+        DeliveryInteractionOutcome outcome,
+        DateTime interactedAtUtc,
+        string? feedbackText,
+        FeedbackQualityStatus? feedbackQualityStatus)
+    {
+        if (interactedAtUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The interaction timestamp must be UTC.", nameof(interactedAtUtc));
+        }
+
+        if (Status != DeliveryStatus.Active || ReservationStatus != ReservationStatus.Reserved)
+        {
+            throw new InvalidOperationException($"Delivery in state '{Status}/{ReservationStatus}' cannot be interacted and charged.");
+        }
+
+        Status = outcome switch
+        {
+            DeliveryInteractionOutcome.Accept => DeliveryStatus.Accepted,
+            DeliveryInteractionOutcome.Reject => DeliveryStatus.Rejected,
+            _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "Interaction outcome is invalid.")
+        };
+        ReservationStatus = ReservationStatus.Charged;
+        InteractedAtUtc = interactedAtUtc;
+        FeedbackText = string.IsNullOrEmpty(feedbackText) ? null : feedbackText;
+        FeedbackCreatedAtUtc = FeedbackText is null ? null : interactedAtUtc;
+        FeedbackQualityStatus = FeedbackText is null ? null : feedbackQualityStatus;
+        UpdatedAtUtc = interactedAtUtc;
+    }
 }
