@@ -156,7 +156,8 @@ public sealed class CompanyDoctorSearchContractTests
             VerificationReference = $"verification/{suffix}",
             ActivityScore = activityScore,
             Status = DoctorMarketplaceStatus.Active,
-            PricePerMessage = pricePerMessage
+            PricePerMessage = pricePerMessage,
+            DailyMessageLimit = 10
         };
 
         await context.Users.AddAsync(user);

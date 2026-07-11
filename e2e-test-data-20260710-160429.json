@@ -1,0 +1,387 @@
+{
+  "Timestamp": "20260710-160429",
+  "DatabaseServer": "Data Source=db54839.public.databaseasp.net;Initial Catalog=db54839;User ID=db54839;Password=********;Encrypt=True;Trust Server Certificate=True",
+  "E2EState": {
+    "DoctorEmail": "doctor-72781f5d@medibridge.local",
+    "DoctorPassword": "Password1!",
+    "DoctorPhone": "5551289052",
+    "DoctorLocation": "Cairo",
+    "DoctorSpecialization": "Cardiology",
+    "DoctorDocRef": "lic-doc-72781f5d",
+    "DoctorUserId": "ef754709dfbe4affa8e6226b777fe381",
+    "DoctorProfileId": "6a99faa59be24aa2b3e025a99fef00c7",
+    "CompanyEmail": "company-72781f5d@medibridge.local",
+    "CompanyPassword": "Password1!",
+    "CompanyPhone": "5551394980",
+    "CompanyName": "E2E Pharma Egypt Ltd",
+    "CompanyLicense": "lic-comp-72781f5d",
+    "CompanyContact": "E2E EGP Contact",
+    "CompanyDocRef": "lic-comp-ref-72781f5d",
+    "CompanyUserId": "25678e5e81c5462fbe734dd65ccf4ff7",
+    "CompanyProfileId": "bd6a74ceb7b84a5086846b563399bd9c",
+    "WalletId": "7f0a4ff76a6b4c368e9007061607f2a6",
+    "CampaignId": "1065aa75d46d4483934bfd628ca4bd01",
+    "FileId": "93dbb72e8a1848e3b60914bc41ac06aa",
+    "CloudinaryKey": "medibridge/campaigns/bd6a74ceb7b84a5086846b563399bd9c/1065aa75d46d4483934bfd628ca4bd01/93dbb72e8a1848e3b60914bc41ac06aa.png",
+    "QueueId": ""
+  },
+  "Scenarios": [
+    {
+      "ScenarioName": "Wrong OTP Verification",
+      "Purpose": "Verify incorrect OTP is rejected",
+      "ExpectedStatus": 400,
+      "ActualStatus": 400,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/auth/verify-contact",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Email\":\"doctor-72781f5d@medibridge.local\",\"Channel\":\"Email\",\"Otp\":\"[REDACTED]\"}",
+      "ResponseBody": "{\"Code\":400,\"Message\":\"Validation failed.\",\"Data\":null}",
+      "Notes": "Rejected as expected."
+    },
+    {
+      "ScenarioName": "Doctor OTP Verification",
+      "Purpose": "Verify doctor OTP successfully",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/auth/verify-contact",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Email\":\"doctor-72781f5d@medibridge.local\",\"Channel\":\"Email\",\"Otp\":\"[REDACTED]\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":null}",
+      "Notes": "Verified successfully."
+    },
+    {
+      "ScenarioName": "Company OTP Verification",
+      "Purpose": "Verify company OTP successfully",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/auth/verify-contact",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Email\":\"company-72781f5d@medibridge.local\",\"Channel\":\"Email\",\"Otp\":\"[REDACTED]\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":null}",
+      "Notes": "Verified successfully."
+    },
+    {
+      "ScenarioName": "Admin Login",
+      "Purpose": "Login as admin user",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/auth/login",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Username\":\"admin@medibridge.local\",\"Password\":\"[REDACTED]\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"AccessToken\":\"[REDACTED]\",\"RefreshToken\":\"[REDACTED]\",\"Role\":\"Admin\",\"ExpiresAtUtc\":\"2026-07-10T17:04:31.6888341Z\"}}",
+      "Notes": "Logged in."
+    },
+    {
+      "ScenarioName": "Admin Approve Doctor",
+      "Purpose": "Approve doctor account status",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/admin/accounts/ef754709dfbe4affa8e6226b777fe381/decision",
+      "RequestMethod": "PUT",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Decision\":\"Approve\",\"Notes\":\"E2E approved account\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"UserId\":\"ef754709dfbe4affa8e6226b777fe381\",\"ResultingAccountStatus\":\"Approved\",\"ResubmissionToken\":null}}",
+      "Notes": "Approved."
+    },
+    {
+      "ScenarioName": "Admin Approve Company",
+      "Purpose": "Approve company account status",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/admin/accounts/25678e5e81c5462fbe734dd65ccf4ff7/decision",
+      "RequestMethod": "PUT",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Decision\":\"Approve\",\"Notes\":\"E2E approved account\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"UserId\":\"25678e5e81c5462fbe734dd65ccf4ff7\",\"ResultingAccountStatus\":\"Approved\",\"ResubmissionToken\":null}}",
+      "Notes": "Approved."
+    },
+    {
+      "ScenarioName": "Set Doctor Pricing",
+      "Purpose": "Set custom per-message price for doctor",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/admin/doctors/6a99faa59be24aa2b3e025a99fef00c7/price",
+      "RequestMethod": "PUT",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"PricePerMessage\":75.00,\"Reason\":\"E2E pricing setup\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"doctorId\":\"6a99faa59be24aa2b3e025a99fef00c7\",\"pricePerMessage\":75.00,\"currency\":\"EGP\"}}",
+      "Notes": "Price set to 75.00 EGP."
+    },
+    {
+      "ScenarioName": "Company Login",
+      "Purpose": "Login as company user",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/auth/login",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Username\":\"company-72781f5d@medibridge.local\",\"Password\":\"[REDACTED]\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"AccessToken\":\"[REDACTED]\",\"RefreshToken\":\"[REDACTED]\",\"Role\":\"Company\",\"ExpiresAtUtc\":\"2026-07-10T17:04:35.2805665Z\"}}",
+      "Notes": "Logged in."
+    },
+    {
+      "ScenarioName": "Doctor Login",
+      "Purpose": "Login as doctor user",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/auth/login",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Username\":\"doctor-72781f5d@medibridge.local\",\"Password\":\"[REDACTED]\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"AccessToken\":\"[REDACTED]\",\"RefreshToken\":\"[REDACTED]\",\"Role\":\"Doctor\",\"ExpiresAtUtc\":\"2026-07-10T17:04:35.8930158Z\"}}",
+      "Notes": "Logged in."
+    },
+    {
+      "ScenarioName": "Query Wallet",
+      "Purpose": "Retrieve company wallet balance",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/wallet",
+      "RequestMethod": "GET",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]"
+      },
+      "RequestBody": null,
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"WalletId\":\"7f0a4ff76a6b4c368e9007061607f2a6\",\"AvailableBalance\":0,\"ReservedBalance\":0,\"Currency\":\"EGP\",\"Transactions\":{\"Page\":{\"PageNumber\":1,\"PageSize\":20,\"TotalCount\":0},\"Items\":[]}}}",
+      "Notes": "Wallet details retrieved."
+    },
+    {
+      "ScenarioName": "Wallet Mock Checkout",
+      "Purpose": "Top-up wallet balance",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/wallet/mock-checkout",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Idempotency-Key": "checkout-bad23699287f453b93bc551eecde3aaa",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Amount\":1500.00,\"Currency\":\"EGP\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"paymentId\":\"fdb2ad442897490c90e69587dacd1e8e\",\"companyId\":\"bd6a74ceb7b84a5086846b563399bd9c\",\"amount\":1500.00,\"status\":\"Succeeded\",\"createdAtUtc\":\"2026-07-10T16:04:37.9613966Z\",\"transactionReference\":\"MOCK-e6ee39b682e54eee91cd6c781589bdb0\",\"walletBalanceBefore\":0.00,\"walletBalanceAfter\":1500.00}}",
+      "Notes": "Wallet credited with 1500.00 EGP."
+    },
+    {
+      "ScenarioName": "Wallet Mock Checkout Replay",
+      "Purpose": "Verify idempotency prevents double top-up",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/wallet/mock-checkout",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Idempotency-Key": "checkout-bad23699287f453b93bc551eecde3aaa",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Amount\":1500.00,\"Currency\":\"EGP\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"paymentId\":\"fdb2ad442897490c90e69587dacd1e8e\",\"companyId\":\"bd6a74ceb7b84a5086846b563399bd9c\",\"amount\":1500.00,\"status\":\"Succeeded\",\"createdAtUtc\":\"2026-07-10T16:04:37.9613966\",\"transactionReference\":\"MOCK-e6ee39b682e54eee91cd6c781589bdb0\",\"walletBalanceBefore\":0.00,\"walletBalanceAfter\":1500.00}}",
+      "Notes": "Idempotent response returned."
+    },
+    {
+      "ScenarioName": "Wallet Mock Checkout Conflict",
+      "Purpose": "Verify key reuse with different payload returns conflict",
+      "ExpectedStatus": 409,
+      "ActualStatus": 409,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/wallet/mock-checkout",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Idempotency-Key": "checkout-bad23699287f453b93bc551eecde3aaa",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Amount\":2000.00,\"Currency\":\"EGP\"}",
+      "ResponseBody": "{\"Code\":409,\"Message\":\"Conflict.\",\"Data\":null}",
+      "Notes": "Conflict status returned as expected."
+    },
+    {
+      "ScenarioName": "Create Campaign Draft",
+      "Purpose": "Create new campaign draft in system",
+      "ExpectedStatus": 201,
+      "ActualStatus": 201,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/campaigns/drafts",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Title\":\"Anti-infection Campaign Egypt E2E\",\"Description\":\"A trial campaign focusing on modern cardiology delivery and medical details.\",\"ClinicalResearchInfo\":\"Details regarding Cardiology medicine efficacy and trials.\"}",
+      "ResponseBody": "{\"Code\":201,\"Message\":\"Success\",\"Data\":{\"CampaignId\":\"1065aa75d46d4483934bfd628ca4bd01\",\"CompanyId\":\"bd6a74ceb7b84a5086846b563399bd9c\",\"Title\":\"Anti-infection Campaign Egypt E2E\",\"Description\":\"A trial campaign focusing on modern cardiology delivery and medical details.\",\"ClinicalResearchInfo\":\"Details regarding Cardiology medicine efficacy and trials.\",\"Status\":\"Draft\"}}",
+      "Notes": "Draft created."
+    },
+    {
+      "ScenarioName": "Upload Campaign Asset",
+      "Purpose": "Upload privately signed media to Cloudinary",
+      "ExpectedStatus": 201,
+      "ActualStatus": 201,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/campaigns/1065aa75d46d4483934bfd628ca4bd01/assets",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]"
+      },
+      "RequestBody": "\"[Multipart Media Content]\"",
+      "ResponseBody": "{\"Code\":201,\"Message\":\"Success\",\"Data\":{\"Id\":\"93dbb72e8a1848e3b60914bc41ac06aa\",\"Purpose\":\"CampaignMedia\",\"OwnerType\":\"Company\",\"OwnerId\":\"bd6a74ceb7b84a5086846b563399bd9c\",\"RelatedCampaignId\":\"1065aa75d46d4483934bfd628ca4bd01\",\"ReplacedFileId\":null,\"OriginalFileName\":\"campaign-media.png\",\"ContentType\":\"image/png\",\"SizeBytes\":68,\"ReviewStatus\":\"Pending\",\"UploadStatus\":\"Stored\",\"SafetyScanStatus\":\"Deferred\",\"CreatedAtUtc\":\"2026-07-10T16:04:40.2542388Z\"}}",
+      "Notes": "Uploaded and registered successfully."
+    },
+    {
+      "ScenarioName": "Admin Review Asset",
+      "Purpose": "Approve campaign asset",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/admin/campaign-assets/93dbb72e8a1848e3b60914bc41ac06aa/review",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Decision\":\"Approved\",\"Comments\":\"Approved by Admin E2E\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"Id\":\"2509f40770ba4b2daf58af63313c97b9\",\"StoredFileId\":\"93dbb72e8a1848e3b60914bc41ac06aa\",\"Decision\":\"Approved\",\"Reason\":null,\"ReviewedByAdminId\":\"59b5eb60-b368-45f5-a532-fa96f23b6fa2\",\"CreatedAtUtc\":\"2026-07-10T16:04:42.4522376Z\",\"CorrectsReviewId\":null}}",
+      "Notes": "Asset approved."
+    },
+    {
+      "ScenarioName": "Campaign Target Preview",
+      "Purpose": "View targeted doctor profile summary",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/campaigns/1065aa75d46d4483934bfd628ca4bd01/target-preview",
+      "RequestMethod": "GET",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]"
+      },
+      "RequestBody": null,
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"eligibleDoctorCount\":7,\"estimatedTotalCost\":402.50,\"currency\":\"EGP\"}}",
+      "Notes": "Target preview retrieved."
+    },
+    {
+      "ScenarioName": "Submit Campaign",
+      "Purpose": "Submit campaign for final admin approval",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/campaigns/1065aa75d46d4483934bfd628ca4bd01/submit",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Idempotency-Key": "submit-5352a7b7262644c0b2a28799585250dc"
+      },
+      "RequestBody": null,
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"campaignId\":\"1065aa75d46d4483934bfd628ca4bd01\",\"status\":\"PendingReview\",\"targetCount\":7,\"estimatedCost\":402.50,\"currency\":\"EGP\",\"submittedAtUtc\":\"2026-07-10T16:04:44.1802646Z\"}}",
+      "Notes": "Campaign submitted."
+    },
+    {
+      "ScenarioName": "Admin Approve Campaign",
+      "Purpose": "Review and approve campaign. Triggers queue generation.",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/admin/campaigns/1065aa75d46d4483934bfd628ca4bd01/review",
+      "RequestMethod": "POST",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]",
+        "Idempotency-Key": "review-601495b698014b1993532181d8fb0330",
+        "Transfer-Encoding": "chunked"
+      },
+      "RequestBody": "{\"Decision\":\"Approved\",\"Notes\":\"FIFO delivery approved\"}",
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"campaignId\":\"1065aa75d46d4483934bfd628ca4bd01\",\"decision\":\"Approved\",\"status\":\"Approved\",\"queuedCount\":7,\"decisionTimeUtc\":\"2026-07-10T16:04:45.4551275Z\",\"canResubmit\":false}}",
+      "Notes": "Campaign approved and queue generated."
+    },
+    {
+      "ScenarioName": "Doctor Inbox Messages",
+      "Purpose": "Verify Doctor can retrieve active campaign messages",
+      "ExpectedStatus": 200,
+      "ActualStatus": 200,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/doctor/messages/today",
+      "RequestMethod": "GET",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]"
+      },
+      "RequestBody": null,
+      "ResponseBody": "{\"Code\":200,\"Message\":\"Today's messages retrieved.\",\"Data\":{\"BusinessDateEgypt\":\"2026-07-10\",\"Items\":[],\"NextCursor\":null}}",
+      "Notes": "Inbox messages retrieved."
+    },
+    {
+      "ScenarioName": "Unauthorized Access",
+      "Purpose": "Anonymous access to protected endpoint",
+      "ExpectedStatus": 401,
+      "ActualStatus": 401,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/wallet",
+      "RequestMethod": "GET",
+      "RequestHeaders": {},
+      "RequestBody": null,
+      "ResponseBody": "{\"Code\":401,\"Message\":\"Unauthorized.\",\"Data\":null}",
+      "Notes": "Unauthorized status code returned as expected."
+    },
+    {
+      "ScenarioName": "Forbidden Access",
+      "Purpose": "Access company wallet using Doctor role",
+      "ExpectedStatus": 403,
+      "ActualStatus": 403,
+      "Pass": true,
+      "RequestUrl": "http://localhost:5246/api/company/wallet",
+      "RequestMethod": "GET",
+      "RequestHeaders": {
+        "Authorization": "Bearer [MASKED]"
+      },
+      "RequestBody": null,
+      "ResponseBody": "{\"Code\":403,\"Message\":\"Forbidden.\",\"Data\":null}",
+      "Notes": "Forbidden status code returned as expected."
+    }
+  ],
+  "OtpRetrieval": {
+    "ChromeAttempted": true,
+    "ChromeAvailable": false,
+    "Fallback": "Gmail connector search",
+    "Source": "latest matching MediBridge OTP emails in override inbox",
+    "DoctorEmail": "doctor-72781f5d@medibridge.local",
+    "CompanyEmail": "company-72781f5d@medibridge.local"
+  },
+  "EvidenceFiles": {
+    "SwaggerEndpoints": "D:\\My Project\\MediBridge Project\\MediBridge\\TestResults\\post-merge-20260710\\swagger-endpoints.json",
+    "DbEvidence": "D:\\My Project\\MediBridge Project\\MediBridge\\TestResults\\post-merge-20260710\\db-evidence.json",
+    "SupplementalHttp": "D:\\My Project\\MediBridge Project\\MediBridge\\TestResults\\post-merge-20260710\\supplemental-live-http-corrected-results.json"
+  }
+}

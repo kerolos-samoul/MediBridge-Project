@@ -1,0 +1,78 @@
+{
+  "timestamp": "20260711-003937",
+  "baseUrl": "http://medibridge-project.runasp.net",
+  "otpRetrievalSource": "Gmail connector or manual input; OTP values masked",
+  "doctor": {
+    "email": "doctor-20260711003503-3bd8d919@medibridge.local",
+    "password": "[MASKED]",
+    "phone": "5551297893",
+    "userId": "b5ed6fe58b0a48ca8d288c2151b16a20",
+    "profileId": "14b3a97429f84540a0cf6491ee759817"
+  },
+  "company": {
+    "email": "company-20260711003503-3bd8d919@medibridge.local",
+    "password": "[MASKED]",
+    "phone": "5551351595",
+    "license": "lic-comp-20260711003503-3bd8d919",
+    "userId": "82266c1842ab45ce8179d9b5cb15e74d",
+    "companyId": "4deb8dbb5da0472e9084a92d852cb847",
+    "walletId": "4c033d9515d74d4aa08dc95d8262f866"
+  },
+  "admin": {
+    "role": "Admin",
+    "expiresAtUtc": "2026-07-10T22:39:38.8868958Z"
+  },
+  "files": [
+    {
+      "id": null,
+      "owner": "14b3a97429f84540a0cf6491ee759817",
+      "purpose": "VerificationDocument",
+      "createdBy": "Doctor"
+    },
+    {
+      "id": null,
+      "owner": "c70a2aaba67e4ffcae251c86c88367cd",
+      "purpose": "CampaignMedia",
+      "storage": ""
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "c70a2aaba67e4ffcae251c86c88367cd",
+      "companyId": "4deb8dbb5da0472e9084a92d852cb847",
+      "queueId": "",
+      "deliveryId": ""
+    }
+  ],
+  "wallets": [
+    {
+      "id": "4c033d9515d74d4aa08dc95d8262f866",
+      "owner": "4deb8dbb5da0472e9084a92d852cb847",
+      "ownerType": "Company"
+    }
+  ],
+  "idempotencyKeys": [
+    "topup-3837dd96-2e31-4a71-8843-a74a57175fad",
+    "submit-101a87c2-e206-4798-90fc-f1164b98ce63",
+    "review-475bf064-eb26-4e3d-9094-d709d3468eb5"
+  ],
+  "database": {
+    "server": "db54839.public.databaseasp.net",
+    "name": "db54839",
+    "user": "[MASKED]",
+    "doctorStatus": "Approved|verified=1",
+    "companyStatus": "Approved|verified=1",
+    "walletSummary": "4c033d9515d74d4aa08dc95d8262f866|available=2000.00|reserved=0.00",
+    "walletTransactionCount": "2",
+    "queueCount": "0",
+    "deliveryCount": "0"
+  },
+  "blockers": [
+    "Delivery activation/interactions blocked: no exposed job endpoint and no activated DoctorAdDelivery was created during this run."
+  ],
+  "resumedFrom": "D:\\My Project\\MediBridge Project\\MediBridge\\e2e-test-data-20260711-003501.json",
+  "assets": [
+    "D:\\My Project\\MediBridge Project\\MediBridge\\e2e-assets-20260711-003937\\verification.pdf",
+    "D:\\My Project\\MediBridge Project\\MediBridge\\e2e-assets-20260711-003937\\campaign-media.png"
+  ]
+}

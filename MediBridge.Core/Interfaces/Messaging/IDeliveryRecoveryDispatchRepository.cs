@@ -11,4 +11,5 @@ public interface IDeliveryRecoveryDispatchRepository
     Task<bool> RecordEnqueuedAsync(string dispatchId, string schedulerJobId, string? dependsOnDispatchId, DateTime enqueuedAtUtc, CancellationToken cancellationToken = default);
     Task<bool> CompleteAsync(string dispatchId, RecoveryDispatchStatus status, DateTime completedAtUtc, string? safeFailureSummary, CancellationToken cancellationToken = default);
     Task<bool> CompleteEnqueuedForJobAsync(DateOnly businessDateEgypt, DeliveryJobType jobType, DateTime completedAtUtc, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<DeliveryRecoveryDispatch>> ListRecentAsync(int take, CancellationToken cancellationToken = default);
 }

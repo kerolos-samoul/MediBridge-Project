@@ -1,0 +1,189 @@
+[
+  {
+    "timestamp": "2026-07-10T21:42:33.2922823Z",
+    "scenario": "manual doctor upload verification document",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/files/verification-documents",
+    "role": "Doctor",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": "{\"multipart\":\"File verification.pdf application/pdf\"}",
+    "httpStatus": 201,
+    "responseBody": "{\"Id\":\"8bdfa26497d24cfea1e8343805ed8a69\",\"UploadStatus\":\"Stored\"}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "StoredFiles insert; Cloudinary upload",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:33.3241044Z",
+    "scenario": "manual company upload campaign asset",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/c70a2aaba67e4ffcae251c86c88367cd/assets",
+    "role": "Company",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": "{\"multipart\":\"file campaign-media.png image/png\"}",
+    "httpStatus": 201,
+    "responseBody": "{\"Id\":\"da3e848102f04d9a969c33b90c2e35a0\",\"UploadStatus\":\"Stored\"}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "StoredFiles insert; Cloudinary upload",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:33.6342909Z",
+    "scenario": "manual admin approve verification file",
+    "method": "PUT",
+    "url": "http://medibridge-project.runasp.net/api/admin/files/8bdfa26497d24cfea1e8343805ed8a69/review",
+    "role": "Admin",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": "{\"Decision\":\"Approved\",\"Notes\":\"Manual continuation approved\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"Id\":\"697b438493af4104b10ce83c1def5c2a\",\"StoredFileId\":\"8bdfa26497d24cfea1e8343805ed8a69\",\"Decision\":\"Approved\",\"Reason\":null,\"ReviewedByAdminId\":\"59b5eb60-b368-45f5-a532-fa96f23b6fa2\",\"CreatedAtUtc\":\"2026-07-10T21:42:33.55342Z\",\"CorrectsReviewId\":null}}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "FileReviews insert; StoredFiles review status update",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:33.9474477Z",
+    "scenario": "manual doctor signed file access",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/files/8bdfa26497d24cfea1e8343805ed8a69/access",
+    "role": "Doctor",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"Url\":\"https://api.cloudinary.com/v1_1/dqruglmn0/raw/download?api_key=636754985524895&attachment=false&expires_at=1783720353&public_id=medibridge/verification/doctor/14b3a97429f84540a0cf6491ee759817/8bdfa26497d24cfea1e8343805ed8a69.pdf&signature=11efd4a4abd6cc86a75a9571b7c5017ebaacb4fb&timestamp=1783719753&type=private\",\"ExpiresAtUtc\":\"2026-07-10T21:52:33.8785989Z\"}}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "FileAccessGrantAudits insert",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:34.7640111Z",
+    "scenario": "manual signed Cloudinary URL HEAD",
+    "method": "HEAD",
+    "url": "https://api.cloudinary.com/v1_1/dqruglmn0/raw/download?api_key=636754985524895&attachment=false&expires_at=1783720353&public_id=medibridge/verification/doctor/14b3a97429f84540a0cf6491ee759817/8bdfa26497d24cfea1e8343805ed8a69.pdf&signature=11efd4a4abd6cc86a75a9571b7c5017ebaacb4fb&timestamp=1783719753&type=private",
+    "role": "Anonymous",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "Cloudinary read only",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:34.9539666Z",
+    "scenario": "manual admin approve campaign asset",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaign-assets/da3e848102f04d9a969c33b90c2e35a0/review",
+    "role": "Admin",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": "{\"Decision\":\"Approved\",\"Notes\":\"Manual continuation asset approved\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"Id\":\"443c5fca70284d7aa9eb05fc69cceb90\",\"StoredFileId\":\"da3e848102f04d9a969c33b90c2e35a0\",\"Decision\":\"Approved\",\"Reason\":null,\"ReviewedByAdminId\":\"59b5eb60-b368-45f5-a532-fa96f23b6fa2\",\"CreatedAtUtc\":\"2026-07-10T21:42:34.9586642Z\",\"CorrectsReviewId\":null}}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "FileReviews insert; StoredFiles review status update",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:35.2382449Z",
+    "scenario": "manual company submit campaign",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/company/campaigns/c70a2aaba67e4ffcae251c86c88367cd/submit",
+    "role": "Company",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"status\":\"PendingReview\",\"targetCount\":8,\"estimatedCost\":477.50,\"currency\":\"EGP\",\"submittedAtUtc\":\"2026-07-10T21:42:35.1796474Z\"}}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "CampaignSubmissionRequests insert; status PendingReview",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:35.4557736Z",
+    "scenario": "manual admin campaign review detail",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaigns/c70a2aaba67e4ffcae251c86c88367cd/review-detail",
+    "role": "Admin",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"companyId\":\"4deb8dbb5da0472e9084a92d852cb847\",\"companyName\":\"E2E Pharma Egypt 20260711003503-3bd8d919\",\"title\":\"E2E Campaign 20260711003503-3bd8d919\",\"description\":\"A cardiology campaign created by deployed E2E smoke test.\",\"status\":\"PendingReview\",\"submittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"targetCount\":8,\"reviewableMediaAssets\":[{\"fileId\":\"da3e848102f04d9a969c33b90c2e35a0\",\"purpose\":\"CampaignMedia\",\"originalFileName\":\"campaign-media.png\",\"contentType\":\"image/png\",\"sizeBytes\":68,\"reviewStatus\":\"Approved\",\"accessUrl\":\"https://api.cloudinary.com/v1_1/dqruglmn0/image/download?api_key=636754985524895&attachment=false&expires_at=1783720355&public_id=medibridge/campaigns/4deb8dbb5da0472e9084a92d852cb847/c70a2aaba67e4ffcae251c86c88367cd/da3e848102f04d9a969c33b90c2e35a0.png&signature=8b5d627a8befc5ec9278f835a8f6024a62db508d&timestamp=1783719755&type=private\",\"accessExpiresAtUtc\":\"2026-07-10T21:52:35.452531Z\"}],\"optionalFiles\":[],\"reviewReadinessIssues\":[]}}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "read Campaigns/Files",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:35.7715664Z",
+    "scenario": "manual admin approve campaign",
+    "method": "POST",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaigns/c70a2aaba67e4ffcae251c86c88367cd/review",
+    "role": "Admin",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": "{\"reason\":null,\"decision\":\"Approved\",\"notes\":\"Manual continuation campaign approved\"}",
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":{\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"decision\":\"Approved\",\"status\":\"Approved\",\"queuedCount\":8,\"decisionTimeUtc\":\"2026-07-10T21:42:35.6856336Z\",\"canResubmit\":false}}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "CampaignTargets/DoctorMessageQueues create",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:35.9656787Z",
+    "scenario": "manual admin campaign queue rows",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/admin/campaigns/c70a2aaba67e4ffcae251c86c88367cd/queue",
+    "role": "Admin",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Success\",\"Data\":[{\"queueId\":\"094705433d75409dbbb0ed6bf791c150\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"46e5cd77c0b44e709aee64b5980e261b\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"},{\"queueId\":\"0f974323ca8148508ddeff3ee21ae69b\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"273f86e546eb4de5b315259f7df7f7c6\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"},{\"queueId\":\"18a068e4c00748b7add4b866949b3b60\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"6a99faa59be24aa2b3e025a99fef00c7\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"},{\"queueId\":\"1e85cdd529f843b6b0cdfa540ed0f983\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"1965b947b1cd4dd28a85a835c64081ac\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"},{\"queueId\":\"7fc5c401a98649b495389cc0d4c47d82\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"5b2f73f190774dbab4e83987b635f704\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"},{\"queueId\":\"ab237f9b6e5b4b79ad6e9b4a410c278a\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"b38f564929a74c91bd14e3f48972228d\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"},{\"queueId\":\"bcf7fe88cca2408089e022bb461460e2\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"bdd3e4a3de8947fab7fc41ca9f4eba26\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"},{\"queueId\":\"d6f8a7ecaf144d1e96c3666ea295591a\",\"campaignId\":\"c70a2aaba67e4ffcae251c86c88367cd\",\"doctorId\":\"14b3a97429f84540a0cf6491ee759817\",\"status\":\"Queued\",\"campaignSubmittedAtUtc\":\"2026-07-10T21:42:35.1796474\",\"queuedAtUtc\":\"2026-07-10T21:42:35.6856336\"}]}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "read DoctorMessageQueues",
+    "correlationId": null
+  },
+  {
+    "timestamp": "2026-07-10T21:42:36.1450867Z",
+    "scenario": "manual doctor today inbox after approval",
+    "method": "GET",
+    "url": "http://medibridge-project.runasp.net/api/doctor/messages/today?PageSize=20",
+    "role": "Doctor",
+    "safeHeaders": {
+      "Authorization": "Bearer [JWT-MASKED]"
+    },
+    "requestBody": null,
+    "httpStatus": 200,
+    "responseBody": "{\"Code\":200,\"Message\":\"Today's messages retrieved.\",\"Data\":{\"BusinessDateEgypt\":\"2026-07-11\",\"Items\":[],\"NextCursor\":null}}",
+    "durationMs": null,
+    "pass": true,
+    "databaseEffect": "read DoctorAdDeliveries/DoctorMessageQueues",
+    "correlationId": null
+  }
+]

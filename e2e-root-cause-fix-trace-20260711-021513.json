@@ -1,0 +1,102 @@
+[
+  {
+    "timestamp": "20260711-021513",
+    "iteration": 1,
+    "status": 0,
+    "url": "build/test",
+    "scenario": "Local baseline",
+    "method": "dotnet",
+    "pass": true,
+    "safeResponse": "Build passed; full tests passed: unit 149, contract 130, integration 420 passed / 3 skipped",
+    "role": "Developer"
+  },
+  {
+    "timestamp": "20260711-021513",
+    "iteration": 2,
+    "status": 0,
+    "url": "site78911-WebDeploy",
+    "scenario": "Publish final build",
+    "method": "MSDeploy",
+    "pass": true,
+    "safeResponse": "Publish succeeded; secrets masked",
+    "role": "Deployer"
+  },
+  {
+    "timestamp": "20260711-021513",
+    "iteration": 3,
+    "status": 200,
+    "url": "http://medibridge-project.runasp.net/api/admin/doctors/14b3a97429f84540a0cf6491ee759817/delivery-settings",
+    "scenario": "Admin delivery settings",
+    "method": "PUT",
+    "pass": true,
+    "safeResponse": {
+      "DoctorWalletProvisioned": true,
+      "IsDeliveryEligible": true
+    },
+    "role": "Admin"
+  },
+  {
+    "timestamp": "20260711-021513",
+    "iteration": 3,
+    "status": 200,
+    "url": "http://medibridge-project.runasp.net/api/admin/platform-fee-policy",
+    "scenario": "Admin platform fee policy",
+    "method": "PUT",
+    "pass": true,
+    "safeResponse": {
+      "FeePercent": 20,
+      "PolicyId": "35c9f415bb344cc386d0ad9c25cfe954"
+    },
+    "role": "Admin"
+  },
+  {
+    "timestamp": "20260711-021513",
+    "iteration": 4,
+    "status": 200,
+    "url": "http://medibridge-project.runasp.net/api/admin/delivery-jobs/run-injector",
+    "scenario": "Manual injector",
+    "method": "POST",
+    "pass": true,
+    "safeResponse": {
+      "Failed": 0,
+      "Skipped": 7,
+      "Examined": 8,
+      "Activated": 1,
+      "SchedulerJobId": "13"
+    },
+    "role": "Admin"
+  },
+  {
+    "timestamp": "20260711-021513",
+    "iteration": 5,
+    "status": 200,
+    "url": "http://medibridge-project.runasp.net/api/doctor/messages",
+    "scenario": "Doctor inbox/read/interact",
+    "method": "GET/PUT/POST",
+    "pass": true,
+    "safeResponse": {
+      "Accept": 200,
+      "DifferentKey": 409,
+      "Replay": 200,
+      "DeliveryId": "0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050",
+      "Read": 200
+    },
+    "role": "Doctor"
+  },
+  {
+    "timestamp": "20260711-021513",
+    "iteration": 6,
+    "status": 200,
+    "url": "http://medibridge-project.runasp.net/api/admin/delivery-jobs/run-expiry",
+    "scenario": "Manual expiry no-op",
+    "method": "POST",
+    "pass": true,
+    "safeResponse": {
+      "Failed": 0,
+      "Expired": 0,
+      "Examined": 0,
+      "SchedulerJobId": "14"
+    },
+    "role": "Admin"
+  }
+]

@@ -94,6 +94,16 @@ public sealed class DeliveryJobRunRepository : IDeliveryJobRunRepository
             cancellationToken);
     }
 
+    public async Task<IReadOnlyList<DeliveryJobRun>> ListRecentAsync(int take, CancellationToken cancellationToken = default)
+    {
+        return await context.DeliveryJobRuns
+            .AsNoTracking()
+            .OrderByDescending(run => run.StartedAtUtc)
+            .ThenByDescending(run => run.Id)
+            .Take(Math.Clamp(take, 1, 100))
+            .ToListAsync(cancellationToken);
+    }
+
     private static void EnsureCounters(DeliveryJobRunCounters counters)
     {
         if (new[] { counters.ExaminedCount, counters.ActivatedCount, counters.ExpiredCount, counters.CancelledCount, counters.SkippedCount, counters.FailedCount }.Any(value => value < 0))

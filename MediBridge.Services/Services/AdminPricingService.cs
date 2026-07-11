@@ -1,5 +1,7 @@
 using System.Text.Json;
 using FluentValidation;
+using MediBridge.Core.Entities.Identity;
+using MediBridge.Core.Entities.Profiles;
 using MediBridge.Core.Enums;
 using MediBridge.Core.Interfaces;
 using MediBridge.Core.Interfaces.Identity;
@@ -12,16 +14,19 @@ public sealed class AdminPricingService : IAdminPricingService
 {
     private readonly IIdentityUnitOfWork identityUnitOfWork;
     private readonly IDomainUnitOfWork domainUnitOfWork;
-    private readonly IValidator<SetDoctorPriceRequestDto> validator;
+    private readonly IValidator<SetDoctorPriceRequestDto> priceValidator;
+    private readonly IValidator<SetDoctorDeliverySettingsRequestDto> deliverySettingsValidator;
 
     public AdminPricingService(
         IIdentityUnitOfWork identityUnitOfWork,
         IDomainUnitOfWork domainUnitOfWork,
-        IValidator<SetDoctorPriceRequestDto> validator)
+        IValidator<SetDoctorPriceRequestDto> priceValidator,
+        IValidator<SetDoctorDeliverySettingsRequestDto> deliverySettingsValidator)
     {
         this.identityUnitOfWork = identityUnitOfWork;
         this.domainUnitOfWork = domainUnitOfWork;
-        this.validator = validator;
+        this.priceValidator = priceValidator;
+        this.deliverySettingsValidator = deliverySettingsValidator;
     }
 
     public async Task<DoctorPriceDto> SetDoctorPriceAsync(
@@ -35,7 +40,7 @@ public sealed class AdminPricingService : IAdminPricingService
             throw new Phase5ValidationException("Validation failed.", ["Pricing request body is required."]);
         }
 
-        var validation = await validator.ValidateAsync(request, cancellationToken);
+        var validation = await priceValidator.ValidateAsync(request, cancellationToken);
         if (!validation.IsValid)
         {
             throw new Phase5ValidationException(
@@ -102,5 +107,185 @@ public sealed class AdminPricingService : IAdminPricingService
 
             return new DoctorPriceDto(doctor.Id, newPrice, "EGP");
         }, cancellationToken);
+    }
+
+    public async Task<DoctorDeliverySettingsDto> GetDoctorDeliverySettingsAsync(
+        string adminUserId,
+        string doctorId,
+        CancellationToken cancellationToken = default)
+    {
+        var admin = await identityUnitOfWork.Users.FindByIdAsync(adminUserId, cancellationToken);
+        if (admin is not { Role: UserRole.Admin, AccountStatus: AccountStatus.Approved, IsDeleted: false })
+        {
+            throw new Phase5ForbiddenException("Forbidden.");
+        }
+
+        if (string.IsNullOrWhiteSpace(doctorId))
+        {
+            throw new Phase5NotFoundException("Doctor was not found.");
+        }
+
+        var doctor = await identityUnitOfWork.Profiles.FindDoctorProfileByIdAsync(
+            doctorId.Trim(),
+            cancellationToken);
+        if (doctor is null)
+        {
+            throw new Phase5NotFoundException("Doctor was not found.");
+        }
+
+        var doctorUser = await identityUnitOfWork.Users.FindByIdAsync(doctor.UserId, cancellationToken);
+        if (doctorUser is not { Role: UserRole.Doctor, IsDeleted: false })
+        {
+            throw new Phase5NotFoundException("Doctor was not found.");
+        }
+
+        return ToDeliverySettingsDto(doctor, doctorUser);
+    }
+
+    public async Task<DoctorDeliverySettingsDto> SetDoctorDeliverySettingsAsync(
+        string adminUserId,
+        string doctorId,
+        SetDoctorDeliverySettingsRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            throw new Phase5ValidationException("Validation failed.", ["Delivery settings request body is required."]);
+        }
+
+        var validation = await deliverySettingsValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+        {
+            throw new Phase5ValidationException(
+                "Validation failed.",
+                validation.Errors.Select(error => error.ErrorMessage).ToArray());
+        }
+
+        return await domainUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
+        {
+            var admin = await identityUnitOfWork.Users.FindByIdForUpdateAsync(adminUserId, transactionCancellationToken);
+            if (admin is not { Role: UserRole.Admin, AccountStatus: AccountStatus.Approved, IsDeleted: false })
+            {
+                throw new Phase5ForbiddenException("Forbidden.");
+            }
+
+            if (string.IsNullOrWhiteSpace(doctorId))
+            {
+                throw new Phase5NotFoundException("Doctor was not found.");
+            }
+
+            var doctor = await identityUnitOfWork.Profiles.FindDoctorProfileByIdForUpdateAsync(
+                doctorId.Trim(),
+                transactionCancellationToken);
+            if (doctor is null)
+            {
+                throw new Phase5NotFoundException("Doctor was not found.");
+            }
+
+            var doctorUser = await identityUnitOfWork.Users.FindByIdForUpdateAsync(
+                doctor.UserId,
+                transactionCancellationToken);
+            if (doctorUser is not { Role: UserRole.Doctor, AccountStatus: AccountStatus.Approved, IsDeleted: false })
+            {
+                throw new Phase5NotFoundException("Doctor was not found.");
+            }
+
+            if (doctor.Status != DoctorMarketplaceStatus.Active)
+            {
+                throw new Phase5ConflictException("Doctor is not active in the marketplace.");
+            }
+
+            var previousDailyLimit = doctor.DailyMessageLimit;
+            var previousWeeklyRequirement = doctor.MinimumWeeklyRequirement;
+            var newDailyLimit = request.DailyMessageLimit!.Value;
+            var newWeeklyRequirement = request.MinimumWeeklyRequirement!.Value;
+            var reason = request.Reason!.Trim();
+            var now = DateTime.UtcNow;
+
+            doctor.DailyMessageLimit = newDailyLimit;
+            doctor.MinimumWeeklyRequirement = newWeeklyRequirement;
+            doctor.UpdatedAtUtc = now;
+            var doctorWallet = await domainUnitOfWork.Wallets.GetOrCreateActiveWalletForUpdateAsync(
+                Guid.NewGuid().ToString("N"),
+                WalletOwnerType.Doctor,
+                doctor.Id,
+                doctor.UserId,
+                now,
+                transactionCancellationToken);
+
+            await domainUnitOfWork.AuditEvents.AddPhase5AuditEventAsync(
+                Guid.NewGuid().ToString("N"),
+                "DoctorDeliverySettingsUpdated",
+                admin.Id,
+                admin.Role.ToString(),
+                AuditTargetType.Doctor,
+                doctor.Id,
+                AuditOutcome.Success,
+                reason,
+                correlationId: null,
+                JsonSerializer.Serialize(new
+                {
+                    PreviousDailyMessageLimit = previousDailyLimit,
+                    NewDailyMessageLimit = newDailyLimit,
+                    PreviousMinimumWeeklyRequirement = previousWeeklyRequirement,
+                    NewMinimumWeeklyRequirement = newWeeklyRequirement,
+                    DoctorWalletId = doctorWallet.Id
+                }),
+                now,
+                transactionCancellationToken);
+
+            return ToDeliverySettingsDto(doctor, doctorUser);
+        }, cancellationToken);
+    }
+
+    private static DoctorDeliverySettingsDto ToDeliverySettingsDto(DoctorProfile doctor, ApplicationUser doctorUser)
+    {
+        var isDeliveryEligible =
+            doctorUser is { Role: UserRole.Doctor, AccountStatus: AccountStatus.Approved, IsDeleted: false }
+            && !doctor.IsDeleted
+            && doctor.Status == DoctorMarketplaceStatus.Active
+            && doctor.PricePerMessage > 0
+            && doctor.DailyMessageLimit > 0;
+
+        var eligibilityState = isDeliveryEligible
+            ? "DeliveryEligible"
+            : ResolveDeliverySettingsState(doctor, doctorUser);
+
+        return new DoctorDeliverySettingsDto(
+            doctor.Id,
+            doctor.DailyMessageLimit,
+            doctor.MinimumWeeklyRequirement,
+            isDeliveryEligible,
+            eligibilityState);
+    }
+
+    private static string ResolveDeliverySettingsState(DoctorProfile doctor, ApplicationUser doctorUser)
+    {
+        if (doctorUser is not { Role: UserRole.Doctor, AccountStatus: AccountStatus.Approved, IsDeleted: false })
+        {
+            return "DoctorAccountNotApproved";
+        }
+
+        if (doctor.IsDeleted)
+        {
+            return "DoctorProfileDeleted";
+        }
+
+        if (doctor.Status != DoctorMarketplaceStatus.Active)
+        {
+            return "DoctorMarketplaceInactive";
+        }
+
+        if (doctor.PricePerMessage is null or <= 0)
+        {
+            return "DoctorPriceMissing";
+        }
+
+        if (doctor.DailyMessageLimit <= 0)
+        {
+            return "DailyMessageLimitNotConfigured";
+        }
+
+        return "DeliveryIneligible";
     }
 }

@@ -181,6 +181,13 @@ public sealed class ProfileRepository : IProfileRepository
         return context.DoctorProfiles.FirstOrDefaultAsync(profile => profile.UserId == userId, cancellationToken);
     }
 
+    public Task<DoctorProfile?> FindDoctorProfileByIdAsync(string doctorId, CancellationToken cancellationToken = default)
+    {
+        return context.DoctorProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(profile => profile.Id == doctorId && !profile.IsDeleted, cancellationToken);
+    }
+
     public Task<DoctorProfile?> FindDoctorProfileByIdForUpdateAsync(
         string doctorId,
         CancellationToken cancellationToken = default)
@@ -302,6 +309,7 @@ public sealed class ProfileRepository : IProfileRepository
             where !profile.IsDeleted
                   && profile.Status == DoctorMarketplaceStatus.Active
                   && profile.PricePerMessage > 0
+                  && profile.DailyMessageLimit > 0
                   && !user.IsDeleted
                   && user.Role == UserRole.Doctor
                   && user.AccountStatus == AccountStatus.Approved

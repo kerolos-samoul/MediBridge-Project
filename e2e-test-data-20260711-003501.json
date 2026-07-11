@@ -1,0 +1,46 @@
+{
+  "timestamp": "20260711-003501",
+  "baseUrl": "http://medibridge-project.runasp.net",
+  "otpRetrievalSource": null,
+  "doctor": {
+    "email": "doctor-20260711003503-3bd8d919@medibridge.local",
+    "password": "[MASKED]",
+    "phone": "5551297893",
+    "userId": "b5ed6fe58b0a48ca8d288c2151b16a20"
+  },
+  "company": {
+    "email": "company-20260711003503-3bd8d919@medibridge.local",
+    "password": "[MASKED]",
+    "phone": "5551351595",
+    "license": "lic-comp-20260711003503-3bd8d919",
+    "userId": "82266c1842ab45ce8179d9b5cb15e74d"
+  },
+  "admin": {
+    "role": "Admin",
+    "expiresAtUtc": "2026-07-10T22:35:02.2742369Z"
+  },
+  "files": [],
+  "campaigns": [],
+  "wallets": [],
+  "idempotencyKeys": [],
+  "database": {
+    "server": "db54839.public.databaseasp.net",
+    "name": "db54839",
+    "user": "[MASKED]"
+  },
+  "blockers": [
+    "OTP_REQUIRED"
+  ],
+  "assets": [
+    "D:\\My Project\\MediBridge Project\\MediBridge\\e2e-assets-20260711-003501\\verification.pdf",
+    "D:\\My Project\\MediBridge Project\\MediBridge\\e2e-assets-20260711-003501\\campaign-media.png"
+  ],
+  "otpNeeded": {
+    "doctorEmail": "doctor-20260711003503-3bd8d919@medibridge.local",
+    "companyEmail": "company-20260711003503-3bd8d919@medibridge.local",
+    "doctorUserId": "b5ed6fe58b0a48ca8d288c2151b16a20",
+    "companyUserId": "82266c1842ab45ce8179d9b5cb15e74d",
+    "endpoint": "/api/auth/verify-contact",
+    "step": "after registration, before contact verification"
+  }
+}

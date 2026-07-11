@@ -1,0 +1,205 @@
+{
+  "timestamp": "20260711-005144",
+  "source": {
+    "branch": "development",
+    "commit": "ec3e8b0b1189ca2c83a6c02ace00b7c2ed4dfcc5"
+  },
+  "database": {
+    "server": "db54839.public.databaseasp.net",
+    "name": "db54839",
+    "user": "[MASKED]"
+  },
+  "migrations": {
+    "applied": [
+      "20260531185506_Phase2IdentityApproval",
+      "20260602022951_Phase3DatabaseCoreModels",
+      "20260602025256_Phase3US2IntegrityConstraints",
+      "20260604054249_EmailOtpVerificationMetadata",
+      "20260608032307_Phase4FileStorageSecurity",
+      "20260609152557_AddMaxAttemptsReachedColumn",
+      "20260618153411_Phase5CampaignQueueFoundation",
+      "20260619132753_AddMockPaymentTransactions",
+      "20260621200235_HardenCampaignReviewWorkflow",
+      "20260625133151_AddStoredFileStorageObjectLifecycle",
+      "20260625134424_ReconcileOtpAndFileStorageLifecycle",
+      "20260625135441_MapContactVerificationLifecycleModel",
+      "20260630151918_AddCampaignReviewModeration",
+      "20260630212738_ReconcileStoredFileResourceType",
+      "20260701172632_AddMockPaymentTransactionsClean",
+      "20260702174103_AddPhase7DeliveryExpiryJobs",
+      "20260710095601_AddPhase8InteractionPayments"
+    ],
+    "source": [
+      "20260531185506_Phase2IdentityApproval",
+      "20260602022951_Phase3DatabaseCoreModels",
+      "20260602025256_Phase3US2IntegrityConstraints",
+      "20260608032307_Phase4FileStorageSecurity",
+      "20260609152557_AddMaxAttemptsReachedColumn",
+      "20260618153411_Phase5CampaignQueueFoundation",
+      "20260630151918_AddCampaignReviewModeration",
+      "20260630212738_ReconcileStoredFileResourceType",
+      "20260701172632_AddMockPaymentTransactionsClean",
+      "20260702174103_AddPhase7DeliveryExpiryJobs",
+      "20260710095601_AddPhase8InteractionPayments"
+    ],
+    "dbOnly": [
+      "20260604054249_EmailOtpVerificationMetadata",
+      "20260619132753_AddMockPaymentTransactions",
+      "20260621200235_HardenCampaignReviewWorkflow",
+      "20260625133151_AddStoredFileStorageObjectLifecycle",
+      "20260625134424_ReconcileOtpAndFileStorageLifecycle",
+      "20260625135441_MapContactVerificationLifecycleModel"
+    ],
+    "gitEvidence": {
+      "20260625133151_AddStoredFileStorageObjectLifecycle": "present in commit 33aab1a and branches 006-wallet-campaign-workflow, codex/preserve-dirty-007-20260701-192332",
+      "20260625134424_ReconcileOtpAndFileStorageLifecycle": "present in commit c5990d0 and branches 006-wallet-campaign-workflow, codex/preserve-dirty-007-20260701-192332",
+      "20260625135441_MapContactVerificationLifecycleModel": "present in commit c9740db and branches 006-wallet-campaign-workflow, codex/preserve-dirty-007-20260701-192332",
+      "20260621200235_HardenCampaignReviewWorkflow": "not present as a migration file in visible refs, but referenced by later Down() guards in current source migrations",
+      "20260604054249_EmailOtpVerificationMetadata": "not found as migration file in visible refs/reflog search",
+      "20260619132753_AddMockPaymentTransactions": "not found as migration file in visible refs/reflog search"
+    }
+  },
+  "hangfire": {
+    "dbUtc": "2026-07-10T21:51:46.3451306",
+    "servers": "w13:107896:4d97214f-7f5f-46fc-bcbb-651f1b6e777b|{\"WorkerCount\":4,\"Queues\":[\"delivery\"],\"StartedAt\":\"2026-07-10T21:07:57.4898118Z\"}|2026-07-10T21:51:28.100",
+    "recurringSet": [
+      "recurring-jobs|1783803900.0|medibridge-daily-injector",
+      "recurring-jobs|1783803600.0|medibridge-expiry-cleaner"
+    ],
+    "recurringHashes": [
+      "recurring-job:medibridge-daily-injector|CreatedAt|1783292484223",
+      "recurring-job:medibridge-daily-injector|Cron|5 0 * * *",
+      "recurring-job:medibridge-daily-injector|Job|{\"t\":\"MediBridge.Services.Interfaces.IDailyDeliveryInjectorService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"],\"a\":[null],\"q\":\"delivery\"}",
+      "recurring-job:medibridge-daily-injector|LastExecution|1783717677557",
+      "recurring-job:medibridge-daily-injector|LastJobId|10",
+      "recurring-job:medibridge-daily-injector|NextExecution|1783803900000",
+      "recurring-job:medibridge-daily-injector|Queue|default",
+      "recurring-job:medibridge-daily-injector|TimeZoneId|Africa/Cairo",
+      "recurring-job:medibridge-daily-injector|V|2",
+      "recurring-job:medibridge-expiry-cleaner|CreatedAt|1783292482695",
+      "recurring-job:medibridge-expiry-cleaner|Cron|0 0 * * *",
+      "recurring-job:medibridge-expiry-cleaner|Job|{\"t\":\"MediBridge.Services.Interfaces.IDeliveryExpiryService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"],\"a\":[null],\"q\":\"delivery\"}",
+      "recurring-job:medibridge-expiry-cleaner|LastExecution|1783717677557",
+      "recurring-job:medibridge-expiry-cleaner|LastJobId|9",
+      "recurring-job:medibridge-expiry-cleaner|NextExecution|1783803600000",
+      "recurring-job:medibridge-expiry-cleaner|Queue|default",
+      "recurring-job:medibridge-expiry-cleaner|TimeZoneId|Africa/Cairo",
+      "recurring-job:medibridge-expiry-cleaner|V|2"
+    ],
+    "recentJobs": [
+      "10|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDailyDeliveryInjectorService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"],\"q\":\"delivery\"}|[null]|2026-07-10T21:07:57.633",
+      "9|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDeliveryExpiryService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"],\"q\":\"delivery\"}|[null]|2026-07-10T21:07:57.587",
+      "8|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDailyDeliveryInjectorService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"]}|[null]|2026-07-10T21:07:57.110",
+      "7|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDeliveryExpiryService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"]}|[null]|2026-07-10T21:07:56.820",
+      "6|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDailyDeliveryInjectorService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"],\"q\":\"delivery\"}|[null]|2026-07-09T23:15:01.227",
+      "5|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDeliveryExpiryService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"],\"q\":\"delivery\"}|[null]|2026-07-09T23:15:00.080",
+      "4|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDailyDeliveryInjectorService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"]}|[null]|2026-07-09T23:14:58.113",
+      "3|Succeeded|{\"t\":\"MediBridge.Services.Interfaces.IDeliveryExpiryService, MediBridge.Services\",\"m\":\"RunAsync\",\"p\":[\"System.Threading.CancellationToken, mscorlib\"]}|[null]|2026-07-09T23:14:56.583"
+    ],
+    "recentStates": [
+      "8|Succeeded|NULL|2026-07-10T21:07:58.553|{\"SucceededAt\":\"1783717678550\",\"PerformanceDuration\":\"575\",\"Latency\":\"864\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DailyInjectorResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-11\\\",\\\"StartedAtUtc\\\":\\\"2026-07-10T21:07:57.9",
+      "10|Succeeded|NULL|2026-07-10T21:07:58.537|{\"SucceededAt\":\"1783717678531\",\"PerformanceDuration\":\"845\",\"Latency\":\"53\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DailyInjectorResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-11\\\",\\\"StartedAtUtc\\\":\\\"2026-07-10T21:07:57.68",
+      "8|Processing|NULL|2026-07-10T21:07:57.970|{\"StartedAt\":\"1783717677960\",\"ServerId\":\"w13:107896:4d97214f-7f5f-46fc-bcbb-651f1b6e777b\",\"WorkerId\":\"3f90d7f8-d2c8-448c-bd16-cddf798718b7\"}",
+      "7|Succeeded|NULL|2026-07-10T21:07:57.960|{\"SucceededAt\":\"1783717677909\",\"PerformanceDuration\":\"308\",\"Latency\":\"781\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DeliveryJobResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-11\\\",\\\"StartedAtUtc\\\":\\\"2026-07-10T21:07:57.612",
+      "8|Enqueued|NULL|2026-07-10T21:07:57.950|{\"EnqueuedAt\":\"1783717677934\",\"Queue\":\"delivery\"}",
+      "9|Succeeded|NULL|2026-07-10T21:07:57.920|{\"SucceededAt\":\"1783717677909\",\"PerformanceDuration\":\"238\",\"Latency\":\"83\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DeliveryJobResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-11\\\",\\\"StartedAtUtc\\\":\\\"2026-07-10T21:07:57.6722",
+      "10|Processing|NULL|2026-07-10T21:07:57.680|{\"StartedAt\":\"1783717677658\",\"ServerId\":\"w13:107896:4d97214f-7f5f-46fc-bcbb-651f1b6e777b\",\"WorkerId\":\"7554f76b-e7d4-4eb5-a876-6eb2fd25fad9\"}",
+      "9|Processing|NULL|2026-07-10T21:07:57.663|{\"StartedAt\":\"1783717677653\",\"ServerId\":\"w13:107896:4d97214f-7f5f-46fc-bcbb-651f1b6e777b\",\"WorkerId\":\"1f0c2ce8-8172-4ea2-be00-743758d8c780\"}",
+      "10|Enqueued|Triggered by recurring job scheduler|2026-07-10T21:07:57.637|{\"EnqueuedAt\":\"1783717677634\",\"Queue\":\"default\"}",
+      "9|Enqueued|Triggered by recurring job scheduler|2026-07-10T21:07:57.597|{\"EnqueuedAt\":\"1783717677593\",\"Queue\":\"default\"}",
+      "7|Processing|NULL|2026-07-10T21:07:57.583|{\"StartedAt\":\"1783717677551\",\"ServerId\":\"w13:107896:4d97214f-7f5f-46fc-bcbb-651f1b6e777b\",\"WorkerId\":\"b7f73a02-93b1-461d-8746-2ad3b342a6bc\"}",
+      "8|Awaiting|NULL|2026-07-10T21:07:57.270|{\"ParentId\":\"7\",\"NextState\":\"{\\\"$type\\\":\\\"Hangfire.States.EnqueuedState, Hangfire.Core\\\",\\\"Queue\\\":\\\"delivery\\\"}\",\"Options\":\"1\"}",
+      "7|Enqueued|NULL|2026-07-10T21:07:57.020|{\"EnqueuedAt\":\"1783717676809\",\"Queue\":\"delivery\"}",
+      "4|Succeeded|NULL|2026-07-09T23:15:15.883|{\"SucceededAt\":\"1783638915645\",\"PerformanceDuration\":\"3258\",\"Latency\":\"14274\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DailyInjectorResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-10\\\",\\\"StartedAtUtc\\\":\\\"2026-07-09T23:15:1",
+      "4|Processing|NULL|2026-07-09T23:15:11.987|{\"StartedAt\":\"1783638911751\",\"ServerId\":\"koko:17744:a30d9004-eef2-40f6-b996-8cfc4523042c\",\"WorkerId\":\"8c29b643-3b0d-48c9-9b89-91452d7c5bee\"}",
+      "6|Succeeded|NULL|2026-07-09T23:15:10.930|{\"SucceededAt\":\"1783638910692\",\"PerformanceDuration\":\"3695\",\"Latency\":\"5769\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DailyInjectorResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-10\\\",\\\"StartedAtUtc\\\":\\\"2026-07-09T23:15:06",
+      "6|Processing|NULL|2026-07-09T23:15:06.600|{\"StartedAt\":\"1783638906297\",\"ServerId\":\"koko:17744:a30d9004-eef2-40f6-b996-8cfc4523042c\",\"WorkerId\":\"8c29b643-3b0d-48c9-9b89-91452d7c5bee\"}",
+      "5|Succeeded|NULL|2026-07-09T23:15:05.487|{\"SucceededAt\":\"1783638905248\",\"PerformanceDuration\":\"871\",\"Latency\":\"4296\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DeliveryJobResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-10\\\",\\\"StartedAtUtc\\\":\\\"2026-07-09T23:15:04.37",
+      "5|Processing|NULL|2026-07-09T23:15:03.983|{\"StartedAt\":\"1783638903742\",\"ServerId\":\"koko:17744:a30d9004-eef2-40f6-b996-8cfc4523042c\",\"WorkerId\":\"8c29b643-3b0d-48c9-9b89-91452d7c5bee\"}",
+      "3|Succeeded|NULL|2026-07-09T23:15:02.907|{\"SucceededAt\":\"1783638901689\",\"PerformanceDuration\":\"983\",\"Latency\":\"4123\",\"Result\":\"{\\\"$type\\\":\\\"MediBridge.Services.DTOs.Messaging.DeliveryJobResultDto, MediBridge.Services\\\",\\\"BusinessDateEgypt\\\":\\\"2026-07-10\\\",\\\"StartedAtUtc\\\":\\\"2026-07-09T23:15:00.71",
+      "4|Enqueued|NULL|2026-07-09T23:15:02.270|{\"EnqueuedAt\":\"1783638902032\",\"Queue\":\"delivery\"}",
+      "6|Enqueued|Triggered by recurring job scheduler|2026-07-09T23:15:01.387|{\"EnqueuedAt\":\"1783638901306\",\"Queue\":\"default\"}",
+      "3|Processing|NULL|2026-07-09T23:15:00.310|{\"StartedAt\":\"1783638900066\",\"ServerId\":\"koko:17744:a30d9004-eef2-40f6-b996-8cfc4523042c\",\"WorkerId\":\"8c29b643-3b0d-48c9-9b89-91452d7c5bee\"}",
+      "5|Enqueued|Triggered by recurring job scheduler|2026-07-09T23:15:00.250|{\"EnqueuedAt\":\"1783638900169\",\"Queue\":\"default\"}",
+      "4|Awaiting|NULL|2026-07-09T23:14:58.837|{\"ParentId\":\"3\",\"NextState\":\"{\\\"$type\\\":\\\"Hangfire.States.EnqueuedState, Hangfire.Core\\\",\\\"Queue\\\":\\\"delivery\\\"}\",\"Options\":\"1\"}",
+      "3|Enqueued|NULL|2026-07-09T23:14:57.343|{\"EnqueuedAt\":\"1783638896578\",\"Queue\":\"delivery\"}"
+    ],
+    "deliveryJobRuns": [
+      "ab885b111e3c434daea14a6367571104|2|2026-07-11|2|2026-07-10T21:07:57.9762171|2026-07-10T21:07:58.5396581|7|0|0|0|7|0|NULL",
+      "852e7fa0c2e44832bf885d0287beab99|2|2026-07-11|2|2026-07-10T21:07:57.6895649|2026-07-10T21:07:58.5222127|7|0|0|0|7|0|NULL",
+      "5d1c9c3941bc447b9df4395d28a65f35|1|2026-07-11|2|2026-07-10T21:07:57.6722023|2026-07-10T21:07:57.8743387|0|0|0|0|0|0|NULL",
+      "10d607023d8a4ccbaf4f36b8372ea3b2|1|2026-07-11|2|2026-07-10T21:07:57.6124130|2026-07-10T21:07:57.8743437|0|0|0|0|0|0|NULL",
+      "73b866b5a49a45ab8f66d8ded611716c|2|2026-07-10|2|2026-07-09T23:15:12.3886847|2026-07-09T23:15:15.3062123|3|0|0|0|3|0|NULL",
+      "a0d8834ed9334de497662494bd1fe5fe|2|2026-07-10|2|2026-07-09T23:15:06.9996766|2026-07-09T23:15:10.3544900|3|0|0|0|3|0|NULL",
+      "c4c0510867bc43f3887da9214e65e1a5|1|2026-07-10|2|2026-07-09T23:15:04.3776694|2026-07-09T23:15:04.9171415|0|0|0|0|0|0|NULL",
+      "a3151fd25c1b46939b106384f70e9044|1|2026-07-10|2|2026-07-09T23:15:00.7137509|2026-07-09T23:15:01.3470659|0|0|0|0|0|0|NULL",
+      "8defabebb222446a9f907a2885f9e575|2|2026-07-06|2|2026-07-05T23:01:36.1945432|2026-07-05T23:01:39.7043018|3|0|0|0|3|0|NULL",
+      "93a2ce3b91934026aaa9e4eebc5bf501|1|2026-07-06|2|2026-07-05T23:01:32.4851677|2026-07-05T23:01:33.1336312|0|0|0|0|0|0|NULL"
+    ],
+    "recoveryDispatches": [
+      "9b849906d022452ebeb8ad205265e0fc|2026-07-11|1|3|7|NULL|2026-07-10T21:07:54.8982669|2026-07-10T21:07:54.8982669|2026-07-10T21:07:57.8743387|NULL",
+      "cfe0c29cfb154ced8643a220fdf2997a|2026-07-11|2|3|8|9b849906d022452ebeb8ad205265e0fc|2026-07-10T21:07:54.8982669|2026-07-10T21:07:54.8982669|2026-07-10T21:07:58.5222127|NULL",
+      "57c70a6d560a41c1a962d3a7fd462d23|2026-07-10|2|3|4|ce922beff8cd46148f00c22146972dae|2026-07-09T23:14:53.6802508|2026-07-09T23:14:53.6802508|2026-07-09T23:15:10.3544900|NULL",
+      "ce922beff8cd46148f00c22146972dae|2026-07-10|1|3|3|NULL|2026-07-09T23:14:53.6802508|2026-07-09T23:14:53.6802508|2026-07-09T23:15:01.3470659|NULL",
+      "a92a08423f744da1a3cfc447ecaa30ab|2026-07-06|2|3|2|6dc3288a68644219a449194baf8fa973|2026-07-05T23:01:26.0243228|2026-07-05T23:01:26.0243228|2026-07-05T23:01:39.7043018|NULL",
+      "6dc3288a68644219a449194baf8fa973|2026-07-06|1|3|1|NULL|2026-07-05T23:01:26.0243228|2026-07-05T23:01:26.0243228|2026-07-05T23:01:33.1336312|NULL"
+    ],
+    "probedEndpoints": [
+      "GET /hangfire -> 404",
+      "GET /hangfire/ -> 404",
+      "GET /jobs -> 404",
+      "GET /api/admin/jobs -> 404"
+    ]
+  },
+  "existingE2E": {
+    "campaignId": "c70a2aaba67e4ffcae251c86c88367cd",
+    "doctorProfileId": "14b3a97429f84540a0cf6491ee759817",
+    "companyWalletId": "4c033d9515d74d4aa08dc95d8262f866",
+    "doctorFileId": "8bdfa26497d24cfea1e8343805ed8a69",
+    "campaignAssetId": "da3e848102f04d9a969c33b90c2e35a0"
+  },
+  "eligibility": {
+    "campaign": "c70a2aaba67e4ffcae251c86c88367cd|4deb8dbb5da0472e9084a92d852cb847|E2E Campaign 20260711003503-3bd8d919|NULL|NULL|3|2026-07-10T21:42:35.1796474|2026-07-10T21:42:35.6856336|0",
+    "targets": [
+      "14b3a97429f84540a0cf6491ee759817|75.00|75.00|0|1|0|Approved|Doctor|0|0",
+      "1965b947b1cd4dd28a85a835c64081ac|75.00|75.00|0|1|0|Approved|Doctor|0|0",
+      "273f86e546eb4de5b315259f7df7f7c6|100.00|100.00|0|1|0|Approved|Doctor|0|0",
+      "46e5cd77c0b44e709aee64b5980e261b|42.50|42.50|0|1|0|Approved|Doctor|0|0",
+      "5b2f73f190774dbab4e83987b635f704|25.00|25.00|0|1|0|Approved|Doctor|0|0",
+      "6a99faa59be24aa2b3e025a99fef00c7|75.00|75.00|0|1|0|Approved|Doctor|0|0",
+      "b38f564929a74c91bd14e3f48972228d|75.00|75.00|0|1|0|Approved|Doctor|0|0",
+      "bdd3e4a3de8947fab7fc41ca9f4eba26|10.00|10.00|0|1|0|Approved|Doctor|0|0"
+    ],
+    "queueRows": [
+      "d6f8a7ecaf144d1e96c3666ea295591a|14b3a97429f84540a0cf6491ee759817|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL",
+      "1e85cdd529f843b6b0cdfa540ed0f983|1965b947b1cd4dd28a85a835c64081ac|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL",
+      "0f974323ca8148508ddeff3ee21ae69b|273f86e546eb4de5b315259f7df7f7c6|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL",
+      "094705433d75409dbbb0ed6bf791c150|46e5cd77c0b44e709aee64b5980e261b|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL",
+      "7fc5c401a98649b495389cc0d4c47d82|5b2f73f190774dbab4e83987b635f704|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL",
+      "18a068e4c00748b7add4b866949b3b60|6a99faa59be24aa2b3e025a99fef00c7|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL",
+      "ab237f9b6e5b4b79ad6e9b4a410c278a|b38f564929a74c91bd14e3f48972228d|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL",
+      "bcf7fe88cca2408089e022bb461460e2|bdd3e4a3de8947fab7fc41ca9f4eba26|c70a2aaba67e4ffcae251c86c88367cd|2026-07-10T21:42:35.6856336|2026-07-10T21:42:35.1796474|1|NULL"
+    ],
+    "files": [
+      "8bdfa26497d24cfea1e8343805ed8a69|Cloudinary|2|2|5|1|NULL",
+      "da3e848102f04d9a969c33b90c2e35a0|Cloudinary|2|2|5|2|c70a2aaba67e4ffcae251c86c88367cd"
+    ],
+    "companyWallet": "4c033d9515d74d4aa08dc95d8262f866|2|82266c1842ab45ce8179d9b5cb15e74d|4deb8dbb5da0472e9084a92d852cb847|2000.00|.00|EGP",
+    "doctorWallet": null
+  },
+  "deliveryAndFinancial": {
+    "deliveries": null,
+    "walletTransactions": [
+      "c4290f897ffa45139802f9e03800e848|4c033d9515d74d4aa08dc95d8262f866|1|1000.00|NULL|2026-07-10T21:38:46.8862652",
+      "320b727c67004c43a0eb122b0dfad034|4c033d9515d74d4aa08dc95d8262f866|1|1000.00|NULL|2026-07-10T21:39:47.6877908"
+    ],
+    "walletLedgerEntries": [
+      "c4290f897ffa45139802f9e03800e848|4c033d9515d74d4aa08dc95d8262f866|2|1000.00|1|NULL|NULL|NULL|4deb8dbb5da0472e9084a92d852cb847|2026-07-10T21:38:46.8862652",
+      "320b727c67004c43a0eb122b0dfad034|4c033d9515d74d4aa08dc95d8262f866|2|1000.00|1|NULL|NULL|NULL|4deb8dbb5da0472e9084a92d852cb847|2026-07-10T21:39:47.6877908"
+    ]
+  },
+  "conclusion": {
+    "safeTriggerAvailable": false,
+    "reason": "Hangfire server is running and recurring jobs are registered, but no published dashboard or Admin/job endpoint is exposed; next recurring run is scheduled for 2026-07-11T21:00:00Z/21:05:00Z, and all campaign target doctors currently have DailyMessageLimit=0 so injector eligibility would return NoCapacity."
+  }
+}

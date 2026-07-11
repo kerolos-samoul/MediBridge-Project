@@ -9,4 +9,15 @@ public interface IAdminPricingService
         string doctorId,
         SetDoctorPriceRequestDto request,
         CancellationToken cancellationToken = default);
+
+    Task<DoctorDeliverySettingsDto> GetDoctorDeliverySettingsAsync(
+        string adminUserId,
+        string doctorId,
+        CancellationToken cancellationToken = default);
+
+    Task<DoctorDeliverySettingsDto> SetDoctorDeliverySettingsAsync(
+        string adminUserId,
+        string doctorId,
+        SetDoctorDeliverySettingsRequestDto request,
+        CancellationToken cancellationToken = default);
 }

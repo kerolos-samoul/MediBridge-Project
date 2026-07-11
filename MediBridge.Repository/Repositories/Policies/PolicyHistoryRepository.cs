@@ -71,19 +71,37 @@ public sealed class PolicyHistoryRepository : IPolicyHistoryRepository
 
     public async Task AddPlatformFeePolicyHistoryAsync(string historyId, decimal feePercent, DateTime effectiveFromUtc, string adminUserId, CancellationToken cancellationToken = default)
     {
-        await AddPlatformFeePolicyHistoryAsync(historyId, feePercent, effectiveFromUtc, adminUserId, correctsHistoryId: null, cancellationToken);
+        await AddPlatformFeePolicyHistoryAsync(historyId, feePercent, effectiveFromUtc, adminUserId, reason: null, correctsHistoryId: null, cancellationToken);
+    }
+
+    public async Task AddPlatformFeePolicyHistoryAsync(
+        string historyId,
+        decimal feePercent,
+        DateTime effectiveFromUtc,
+        string adminUserId,
+        string? reason,
+        CancellationToken cancellationToken = default)
+    {
+        await AddPlatformFeePolicyHistoryAsync(historyId, feePercent, effectiveFromUtc, adminUserId, reason, correctsHistoryId: null, cancellationToken);
     }
 
     public async Task AddPlatformFeePolicyHistoryCorrectionAsync(string historyId, string correctsHistoryId, decimal feePercent, DateTime effectiveFromUtc, string adminUserId, CancellationToken cancellationToken = default)
     {
-        await AddPlatformFeePolicyHistoryAsync(historyId, feePercent, effectiveFromUtc, adminUserId, correctsHistoryId, cancellationToken);
+        await AddPlatformFeePolicyHistoryAsync(historyId, feePercent, effectiveFromUtc, adminUserId, reason: null, correctsHistoryId, cancellationToken);
     }
 
-    private async Task AddPlatformFeePolicyHistoryAsync(string historyId, decimal feePercent, DateTime effectiveFromUtc, string adminUserId, string? correctsHistoryId, CancellationToken cancellationToken)
+    private async Task AddPlatformFeePolicyHistoryAsync(
+        string historyId,
+        decimal feePercent,
+        DateTime effectiveFromUtc,
+        string adminUserId,
+        string? reason,
+        string? correctsHistoryId,
+        CancellationToken cancellationToken)
     {
-        if (feePercent < 0m)
+        if (feePercent <= 0m || feePercent > 100m)
         {
-            throw new ArgumentOutOfRangeException(nameof(feePercent), feePercent, "Platform fee percent cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(feePercent), feePercent, "Platform fee percent must be greater than zero and at most 100.");
         }
 
         await context.PlatformFeePolicyHistories.AddAsync(new PlatformFeePolicyHistory
@@ -92,8 +110,30 @@ public sealed class PolicyHistoryRepository : IPolicyHistoryRepository
             FeePercent = feePercent,
             EffectiveFromUtc = effectiveFromUtc,
             ChangedByAdminUserId = adminUserId,
+            Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
             CorrectsHistoryId = correctsHistoryId
         }, cancellationToken);
+    }
+
+    public Task<int> CloseEffectivePlatformFeePoliciesAsync(
+        DateTime effectiveAtUtc,
+        DateTime effectiveToUtc,
+        CancellationToken cancellationToken = default)
+    {
+        if (effectiveAtUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The effective policy instant must be UTC.", nameof(effectiveAtUtc));
+        }
+
+        if (effectiveToUtc.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The closing instant must be UTC.", nameof(effectiveToUtc));
+        }
+
+        return context.PlatformFeePolicyHistories
+            .Where(history => history.EffectiveFromUtc <= effectiveAtUtc
+                && (history.EffectiveToUtc == null || effectiveAtUtc < history.EffectiveToUtc))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(history => history.EffectiveToUtc, effectiveToUtc), cancellationToken);
     }
 
     public async Task<IReadOnlyList<string>> ListPlatformFeePolicyHistoryIdsAsync(DateTime? effectiveAtUtc = null, CancellationToken cancellationToken = default)
