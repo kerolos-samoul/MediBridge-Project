@@ -63,7 +63,7 @@ public class SwaggerEnvironmentPolicyTests
     }
 
     [Fact]
-    public async Task Swagger_DocumentsOnlyTheSecuredPhase7DoctorRoutesAndContractedResponses()
+    public async Task Swagger_DocumentsSecuredDoctorMessageRoutesAndPhase8InteractionContracts()
     {
         await using var factory = new WebAppFactory();
         using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
@@ -74,7 +74,12 @@ public class SwaggerEnvironmentPolicyTests
         using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
         var paths = document.RootElement.GetProperty("paths");
         Assert.Equal(
-            ["/api/doctor/messages/today", "/api/doctor/messages/{deliveryId}/assets/{fileId}/access"],
+            [
+                "/api/doctor/messages/today",
+                "/api/doctor/messages/{deliveryId}/assets/{fileId}/access",
+                "/api/doctor/messages/{deliveryId}/interact",
+                "/api/doctor/messages/{deliveryId}/read"
+            ],
             paths.EnumerateObject()
                 .Select(path => path.Name)
                 .Where(path => path.StartsWith("/api/doctor/messages", StringComparison.Ordinal))
@@ -92,18 +97,59 @@ public class SwaggerEnvironmentPolicyTests
         var asset = paths.GetProperty("/api/doctor/messages/{deliveryId}/assets/{fileId}/access").GetProperty("get");
         AssertResponses(asset, "200", "401", "403", "404", "429", "503");
 
+        var read = paths.GetProperty("/api/doctor/messages/{deliveryId}/read").GetProperty("put");
+        AssertResponses(read, "200", "401", "403", "404", "429");
+        Assert.DoesNotContain(
+            read.GetProperty("parameters").EnumerateArray(),
+            parameter => string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase));
+        AssertOperationHasBearerSecurity(read, AuthorizationPolicies.Phase7DoctorMessagesRead);
+
+        var interact = paths.GetProperty("/api/doctor/messages/{deliveryId}/interact").GetProperty("post");
+        AssertResponses(interact, "200", "400", "401", "403", "404", "409", "429");
+        var idempotencyKey = Assert.Single(
+            interact.GetProperty("parameters").EnumerateArray(),
+            parameter => string.Equals(parameter.GetProperty("name").GetString(), "Idempotency-Key", StringComparison.OrdinalIgnoreCase));
+        Assert.True(idempotencyKey.GetProperty("required").GetBoolean());
+        Assert.Equal("header", idempotencyKey.GetProperty("in").GetString());
+        AssertOperationHasBearerSecurity(interact, AuthorizationPolicies.Phase7DoctorMessagesRead);
+
         var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
         var inboxSchema = schemas.EnumerateObject().Single(schema => schema.Name.EndsWith("TodayInboxDto", StringComparison.Ordinal)).Value;
         var nextCursor = inboxSchema.GetProperty("properties").GetProperty("NextCursor");
         Assert.True(nextCursor.GetProperty("nullable").GetBoolean());
 
         Assert.False(paths.TryGetProperty("/hangfire", out _));
-        Assert.DoesNotContain(paths.EnumerateObject(), path => path.Name.Contains("job", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(
+            [
+                "/api/admin/delivery-jobs/run-expiry",
+                "/api/admin/delivery-jobs/run-injector",
+                "/api/admin/delivery-jobs/status"
+            ],
+            paths.EnumerateObject()
+                .Select(path => path.Name)
+                .Where(path => path.Contains("delivery-jobs", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToArray());
+        Assert.DoesNotContain(paths.EnumerateObject(), path =>
+            path.Name.Contains("jobs/retry", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path.Name, "/jobs", StringComparison.OrdinalIgnoreCase));
 
         var authorize = typeof(DoctorMessagesController).GetCustomAttribute<AuthorizeAttribute>();
         Assert.Equal(AuthorizationPolicies.Phase7DoctorMessagesRead, authorize?.Policy);
         var rateLimit = typeof(DoctorMessagesController).GetCustomAttribute<EnableRateLimitingAttribute>();
         Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, rateLimit?.PolicyName);
+
+        var markReadRateLimit = typeof(DoctorMessagesController).GetMethod("MarkRead")!
+            .GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.Phase7DoctorMessagesRead, markReadRateLimit?.PolicyName);
+        var interactRateLimit = typeof(DoctorMessagesController).GetMethod("Interact")!
+            .GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.DoctorInteraction, interactRateLimit?.PolicyName);
+
+        var adminJobsAuthorize = typeof(AdminDeliveryJobsController).GetCustomAttribute<AuthorizeAttribute>();
+        Assert.Equal(AuthorizationPolicies.AdminOnly, adminJobsAuthorize?.Policy);
+        var adminJobsRateLimit = typeof(AdminDeliveryJobsController).GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.Envelope, adminJobsRateLimit?.PolicyName);
     }
 
     [Fact]
@@ -189,5 +235,11 @@ public class SwaggerEnvironmentPolicyTests
         }
 
         return false;
+    }
+
+    private static void AssertOperationHasBearerSecurity(JsonElement operation, string policy)
+    {
+        AssertOperationReferencesBearer(operation);
+        Assert.Contains(policy, operation.GetProperty("description").GetString(), StringComparison.Ordinal);
     }
 }

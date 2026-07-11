@@ -151,6 +151,16 @@ public sealed class DeliveryRecoveryDispatchRepository : IDeliveryRecoveryDispat
         return rows == 1;
     }
 
+    public async Task<IReadOnlyList<DeliveryRecoveryDispatch>> ListRecentAsync(int take, CancellationToken cancellationToken = default)
+    {
+        return await context.DeliveryRecoveryDispatches
+            .AsNoTracking()
+            .OrderByDescending(dispatch => dispatch.ClaimedAtUtc)
+            .ThenByDescending(dispatch => dispatch.Id)
+            .Take(Math.Clamp(take, 1, 100))
+            .ToListAsync(cancellationToken);
+    }
+
     private static void EnsureUtc(DateTime value, string parameterName)
     {
         if (value.Kind != DateTimeKind.Utc)

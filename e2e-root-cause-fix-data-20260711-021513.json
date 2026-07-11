@@ -1,0 +1,91 @@
+{
+  "timestamp": "20260711-021513",
+  "baseUrl": "http://medibridge-project.runasp.net",
+  "source": {
+    "branch": "development",
+    "deployedCommitProvable": false,
+    "commit": "ec3e8b0b1189ca2c83a6c02ace00b7c2ed4dfcc5"
+  },
+  "doctor": {
+    "walletId": "1ab64a2853df42e28994842831883e9c",
+    "userId": "b5ed6fe58b0a48ca8d288c2151b16a20",
+    "profileId": "14b3a97429f84540a0cf6491ee759817",
+    "email": "doctor-20260711003503-3bd8d919@medibridge.local"
+  },
+  "company": {
+    "walletId": "4c033d9515d74d4aa08dc95d8262f866",
+    "userId": "82266c1842ab45ce8179d9b5cb15e74d",
+    "email": "company-20260711003503-3bd8d919@medibridge.local",
+    "companyId": "4deb8dbb5da0472e9084a92d852cb847"
+  },
+  "campaign": {
+    "id": "c70a2aaba67e4ffcae251c86c88367cd",
+    "assetId": "da3e848102f04d9a969c33b90c2e35a0"
+  },
+  "delivery": {
+    "id": "0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050",
+    "rows": [
+      "0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|14b3a97429f84540a0cf6491ee759817|c70a2aaba67e4ffcae251c86c88367cd|2|3|75.00|20.00|15.00|60.00|75.00|2026-07-10 23:03:56.1572298|2026-07-10 23:13:11.9614084"
+    ]
+  },
+  "queueRows": [
+    "094705433d75409dbbb0ed6bf791c150|46e5cd77c0b44e709aee64b5980e261b|c70a2aaba67e4ffcae251c86c88367cd|1",
+    "0f974323ca8148508ddeff3ee21ae69b|273f86e546eb4de5b315259f7df7f7c6|c70a2aaba67e4ffcae251c86c88367cd|1",
+    "18a068e4c00748b7add4b866949b3b60|6a99faa59be24aa2b3e025a99fef00c7|c70a2aaba67e4ffcae251c86c88367cd|1",
+    "1e85cdd529f843b6b0cdfa540ed0f983|1965b947b1cd4dd28a85a835c64081ac|c70a2aaba67e4ffcae251c86c88367cd|1",
+    "7fc5c401a98649b495389cc0d4c47d82|5b2f73f190774dbab4e83987b635f704|c70a2aaba67e4ffcae251c86c88367cd|1",
+    "ab237f9b6e5b4b79ad6e9b4a410c278a|b38f564929a74c91bd14e3f48972228d|c70a2aaba67e4ffcae251c86c88367cd|1",
+    "bcf7fe88cca2408089e022bb461460e2|bdd3e4a3de8947fab7fc41ca9f4eba26|c70a2aaba67e4ffcae251c86c88367cd|1",
+    "d6f8a7ecaf144d1e96c3666ea295591a|14b3a97429f84540a0cf6491ee759817|c70a2aaba67e4ffcae251c86c88367cd|2"
+  ],
+  "wallets": [
+    "1ab64a2853df42e28994842831883e9c|1|14b3a97429f84540a0cf6491ee759817|60.00|.00|EGP",
+    "4c033d9515d74d4aa08dc95d8262f866|2|4deb8dbb5da0472e9084a92d852cb847|1925.00|.00|EGP"
+  ],
+  "walletTransactions": [
+    "835bdd0dde3f436f83ca7c49a7b8e531|4c033d9515d74d4aa08dc95d8262f866|10|75.00|0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|2026-07-10 23:03:33.9674523",
+    "a0ef973ebe8a48a5a5f8f71ed725b3a1|4c033d9515d74d4aa08dc95d8262f866|20|75.00|0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|2026-07-10 23:13:11.9614084",
+    "ff2f773c33d2405bb8e91710705413cd|1ab64a2853df42e28994842831883e9c|21|60.00|0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|2026-07-10 23:13:11.9614084"
+  ],
+  "walletLedgerEntries": [
+    "31997804b38d41a38f91487728f56cfa|835bdd0dde3f436f83ca7c49a7b8e531|4c033d9515d74d4aa08dc95d8262f866|2|75.00|2|c70a2aaba67e4ffcae251c86c88367cd|0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|14b3a97429f84540a0cf6491ee759817|4deb8dbb5da0472e9084a92d852cb847",
+    "56e7e989f51b404d94d68b5c1642b88e|835bdd0dde3f436f83ca7c49a7b8e531|4c033d9515d74d4aa08dc95d8262f866|1|75.00|1|c70a2aaba67e4ffcae251c86c88367cd|0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|14b3a97429f84540a0cf6491ee759817|4deb8dbb5da0472e9084a92d852cb847",
+    "900d6cbc581b428696e2f88c3a54a741|ff2f773c33d2405bb8e91710705413cd|1ab64a2853df42e28994842831883e9c|2|60.00|1|c70a2aaba67e4ffcae251c86c88367cd|0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|14b3a97429f84540a0cf6491ee759817|4deb8dbb5da0472e9084a92d852cb847",
+    "263da1b0f46a4fd58c79278406c6c74c|a0ef973ebe8a48a5a5f8f71ed725b3a1|4c033d9515d74d4aa08dc95d8262f866|1|75.00|2|c70a2aaba67e4ffcae251c86c88367cd|0989d63c4bf5963b4791955ddac39719a9c5aab36d980faea7c7922356189050|14b3a97429f84540a0cf6491ee759817|4deb8dbb5da0472e9084a92d852cb847"
+  ],
+  "recentJobRuns": [
+    "e15063b9b0354d8b85de60d3a85aa99b|1|2026-07-11|2|0|0|0|0|0|NULL",
+    "664fc0d6ed0b4f3383f989b24e941fd5|2|2026-07-11|2|8|1|0|7|0|NULL",
+    "9464156a358649dcb9b4f834db2a0d96|2|2026-07-11|4|8|0|0|7|1|One or more daily delivery candidates failed.",
+    "0922b269af75426b9f7a61bb40da8d57|1|2026-07-11|2|0|0|0|0|0|NULL",
+    "ab885b111e3c434daea14a6367571104|2|2026-07-11|2|7|0|0|7|0|NULL",
+    "852e7fa0c2e44832bf885d0287beab99|2|2026-07-11|2|7|0|0|7|0|NULL",
+    "5d1c9c3941bc447b9df4395d28a65f35|1|2026-07-11|2|0|0|0|0|0|NULL",
+    "10d607023d8a4ccbaf4f36b8372ea3b2|1|2026-07-11|2|0|0|0|0|0|NULL"
+  ],
+  "auditEvents": [
+    "ed0ce8ec68fd4336878b875e030f869f|ManualDeliveryExpiryEnqueued|11|14|Final no-op expiry verification after accepted delivery; no prior-day active delivery candidate exists",
+    "413561af7b2044bc817b9319e0751a01|DoctorDeliverySettingsUpdated|2|14b3a97429f84540a0cf6491ee759817|Reapply operational settings to provision doctor wallet after settlement RCA",
+    "2fdca78b8abe409da8f2b460e4aff068|ManualDailyInjectorEnqueued|11|13|Activate eligible queued delivery after platform fee policy configuration",
+    "46e2d52def4745818a3ce120479b3ffc|PlatformFeePolicyUpdated|10|35c9f415bb344cc386d0ad9c25cfe954|Configure active platform fee policy required for delivery settlement E2E",
+    "d9db000acc1a47f9b410bace1fb0b1e7|ManualDailyInjectorEnqueued|11|12|Activate eligible queued delivery after configuring doctor capacity - retry after script timeout",
+    "d607e0f6ffc84e2f9ac0cc94906f085c|ManualDeliveryExpiryEnqueued|11|11|Run expiry before injector for production E2E verification",
+    "6bef8f0dd4914813abdaf8da8c4ba691|DoctorDeliverySettingsUpdated|2|14b3a97429f84540a0cf6491ee759817|Configure production E2E doctor operational delivery capacity after root-cause fix"
+  ],
+  "platformFeePolicy": {
+    "feePercent": 20,
+    "policyId": "35c9f415bb344cc386d0ad9c25cfe954"
+  },
+  "idempotency": {
+    "interaction": "interact-dacd4f06a2ac4bca944fab7b84b39ee2"
+  },
+  "expiryCandidates": [],
+  "blockers": [
+    "Expiry release could not be proven without direct DB mutation or waiting: no prior-day Active/Reserved delivery existed after interaction completed. Protected expiry job itself succeeded as no-op."
+  ],
+  "migration": {
+    "required": false,
+    "sourceMigrations": "unchanged",
+    "databaseUpdateApplied": false
+  }
+}

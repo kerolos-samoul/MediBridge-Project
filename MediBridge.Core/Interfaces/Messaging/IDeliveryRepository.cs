@@ -31,4 +31,8 @@ public interface IDeliveryRepository
     Task<IReadOnlyList<TodayDeliveryReadModel>> ListTodayPageAsync(string doctorId, DateOnly businessDateEgypt, TodayDeliveryCursor? after, int takePlusOne, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ApprovedDeliveryAssetReadModel>> ListApprovedAssetsAsync(IReadOnlyCollection<string> campaignIds, CancellationToken cancellationToken = default);
     Task<DeliveryAssetAuthorizationReadModel?> FindDeliveryAssetAuthorizationAsync(string doctorId, string deliveryId, string fileId, DateOnly businessDateEgypt, CancellationToken cancellationToken = default);
+    Task<DoctorAdDelivery?> FindCurrentOwnedForReadForUpdateAsync(string doctorId, string deliveryId, DateOnly businessDateEgypt, CancellationToken cancellationToken = default);
+    Task<DoctorAdDelivery?> FindActiveReservedForInteractionForUpdateAsync(string doctorId, string deliveryId, DateOnly businessDateEgypt, CancellationToken cancellationToken = default);
+    Task<DeliveryInteractionSettlementResultReadModel?> FindSettledOwnedInteractionAsync(string doctorId, string deliveryId, DateOnly businessDateEgypt, CancellationToken cancellationToken = default);
+    Task<MarkDeliveryReadRepositoryResult?> FindCurrentReadVisibilityAsync(string doctorId, string deliveryId, DateOnly businessDateEgypt, CancellationToken cancellationToken = default);
 }

@@ -159,8 +159,9 @@ public sealed class Phase5QueueCreationIntegrationTests : IClassFixture<WebAppFa
         var softDeleted = await Phase5CampaignQueueTestHelpers.SeedApprovedDoctorAsync(factory.Services);
         var unapproved = await Phase5CampaignQueueTestHelpers.SeedApprovedDoctorAsync(factory.Services);
         var zeroPrice = await Phase5CampaignQueueTestHelpers.SeedApprovedDoctorAsync(factory.Services);
+        var zeroCapacity = await Phase5CampaignQueueTestHelpers.SeedApprovedDoctorAsync(factory.Services, dailyMessageLimit: 0);
         var campaignId = await Phase5CampaignQueueTestHelpers.SeedCampaignAsync(factory.Services, company.CompanyId, CampaignStatus.Approved);
-        foreach (var doctorId in new[] { eligible.DoctorId, suspended.DoctorId, softDeleted.DoctorId, unapproved.DoctorId, zeroPrice.DoctorId })
+        foreach (var doctorId in new[] { eligible.DoctorId, suspended.DoctorId, softDeleted.DoctorId, unapproved.DoctorId, zeroPrice.DoctorId, zeroCapacity.DoctorId })
         {
             await AddCampaignTargetAsync(campaignId, doctorId);
         }
@@ -177,11 +178,11 @@ public sealed class Phase5QueueCreationIntegrationTests : IClassFixture<WebAppFa
         var result = await Phase5CampaignQueueTestHelpers.TriggerApprovedCampaignQueueCreationAsync(factory.Services, campaignId, DateTime.UtcNow, actorUserId: company.UserId);
 
         Assert.Equal(1, result.CreatedCount);
-        Assert.Equal(4, result.SkippedCount);
+        Assert.Equal(5, result.SkippedCount);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
         Assert.Equal(1, await context.DoctorMessageQueues.CountAsync(queue => queue.CampaignId == campaignId));
-        Assert.Equal(4, await context.AuditEvents.CountAsync(audit => audit.EventType == "Phase5QueueCreationSkippedTarget" && audit.TargetId == campaignId));
+        Assert.Equal(5, await context.AuditEvents.CountAsync(audit => audit.EventType == "Phase5QueueCreationSkippedTarget" && audit.TargetId == campaignId));
     }
 
     [Fact]

@@ -44,7 +44,7 @@ public sealed class DoctorAdDeliveryConfiguration : IEntityTypeConfiguration<Doc
         builder.Property(delivery => delivery.PlatformFeeAmount).HasPrecision(18, 2);
         builder.Property(delivery => delivery.DoctorEarnings).HasPrecision(18, 2);
         builder.Property(delivery => delivery.ReservedAmount).HasPrecision(18, 2);
-        builder.Property(delivery => delivery.FeedbackText).HasMaxLength(4000);
+        builder.Property(delivery => delivery.FeedbackText).HasMaxLength(1000);
         builder.Property(delivery => delivery.ConcurrencyToken).IsRowVersion();
         builder.ToTable(table => table.HasCheckConstraint(
             "CK_DoctorAdDeliveries_Money_NonNegative",
@@ -66,6 +66,12 @@ public sealed class DoctorAdDeliveryConfiguration : IEntityTypeConfiguration<Doc
             delivery.DoctorId,
             delivery.DeliveryDateEgypt,
             delivery.DeliveredAtUtc,
+            delivery.Id
+        });
+        builder.HasIndex(delivery => new
+        {
+            delivery.DoctorId,
+            delivery.DeliveryDateEgypt,
             delivery.Id
         });
     }

@@ -759,6 +759,71 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("RefreshCredentials", (string)null);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryInteractionOperation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ChargeTransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Decision")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DeliveryId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DoctorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("EarnTransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FeedbackText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("SafeFailureSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId", "Decision");
+
+                    b.HasIndex("DoctorId", "DeliveryId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("DeliveryInteractionOperations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DeliveryInteractionOperations_FeedbackText_Length", "[FeedbackText] IS NULL OR LEN([FeedbackText]) <= 1000");
+
+                            t.HasCheckConstraint("CK_DeliveryInteractionOperations_IdempotencyKey_Length", "LEN([IdempotencyKey]) BETWEEN 8 AND 128");
+                        });
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryJobRun", b =>
                 {
                     b.Property<string>("Id")
@@ -926,8 +991,8 @@ namespace MediBridge.Repository.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("FeedbackText")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime?>("InteractedAtUtc")
                         .HasColumnType("datetime2");
@@ -968,6 +1033,8 @@ namespace MediBridge.Repository.Migrations
 
                     b.HasIndex("DoctorId", "DeliveryDateEgypt", "CampaignId")
                         .IsUnique();
+
+                    b.HasIndex("DoctorId", "DeliveryDateEgypt", "Id");
 
                     b.HasIndex("DoctorId", "DeliveryDateEgypt", "DeliveredAtUtc", "Id");
 
@@ -2113,6 +2180,15 @@ namespace MediBridge.Repository.Migrations
                     b.HasOne("MediBridge.Repository.Data.Identity.MediBridgeIdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryInteractionOperation", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Messaging.DoctorAdDelivery", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

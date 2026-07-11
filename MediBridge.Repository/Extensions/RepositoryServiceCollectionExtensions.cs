@@ -58,6 +58,7 @@ public static class RepositoryServiceCollectionExtensions
         services.AddScoped<ICampaignRepository, CampaignRepository>();
         services.AddScoped<IMessageQueueRepository, MessageQueueRepository>();
         services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+        services.AddScoped<IDeliveryInteractionOperationRepository, DeliveryInteractionOperationRepository>();
         services.AddScoped<IDeliveryJobRunRepository, DeliveryJobRunRepository>();
         services.AddScoped<IDeliveryRecoveryDispatchRepository, DeliveryRecoveryDispatchRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();

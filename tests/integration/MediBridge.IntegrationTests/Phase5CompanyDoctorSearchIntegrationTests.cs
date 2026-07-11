@@ -21,7 +21,7 @@ public sealed class Phase5CompanyDoctorSearchIntegrationTests : IClassFixture<We
     }
 
     [Fact]
-    public async Task Search_ExcludesUnapprovedSuspendedSoftDeletedAndZeroPriceDoctors()
+    public async Task Search_ExcludesUnapprovedSuspendedSoftDeletedZeroPriceAndZeroCapacityDoctors()
     {
         await factory.InitializeDatabaseAsync();
         using var client = await CreateAuthorizedCompanyClientAsync();
@@ -31,6 +31,7 @@ public sealed class Phase5CompanyDoctorSearchIntegrationTests : IClassFixture<We
         await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Suspended, false, specialization, 7, "Cairo", 96m, 40m);
         await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Active, true, specialization, 7, "Cairo", 97m, 40m);
         await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Active, false, specialization, 7, "Cairo", 98m, 0m);
+        await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Active, false, specialization, 7, "Cairo", 99m, 40m, dailyMessageLimit: 0);
 
         var response = await client.GetAsync($"/api/company/doctors?PageNumber=1&PageSize=20&specialization={Uri.EscapeDataString(specialization)}");
 
@@ -86,11 +87,12 @@ public sealed class Phase5CompanyDoctorSearchIntegrationTests : IClassFixture<We
         var second = await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Active, false, specialization, 9, "Giza", 90m, 30m, $"selected-2-{Guid.NewGuid():N}");
         await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Active, false, specialization, 10, "Alexandria", 100m, 20m, $"not-selected-{Guid.NewGuid():N}");
         var suspended = await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Suspended, false, specialization, 8, "Cairo", 80m, 40m, $"suspended-{Guid.NewGuid():N}");
+        var zeroCapacity = await SeedDoctorAsync(AccountStatus.Approved, DoctorMarketplaceStatus.Active, false, specialization, 8, "Cairo", 85m, 40m, $"zero-capacity-{Guid.NewGuid():N}", dailyMessageLimit: 0);
 
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<MediBridge.Core.Interfaces.IDomainUnitOfWork>().Profiles;
 
-        var doctors = await repository.ListEligibleDoctorsByIdsAsync([second, suspended, first], CancellationToken.None);
+        var doctors = await repository.ListEligibleDoctorsByIdsAsync([second, suspended, zeroCapacity, first], CancellationToken.None);
 
         Assert.Equal([first, second], doctors.Select(doctor => doctor.Id).ToArray());
     }
@@ -141,7 +143,8 @@ public sealed class Phase5CompanyDoctorSearchIntegrationTests : IClassFixture<We
         string location,
         decimal activityScore,
         decimal pricePerMessage,
-        string? doctorId = null)
+        string? doctorId = null,
+        int dailyMessageLimit = 10)
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
@@ -162,6 +165,7 @@ public sealed class Phase5CompanyDoctorSearchIntegrationTests : IClassFixture<We
             ActivityScore = activityScore,
             Status = marketplaceStatus,
             PricePerMessage = pricePerMessage,
+            DailyMessageLimit = dailyMessageLimit,
             IsDeleted = isDeleted,
             DeletedAtUtc = isDeleted ? DateTime.UtcNow : null
         };

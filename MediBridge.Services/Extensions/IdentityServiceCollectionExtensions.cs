@@ -34,11 +34,19 @@ public static class IdentityServiceCollectionExtensions
         {
             throw new InvalidOperationException(string.Join(" ", smtpEmailErrors));
         }
+        var doctorDeliverySettingsOptions = new DoctorDeliverySettingsOptions();
+        configuration.GetSection(DoctorDeliverySettingsOptions.SectionName).Bind(doctorDeliverySettingsOptions);
+        var deliverySettingsErrors = doctorDeliverySettingsOptions.Validate();
+        if (deliverySettingsErrors.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(" ", deliverySettingsErrors));
+        }
 
         services.AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IOptions<FileStorageOptions>>().Value);
         services.AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IOptions<CloudinaryStorageOptions>>().Value);
         services.AddSingleton(contactVerificationOptions);
         services.AddSingleton(smtpEmailOptions);
+        services.AddSingleton(doctorDeliverySettingsOptions);
         services.AddSingleton<IAuthTokenService>(_ => new AuthTokenService(
             tokenOptions.Issuer,
             tokenOptions.Audience,
@@ -69,6 +77,8 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<IAdminCampaignReviewService, AdminCampaignReviewService>();
         services.AddScoped<ICompanyWalletService, CompanyWalletService>();
         services.AddScoped<IAdminPricingService, AdminPricingService>();
+        services.AddScoped<IAdminPlatformFeePolicyService, AdminPlatformFeePolicyService>();
+        services.AddScoped<IAdminDeliveryJobService, AdminDeliveryJobService>();
         services.AddScoped<DeliveryJobRunTracker>();
         services.AddScoped<IDeliveryJobRecoveryCoordinator, DeliveryJobRecoveryCoordinator>();
         services.AddScoped<IDeliveryExpiryService, DeliveryExpiryService>();

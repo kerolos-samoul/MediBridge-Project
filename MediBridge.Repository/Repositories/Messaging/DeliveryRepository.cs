@@ -296,4 +296,86 @@ public sealed class DeliveryRepository : IDeliveryRepository
                 file.StorageDeliveryType))
             .SingleOrDefaultAsync(cancellationToken);
     }
+
+    public Task<DoctorAdDelivery?> FindCurrentOwnedForReadForUpdateAsync(
+        string doctorId,
+        string deliveryId,
+        DateOnly businessDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        return context.DoctorAdDeliveries
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [DoctorAdDeliveries] WITH (UPDLOCK, ROWLOCK)
+                WHERE [Id] = {deliveryId}
+                    AND [DoctorId] = {doctorId}
+                    AND [DeliveryDateEgypt] = {businessDateEgypt}
+                    AND [Status] IN ({(int)DeliveryStatus.Active}, {(int)DeliveryStatus.Accepted}, {(int)DeliveryStatus.Rejected})
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<DoctorAdDelivery?> FindActiveReservedForInteractionForUpdateAsync(
+        string doctorId,
+        string deliveryId,
+        DateOnly businessDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        return context.DoctorAdDeliveries
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [DoctorAdDeliveries] WITH (UPDLOCK, ROWLOCK)
+                WHERE [Id] = {deliveryId}
+                    AND [DoctorId] = {doctorId}
+                    AND [DeliveryDateEgypt] = {businessDateEgypt}
+                    AND [Status] = {(int)DeliveryStatus.Active}
+                    AND [ReservationStatus] = {(int)ReservationStatus.Reserved}
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<DeliveryInteractionSettlementResultReadModel?> FindSettledOwnedInteractionAsync(
+        string doctorId,
+        string deliveryId,
+        DateOnly businessDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        return context.DoctorAdDeliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.Id == deliveryId
+                && delivery.DoctorId == doctorId
+                && delivery.DeliveryDateEgypt == businessDateEgypt
+                && (delivery.Status == DeliveryStatus.Accepted || delivery.Status == DeliveryStatus.Rejected)
+                && delivery.InteractedAtUtc != null)
+            .Select(delivery => new DeliveryInteractionSettlementResultReadModel(
+                delivery.Id,
+                delivery.Status,
+                delivery.InteractedAtUtc!.Value,
+                delivery.FeedbackText,
+                null,
+                null))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<MarkDeliveryReadRepositoryResult?> FindCurrentReadVisibilityAsync(
+        string doctorId,
+        string deliveryId,
+        DateOnly businessDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        return context.DoctorAdDeliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.Id == deliveryId
+                && delivery.DoctorId == doctorId
+                && delivery.DeliveryDateEgypt == businessDateEgypt
+                && (delivery.Status == DeliveryStatus.Active
+                    || delivery.Status == DeliveryStatus.Accepted
+                    || delivery.Status == DeliveryStatus.Rejected)
+                && delivery.ReadAtUtc != null)
+            .Select(delivery => new MarkDeliveryReadRepositoryResult(
+                delivery.Id,
+                delivery.ReadAtUtc!.Value,
+                false))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
 }
