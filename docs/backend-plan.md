@@ -676,6 +676,13 @@ Detailed tasks:
 - Implement Job 4 Daily Activity Score per Background Jobs (Hangfire) and Locked Decisions.
 - Implement Job 3 Weekly Enforcement per Background Jobs (Hangfire) and Locked Decisions.
 - Implement admin-visible endpoints for violations and doctor status changes (warn/reduce/suspend).
+- Implement Admin-only activity job operations:
+  `GET /api/admin/activity-jobs/status`, `POST /api/admin/activity-jobs/run-score`,
+  `POST /api/admin/activity-jobs/run-weekly-enforcement`, and
+  `POST /api/admin/activity-jobs/run-suspension-expiry`.
+- Recurring job IDs are `medibridge-daily-activity-score`,
+  `medibridge-weekly-enforcement`, and `medibridge-suspension-expiry`, scheduled in
+  Africa/Cairo at `30 0 * * *`, `0 0 * * 1`, and `*/5 * * * *`.
 
 Related components:
 

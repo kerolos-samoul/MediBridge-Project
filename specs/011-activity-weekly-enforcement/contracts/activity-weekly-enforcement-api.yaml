@@ -1,0 +1,520 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Activity & Weekly Enforcement API
+  version: 1.0.0
+  description: Admin-only contracts for Phase 9 activity scoring, weekly enforcement, and manual doctor enforcement actions.
+servers:
+  - url: https://api.medibridge.local
+security:
+  - bearerAuth: []
+
+paths:
+  /api/admin/violations:
+    get:
+      summary: List doctor weekly violation summaries
+      operationId: listDoctorViolationSummaries
+      tags: [ActivityEnforcement]
+      parameters:
+        - $ref: "#/components/parameters/PageNumber"
+        - $ref: "#/components/parameters/PageSize"
+        - name: doctorId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/DoctorMarketplaceStatus"
+        - name: eligibility
+          in: query
+          schema:
+            $ref: "#/components/schemas/EnforcementEligibility"
+        - name: weekFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Inclusive Africa/Cairo week start filter.
+        - name: weekTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Inclusive Africa/Cairo week start filter.
+        - name: minRollingViolations
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Violation summaries returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViolationSummaryPageEnvelope"
+        "401":
+          $ref: "#/components/responses/UnauthorizedEnvelope"
+        "403":
+          $ref: "#/components/responses/ForbiddenEnvelope"
+
+  /api/admin/doctors/{doctorId}/status:
+    put:
+      summary: Apply a manual doctor enforcement action
+      operationId: applyDoctorEnforcementAction
+      tags: [ActivityEnforcement]
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DoctorEnforcementActionRequest"
+      responses:
+        "200":
+          description: Enforcement action applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DoctorEnforcementActionEnvelope"
+        "400":
+          $ref: "#/components/responses/ValidationEnvelope"
+        "401":
+          $ref: "#/components/responses/UnauthorizedEnvelope"
+        "403":
+          $ref: "#/components/responses/ForbiddenEnvelope"
+        "404":
+          $ref: "#/components/responses/NotFoundEnvelope"
+        "409":
+          $ref: "#/components/responses/ConflictEnvelope"
+
+  /api/admin/activity-jobs/status:
+    get:
+      summary: Get recent Phase 9 job outcomes
+      operationId: getActivityEnforcementJobStatus
+      tags: [ActivityEnforcementJobs]
+      parameters:
+        - name: take
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Recent job outcomes returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityJobStatusEnvelope"
+        "401":
+          $ref: "#/components/responses/UnauthorizedEnvelope"
+        "403":
+          $ref: "#/components/responses/ForbiddenEnvelope"
+
+  /api/admin/activity-jobs/run-score:
+    post:
+      summary: Request daily activity score catch-up for a score date
+      operationId: runDailyActivityScore
+      tags: [ActivityEnforcementJobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunDailyActivityScoreRequest"
+      responses:
+        "200":
+          description: Score catch-up accepted or completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityJobRunEnvelope"
+        "400":
+          $ref: "#/components/responses/ValidationEnvelope"
+        "401":
+          $ref: "#/components/responses/UnauthorizedEnvelope"
+        "403":
+          $ref: "#/components/responses/ForbiddenEnvelope"
+
+  /api/admin/activity-jobs/run-weekly-enforcement:
+    post:
+      summary: Request weekly enforcement catch-up for a completed week
+      operationId: runWeeklyEnforcement
+      tags: [ActivityEnforcementJobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunWeeklyEnforcementRequest"
+      responses:
+        "200":
+          description: Weekly enforcement catch-up accepted or completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityJobRunEnvelope"
+        "400":
+          $ref: "#/components/responses/ValidationEnvelope"
+        "401":
+          $ref: "#/components/responses/UnauthorizedEnvelope"
+        "403":
+          $ref: "#/components/responses/ForbiddenEnvelope"
+
+  /api/admin/activity-jobs/run-suspension-expiry:
+    post:
+      summary: Request suspension-expiry catch-up for expired temporary suspensions
+      operationId: runSuspensionExpiry
+      tags: [ActivityEnforcementJobs]
+      responses:
+        "200":
+          description: Suspension-expiry catch-up accepted or completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityJobRunEnvelope"
+        "401":
+          $ref: "#/components/responses/UnauthorizedEnvelope"
+        "403":
+          $ref: "#/components/responses/ForbiddenEnvelope"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageNumber:
+      name: PageNumber
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: PageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    ValidationEnvelope:
+      description: Validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmptyEnvelope"
+    UnauthorizedEnvelope:
+      description: Authentication required or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmptyEnvelope"
+    ForbiddenEnvelope:
+      description: Admin role required.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmptyEnvelope"
+    NotFoundEnvelope:
+      description: Target doctor not found or unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmptyEnvelope"
+    ConflictEnvelope:
+      description: Current doctor state conflicts with requested action.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmptyEnvelope"
+
+  schemas:
+    EmptyEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+
+    DoctorMarketplaceStatus:
+      type: string
+      enum: [Active, Warned, Suspended]
+
+    EnforcementEligibility:
+      type: string
+      enum: [None, Warning, ActionEligible]
+
+    EnforcementActionType:
+      type: string
+      enum: [Warn, ReduceDailyLimit, Suspend, Reactivate]
+
+    ActivityJobType:
+      type: string
+      enum: [DailyActivityScore, WeeklyEnforcement, SuspensionExpiry]
+
+    ActivityJobRunStatus:
+      type: string
+      enum: [Running, Succeeded, PartiallySucceeded, Failed, Deferred, Interrupted]
+
+    ViolationSummaryPageEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+          example: 200
+        Message:
+          type: string
+          example: Success
+        Data:
+          $ref: "#/components/schemas/ViolationSummaryPage"
+
+    ViolationSummaryPage:
+      type: object
+      required: [Items, PageNumber, PageSize, TotalCount, TotalPages, HasPreviousPage, HasNextPage]
+      properties:
+        Items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ViolationSummary"
+        PageNumber:
+          type: integer
+        PageSize:
+          type: integer
+        TotalCount:
+          type: integer
+        TotalPages:
+          type: integer
+        HasPreviousPage:
+          type: boolean
+        HasNextPage:
+          type: boolean
+
+    ViolationSummary:
+      type: object
+      required:
+        - DoctorId
+        - Status
+        - DailyMessageLimit
+        - MinimumWeeklyRequirement
+        - ActivityScore
+        - RollingViolationCount
+        - Eligibility
+        - RecentViolationWeeks
+      properties:
+        DoctorId:
+          type: string
+        DoctorDisplayName:
+          type: string
+          nullable: true
+        Status:
+          $ref: "#/components/schemas/DoctorMarketplaceStatus"
+        DailyMessageLimit:
+          type: integer
+          minimum: 0
+        MinimumWeeklyRequirement:
+          type: integer
+          minimum: 0
+        ActivityScore:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+        SuspendedUntilUtc:
+          type: string
+          format: date-time
+          nullable: true
+        RollingViolationCount:
+          type: integer
+          minimum: 0
+        Eligibility:
+          $ref: "#/components/schemas/EnforcementEligibility"
+        RecentViolationWeeks:
+          type: array
+          items:
+            type: string
+            format: date
+        LastEnforcementAction:
+          $ref: "#/components/schemas/LastEnforcementAction"
+
+    LastEnforcementAction:
+      type: object
+      nullable: true
+      required: [ActionType, EffectiveAtUtc]
+      properties:
+        ActionType:
+          $ref: "#/components/schemas/EnforcementActionType"
+        EffectiveAtUtc:
+          type: string
+          format: date-time
+        Reason:
+          type: string
+          nullable: true
+
+    DoctorEnforcementActionRequest:
+      type: object
+      required: [ActionType, Reason]
+      properties:
+        ActionType:
+          $ref: "#/components/schemas/EnforcementActionType"
+        Reason:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        NewDailyMessageLimit:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Required for ReduceDailyLimit.
+        SuspendedUntilUtc:
+          type: string
+          format: date-time
+          nullable: true
+          description: Required for Suspend and must be in the future.
+
+    DoctorEnforcementActionEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+          example: 200
+        Message:
+          type: string
+          example: Success
+        Data:
+          $ref: "#/components/schemas/DoctorEnforcementActionResult"
+
+    DoctorEnforcementActionResult:
+      type: object
+      required: [DoctorId, Status, DailyMessageLimit, ActionType, EffectiveAtUtc]
+      properties:
+        DoctorId:
+          type: string
+        Status:
+          $ref: "#/components/schemas/DoctorMarketplaceStatus"
+        DailyMessageLimit:
+          type: integer
+          minimum: 0
+        SuspendedUntilUtc:
+          type: string
+          format: date-time
+          nullable: true
+        ActionType:
+          $ref: "#/components/schemas/EnforcementActionType"
+        EffectiveAtUtc:
+          type: string
+          format: date-time
+        AuditEventId:
+          type: string
+          nullable: true
+
+    ActivityJobStatusEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+          example: 200
+        Message:
+          type: string
+          example: Success
+        Data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityJobRun"
+
+    ActivityJobRunEnvelope:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+          example: 200
+        Message:
+          type: string
+          example: Success
+        Data:
+          $ref: "#/components/schemas/ActivityJobRun"
+
+    ActivityJobRun:
+      type: object
+      required:
+        - JobRunId
+        - JobType
+        - Status
+        - ProcessedCount
+        - SkippedCount
+        - CreatedCount
+        - UpdatedCount
+        - FailedCount
+      properties:
+        JobRunId:
+          type: string
+        JobType:
+          $ref: "#/components/schemas/ActivityJobType"
+        TargetScoreDateEgypt:
+          type: string
+          format: date
+          nullable: true
+          description: Null for WeeklyEnforcement and SuspensionExpiry jobs.
+        TargetWeekStartDateEgypt:
+          type: string
+          format: date
+          nullable: true
+          description: Null for DailyActivityScore and SuspensionExpiry jobs.
+        Status:
+          $ref: "#/components/schemas/ActivityJobRunStatus"
+        ProcessedCount:
+          type: integer
+          minimum: 0
+        SkippedCount:
+          type: integer
+          minimum: 0
+        CreatedCount:
+          type: integer
+          minimum: 0
+        UpdatedCount:
+          type: integer
+          minimum: 0
+        FailedCount:
+          type: integer
+          minimum: 0
+        SafeFailureSummary:
+          type: string
+          nullable: true
+
+    RunDailyActivityScoreRequest:
+      type: object
+      required: [ScoreDateEgypt]
+      properties:
+        ScoreDateEgypt:
+          type: string
+          format: date
+          description: Cairo score date. The scoring window is the 30 completed Cairo dates before this date.
+
+    RunWeeklyEnforcementRequest:
+      type: object
+      required: [WeekStartDateEgypt]
+      properties:
+        WeekStartDateEgypt:
+          type: string
+          format: date
+          description: Monday Cairo date for the completed week to evaluate.

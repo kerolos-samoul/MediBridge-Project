@@ -3,6 +3,7 @@ using MediBridge.Core.Entities.Profiles;
 using MediBridge.Repository.Data.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using PolicyActivityScoreHistory = MediBridge.Core.Entities.Policies.ActivityScoreHistory;
 
 namespace MediBridge.Repository.Configurations.Policies;
 
@@ -36,9 +37,9 @@ public sealed class PlatformFeePolicyHistoryConfiguration : IEntityTypeConfigura
     }
 }
 
-public sealed class ActivityScoreHistoryConfiguration : IEntityTypeConfiguration<ActivityScoreHistory>
+public sealed class ActivityScoreHistoryConfiguration : IEntityTypeConfiguration<PolicyActivityScoreHistory>
 {
-    public void Configure(EntityTypeBuilder<ActivityScoreHistory> builder)
+    public void Configure(EntityTypeBuilder<PolicyActivityScoreHistory> builder)
     {
         builder.ToTable("ActivityScoreHistories");
         builder.HasKey(history => history.Id);
@@ -47,7 +48,7 @@ public sealed class ActivityScoreHistoryConfiguration : IEntityTypeConfiguration
         builder.Property(history => history.EngagementScore).HasPrecision(5, 2);
         builder.Property(history => history.FeedbackScore).HasPrecision(5, 2);
         builder.HasOne<DoctorProfile>().WithMany().HasForeignKey(history => history.DoctorId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<ActivityScoreHistory>().WithMany().HasForeignKey(history => history.CorrectsHistoryId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<PolicyActivityScoreHistory>().WithMany().HasForeignKey(history => history.CorrectsHistoryId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(history => new { history.DoctorId, history.CreatedAtUtc });
     }
 }

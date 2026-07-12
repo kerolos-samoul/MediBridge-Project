@@ -301,6 +301,121 @@ public sealed class ProfileRepository : IProfileRepository
             profile.DailyMessageLimit);
     }
 
+    public async Task<IReadOnlyList<string>> ListApprovedNonDeletedDoctorIdsForActivityScoringAsync(
+        string? afterDoctorId,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        return await ApprovedNonDeletedDoctorQuery(includeSuspended: true)
+            .Where(profile => afterDoctorId == null || string.Compare(profile.Id, afterDoctorId) > 0)
+            .OrderBy(profile => profile.Id)
+            .Take(Math.Clamp(take, 1, 1000))
+            .Select(profile => profile.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> ListApprovedNonDeletedDoctorIdsForWeeklyEnforcementAsync(
+        string? afterDoctorId,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        return await ApprovedNonDeletedDoctorQuery(includeSuspended: true)
+            .Where(profile => afterDoctorId == null || string.Compare(profile.Id, afterDoctorId) > 0)
+            .OrderBy(profile => profile.Id)
+            .Take(Math.Clamp(take, 1, 1000))
+            .Select(profile => profile.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<DoctorProfile?> FindDoctorProfileForEnforcementUpdateByIdAsync(string doctorId, CancellationToken cancellationToken = default)
+    {
+        return context.DoctorProfiles
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM [DoctorProfiles] WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+                WHERE [Id] = {doctorId}
+                    AND [IsDeleted] = CAST(0 AS bit)
+                """)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<DoctorProfile>> ListExpiredSuspendedDoctorsForUpdateAsync(
+        DateTime nowUtc,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureUtc(nowUtc, nameof(nowUtc));
+        var doctorRole = UserRole.Doctor.ToString();
+        var approvedStatus = AccountStatus.Approved.ToString();
+        return await context.DoctorProfiles
+            .FromSqlInterpolated($"""
+                SELECT TOP({Math.Clamp(take, 1, 1000)}) profiles.*
+                FROM [DoctorProfiles] AS profiles WITH (UPDLOCK, ROWLOCK, READPAST)
+                INNER JOIN [Users] AS users ON users.[Id] = profiles.[UserId]
+                WHERE profiles.[IsDeleted] = CAST(0 AS bit)
+                    AND profiles.[Status] = {(int)DoctorMarketplaceStatus.Suspended}
+                    AND profiles.[SuspendedUntilUtc] IS NOT NULL
+                    AND profiles.[SuspendedUntilUtc] <= {nowUtc}
+                    AND users.[IsDeleted] = CAST(0 AS bit)
+                    AND users.[Role] = {doctorRole}
+                    AND users.[AccountStatus] = {approvedStatus}
+                ORDER BY profiles.[SuspendedUntilUtc], profiles.[Id]
+                """)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> ApplyCurrentActivityScoreAsync(
+        string doctorId,
+        decimal activityScore,
+        DateTime calculatedAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureUtc(calculatedAtUtc, nameof(calculatedAtUtc));
+        if (activityScore is < 0m or > 100m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(activityScore), activityScore, "Activity score must be between 0.0 and 100.0.");
+        }
+
+        var rounded = Math.Round(activityScore, 1, MidpointRounding.AwayFromZero);
+        var rows = await context.DoctorProfiles
+            .Where(profile => profile.Id == doctorId && !profile.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(profile => profile.ActivityScore, rounded)
+                .SetProperty(profile => profile.UpdatedAtUtc, calculatedAtUtc),
+                cancellationToken);
+        return rows == 1;
+    }
+
+    public Task ApplyEnforcementStateChangesAsync(DoctorProfile profile, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        context.DoctorProfiles.Update(profile);
+        return Task.CompletedTask;
+    }
+
+    public async Task<bool> SuspensionOverlapsEgyptWeekAsync(
+        string doctorId,
+        DateOnly weekStartDateEgypt,
+        DateOnly weekEndDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        if (weekStartDateEgypt.DayOfWeek != DayOfWeek.Monday || weekEndDateEgypt != weekStartDateEgypt.AddDays(7))
+        {
+            throw new ArgumentException("Suspension overlap checks require a Monday-to-Monday Cairo week.");
+        }
+
+        var weekStartUtc = ConvertCairoDateStartToUtc(weekStartDateEgypt);
+        var weekEndUtc = ConvertCairoDateStartToUtc(weekEndDateEgypt);
+        return await context.DoctorProfiles
+            .AsNoTracking()
+            .AnyAsync(profile => profile.Id == doctorId
+                && profile.SuspendedAtUtc != null
+                && profile.SuspendedUntilUtc != null
+                && profile.SuspendedAtUtc < weekEndUtc
+                && profile.SuspendedUntilUtc > weekStartUtc,
+                cancellationToken);
+    }
+
     private IQueryable<DoctorProfile> ApplyEligibleDoctorFilters(EligibleDoctorSearchCriteria criteria)
     {
         var query =
@@ -354,6 +469,51 @@ public sealed class ProfileRepository : IProfileRepository
 
         return query;
     }
+
+    private IQueryable<DoctorProfile> ApprovedNonDeletedDoctorQuery(bool includeSuspended)
+    {
+        var query =
+            from profile in context.DoctorProfiles.AsNoTracking()
+            join user in context.Users.AsNoTracking() on profile.UserId equals user.Id
+            where !profile.IsDeleted
+                && !user.IsDeleted
+                && user.Role == UserRole.Doctor
+                && user.AccountStatus == AccountStatus.Approved
+            select profile;
+
+        return includeSuspended ? query : query.Where(profile => profile.Status != DoctorMarketplaceStatus.Suspended);
+    }
+
+    private static void EnsureUtc(DateTime value, string parameterName)
+    {
+        if (value.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("Profile update timestamps must be UTC.", parameterName);
+        }
+    }
+
+    private static DateTime ConvertCairoDateStartToUtc(DateOnly dateEgypt)
+    {
+        var local = new DateTime(dateEgypt.Year, dateEgypt.Month, dateEgypt.Day, 0, 0, 0, DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(local, CairoTimeZone.Value);
+    }
+
+    private static readonly Lazy<TimeZoneInfo> CairoTimeZone = new(() =>
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Africa/Cairo");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            if (TimeZoneInfo.TryConvertIanaIdToWindowsId("Africa/Cairo", out var windowsId))
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(windowsId);
+            }
+
+            throw;
+        }
+    });
 }
 
 public sealed class RefreshCredentialRepository : IRefreshCredentialRepository

@@ -105,20 +105,6 @@ public sealed class Phase7MigrationTests
         context.Users.AddRange(
             CreateUser("phase7-migration-doctor-user", "phase7-migration-doctor@example.com", UserRole.Doctor),
             CreateUser("phase7-migration-company-user", "phase7-migration-company@example.com", UserRole.Company));
-        context.DoctorProfiles.Add(new DoctorProfile
-        {
-            Id = "phase7-migration-doctor",
-            UserId = "phase7-migration-doctor-user",
-            Specialization = "Cardiology",
-            Location = "Cairo",
-            VerificationDocumentType = "License",
-            VerificationOriginalFileName = "doctor.pdf",
-            VerificationContentType = "application/pdf",
-            VerificationReference = "migration/doctor",
-            DailyMessageLimit = 10,
-            PricePerMessage = 50m,
-            CreatedAtUtc = createdAtUtc
-        });
         context.CompanyProfiles.Add(new CompanyProfile
         {
             Id = "phase7-migration-company",
@@ -139,6 +125,21 @@ public sealed class Phase7MigrationTests
         context.Campaigns.AddRange(queuedCampaign, activatedCampaign, cancelledCampaign);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
+
+        await context.Database.ExecuteSqlRawAsync("""
+            INSERT INTO [DoctorProfiles] (
+                [Id], [UserId], [Specialization], [ExperienceYears], [Location],
+                [VerificationDocumentType], [VerificationOriginalFileName], [VerificationContentType],
+                [VerificationSizeBytes], [VerificationReference], [DailyMessageLimit],
+                [MinimumWeeklyRequirement], [ActivityScore], [Status], [PricePerMessage],
+                [CreatedAtUtc], [IsDeleted])
+            VALUES (
+                'phase7-migration-doctor', 'phase7-migration-doctor-user', 'Cardiology', 5, 'Cairo',
+                'License', 'doctor.pdf', 'application/pdf',
+                1024, 'migration/doctor', 10,
+                5, 95.0, 1, 50.0,
+                '2026-06-20T10:00:00Z', CAST(0 AS bit))
+            """);
 
         await InsertLegacyQueueAsync(context, "queue-queued", queuedCampaign.Id, QueueItemStatus.Queued, createdAtUtc.AddHours(5));
         await InsertLegacyQueueAsync(context, "queue-activated", activatedCampaign.Id, QueueItemStatus.Activated, createdAtUtc.AddHours(1));

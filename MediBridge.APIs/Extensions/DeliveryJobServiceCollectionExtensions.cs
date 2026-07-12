@@ -50,6 +50,7 @@ public static class DeliveryJobServiceCollectionExtensions
 
         services.AddSingleton<IDeliveryJobEnqueuer, HangfireDeliveryJobEnqueuer>();
         services.AddSingleton<RecurringDeliveryJobRegistrar>();
+        services.AddSingleton<RecurringActivityEnforcementJobRegistrar>();
         return services;
     }
 }

@@ -36,4 +36,6 @@ public interface IDeliveryRepository
     Task<DoctorAdDelivery?> FindOwnedActiveReservedForInteractionAsync(string doctorId, string deliveryId, DateOnly businessDateEgypt, CancellationToken cancellationToken = default);
     Task<InteractionReplayReadModel?> FindSettledInteractionReplayAsync(string doctorId, string deliveryId, CancellationToken cancellationToken = default);
     Task<bool> TryMarkInteractedAndChargedAsync(string deliveryId, DeliveryInteractionOutcome outcome, DateTime interactedAtUtc, string? feedbackText, FeedbackQualityStatus? feedbackQualityStatus, CancellationToken cancellationToken = default);
+    Task<ActivityScoreAggregateReadModel> GetActivityScoreAggregateAsync(string doctorId, DateOnly windowStartDateEgypt, DateOnly windowEndDateEgypt, CancellationToken cancellationToken = default) => throw new NotSupportedException("Phase 9 activity score aggregates are not available.");
+    Task<WeeklyInteractionCountReadModel> GetWeeklyInteractionCountAsync(string doctorId, DateOnly weekStartDateEgypt, DateOnly weekEndDateEgypt, CancellationToken cancellationToken = default) => throw new NotSupportedException("Phase 9 weekly interaction counts are not available.");
 }

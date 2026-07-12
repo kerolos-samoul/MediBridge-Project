@@ -5,6 +5,7 @@ using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Core.Interfaces.Payments;
 using MediBridge.Core.Interfaces.Policies;
+using MediBridge.Core.Interfaces.Profiles;
 using MediBridge.Core.Interfaces.Wallets;
 using MediBridge.Repository.Data;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -24,6 +25,10 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         IDeliveryInteractionRepository deliveryInteractions,
         IDeliveryJobRunRepository deliveryJobRuns,
         IDeliveryRecoveryDispatchRepository deliveryRecoveryDispatches,
+        IActivityEnforcementJobRunRepository activityEnforcementJobRuns,
+        IActivityScoreHistoryRepository activityScoreHistories,
+        IWeeklyEnforcementRepository weeklyEnforcement,
+        IDoctorEnforcementActionRepository doctorEnforcementActions,
         IWalletRepository wallets,
         IWalletTransactionRepository walletTransactions,
         IWalletLedgerEntryRepository walletLedgerEntries,
@@ -42,6 +47,10 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         DeliveryInteractions = deliveryInteractions;
         DeliveryJobRuns = deliveryJobRuns;
         DeliveryRecoveryDispatches = deliveryRecoveryDispatches;
+        ActivityEnforcementJobRuns = activityEnforcementJobRuns;
+        ActivityScoreHistories = activityScoreHistories;
+        WeeklyEnforcement = weeklyEnforcement;
+        DoctorEnforcementActions = doctorEnforcementActions;
         Wallets = wallets;
         WalletTransactions = walletTransactions;
         WalletLedgerEntries = walletLedgerEntries;
@@ -60,6 +69,10 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     public IDeliveryInteractionRepository DeliveryInteractions { get; }
     public IDeliveryJobRunRepository DeliveryJobRuns { get; }
     public IDeliveryRecoveryDispatchRepository DeliveryRecoveryDispatches { get; }
+    public IActivityEnforcementJobRunRepository ActivityEnforcementJobRuns { get; }
+    public IActivityScoreHistoryRepository ActivityScoreHistories { get; }
+    public IWeeklyEnforcementRepository WeeklyEnforcement { get; }
+    public IDoctorEnforcementActionRepository DoctorEnforcementActions { get; }
     public IWalletRepository Wallets { get; }
     public IWalletTransactionRepository WalletTransactions { get; }
     public IWalletLedgerEntryRepository WalletLedgerEntries { get; }

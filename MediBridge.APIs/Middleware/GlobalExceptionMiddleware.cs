@@ -25,11 +25,11 @@ public sealed class GlobalExceptionMiddleware
         catch (Exception ex)
         {
             var correlationId = CorrelationIdMiddleware.GetCorrelationId(context);
-            if (ex is Phase7StorageUnavailableException)
+            if (ex is Phase7StorageUnavailableException or Phase9ServiceUnavailableException)
             {
                 _logger.LogWarning("Storage unavailable while processing {Method} {Path} {CorrelationId}", context.Request.Method, context.Request.Path, correlationId);
             }
-            else if (ex is Phase7WorkflowException)
+            else if (ex is Phase7WorkflowException or Phase9WorkflowException)
             {
                 _logger.LogInformation("Safe workflow request rejected with {ExceptionType} while processing {Method} {Path} {CorrelationId}", ex.GetType().Name, context.Request.Method, context.Request.Path, correlationId);
             }
@@ -60,6 +60,11 @@ public sealed class GlobalExceptionMiddleware
                 Phase7NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
                 Phase7ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
                 Phase7StorageUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Storage unavailable."),
+                Phase9ValidationException => (StatusCodes.Status400BadRequest, "Validation failed."),
+                Phase9ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden."),
+                Phase9NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
+                Phase9ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
+                Phase9ServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Service unavailable."),
                 _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
             };
 
