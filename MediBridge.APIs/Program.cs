@@ -64,6 +64,7 @@ var deliveryJobOptions = app.Services.GetRequiredService<IOptions<DeliveryJobOpt
 if (deliveryJobOptions.Enabled)
 {
     app.Services.GetRequiredService<RecurringDeliveryJobRegistrar>().Register();
+    app.Services.GetRequiredService<RecurringActivityEnforcementJobRegistrar>().Register();
     using var recoveryScope = app.Services.CreateScope();
     await recoveryScope.ServiceProvider
         .GetRequiredService<IDeliveryJobRecoveryCoordinator>()

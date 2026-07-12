@@ -398,4 +398,81 @@ public sealed class DeliveryRepository : IDeliveryRepository
         delivery.MarkInteractedAndCharged(outcome, interactedAtUtc, feedbackText, feedbackQualityStatus);
         return true;
     }
+
+    public async Task<ActivityScoreAggregateReadModel> GetActivityScoreAggregateAsync(
+        string doctorId,
+        DateOnly windowStartDateEgypt,
+        DateOnly windowEndDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        if (windowEndDateEgypt < windowStartDateEgypt)
+        {
+            throw new ArgumentException("Activity score window end cannot be before start.", nameof(windowEndDateEgypt));
+        }
+
+        var rows = await context.DoctorAdDeliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.DoctorId == doctorId
+                && delivery.DeliveryDateEgypt >= windowStartDateEgypt
+                && delivery.DeliveryDateEgypt <= windowEndDateEgypt
+                && (delivery.Status == DeliveryStatus.Active
+                    || delivery.Status == DeliveryStatus.Accepted
+                    || delivery.Status == DeliveryStatus.Rejected
+                    || delivery.Status == DeliveryStatus.Expired))
+            .Select(delivery => new
+            {
+                delivery.Status,
+                delivery.DeliveredAtUtc,
+                delivery.InteractedAtUtc,
+                delivery.FeedbackText
+            })
+            .ToListAsync(cancellationToken);
+
+        var interactedRows = rows
+            .Where(row => row.Status is DeliveryStatus.Accepted or DeliveryStatus.Rejected && row.InteractedAtUtc is not null)
+            .ToArray();
+        var contributionSum = interactedRows.Sum(row =>
+        {
+            var responseHours = (decimal)(row.InteractedAtUtc!.Value - row.DeliveredAtUtc).TotalHours;
+            var contribution = (1m - responseHours / 24m) * 100m;
+            return Math.Clamp(contribution, 0m, 100m);
+        });
+        var feedbackQualified = interactedRows.Count(row => CountNonWhitespace(row.FeedbackText) >= 15);
+
+        return new ActivityScoreAggregateReadModel(
+            doctorId,
+            rows.Count,
+            interactedRows.Length,
+            feedbackQualified,
+            contributionSum,
+            interactedRows.Length);
+    }
+
+    public async Task<WeeklyInteractionCountReadModel> GetWeeklyInteractionCountAsync(
+        string doctorId,
+        DateOnly weekStartDateEgypt,
+        DateOnly weekEndDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        if (weekStartDateEgypt.DayOfWeek != DayOfWeek.Monday || weekEndDateEgypt != weekStartDateEgypt.AddDays(7))
+        {
+            throw new ArgumentException("Weekly interaction counts require a Monday-to-Monday Cairo week.", nameof(weekStartDateEgypt));
+        }
+
+        var count = await context.DoctorAdDeliveries
+            .AsNoTracking()
+            .CountAsync(delivery => delivery.DoctorId == doctorId
+                && delivery.DeliveryDateEgypt >= weekStartDateEgypt
+                && delivery.DeliveryDateEgypt < weekEndDateEgypt
+                && (delivery.Status == DeliveryStatus.Accepted || delivery.Status == DeliveryStatus.Rejected)
+                && delivery.InteractedAtUtc != null,
+                cancellationToken);
+
+        return new WeeklyInteractionCountReadModel(doctorId, weekStartDateEgypt, weekEndDateEgypt, count);
+    }
+
+    private static int CountNonWhitespace(string? value)
+    {
+        return string.IsNullOrEmpty(value) ? 0 : value.Count(character => !char.IsWhiteSpace(character));
+    }
 }

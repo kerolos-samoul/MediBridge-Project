@@ -137,6 +137,31 @@ public class SwaggerEnvironmentPolicyTests
     }
 
     [Fact]
+    public async Task Swagger_DocumentsTheSecuredPhase9AdminEnforcementRoutes()
+    {
+        await using var factory = new WebAppFactory();
+        using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
+
+        using var response = await client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var paths = document.RootElement.GetProperty("paths");
+        var violations = paths.GetProperty("/api/admin/violations").GetProperty("get");
+        var doctorStatus = paths.GetProperty("/api/admin/doctors/{doctorId}/status").GetProperty("put");
+
+        AssertOperationReferencesBearer(violations);
+        AssertOperationReferencesBearer(doctorStatus);
+        AssertResponses(violations, "200", "400", "401", "403", "404", "409");
+        AssertResponses(doctorStatus, "200", "400", "401", "403", "404", "409");
+
+        var authorize = typeof(AdminActivityEnforcementController).GetCustomAttribute<AuthorizeAttribute>();
+        Assert.Equal(AuthorizationPolicies.AdminOnly, authorize?.Policy);
+        var rateLimit = typeof(AdminActivityEnforcementController).GetCustomAttribute<EnableRateLimitingAttribute>();
+        Assert.Equal(RateLimitPolicyNames.Envelope, rateLimit?.PolicyName);
+    }
+
+    [Fact]
     public async Task Swagger_DocumentsBearerSecurityAndRequiredIdempotencyForActualReplaySafeEndpoints()
     {
         await using var factory = new WebAppFactory();

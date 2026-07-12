@@ -71,6 +71,46 @@ public enum DeliveryJobRunStatus
     Interrupted = 6
 }
 
+public enum ActivityScoreCalculationMode
+{
+    DefaultNoDeliveries = 1,
+    ZeroInteractions = 2,
+    Calculated = 3
+}
+
+public enum WeeklyEnforcementDecisionType
+{
+    Compliant = 1,
+    SuspensionSkipped = 2,
+    Violation = 3
+}
+
+public enum DoctorEnforcementActionType
+{
+    Warn = 1,
+    ReduceDailyLimit = 2,
+    Suspend = 3,
+    Reactivate = 4,
+    AutomaticReactivate = 5
+}
+
+public enum ActivityEnforcementJobType
+{
+    DailyActivityScore = 1,
+    WeeklyEnforcement = 2,
+    SuspensionExpiry = 3
+}
+
+public enum ActivityEnforcementJobRunStatus
+{
+    Running = 1,
+    Succeeded = 2,
+    PartiallySucceeded = 3,
+    Failed = 4,
+    Deferred = 5,
+    Interrupted = 6
+}
+
 public enum RecoveryDispatchStatus
 {
     Pending = 1,

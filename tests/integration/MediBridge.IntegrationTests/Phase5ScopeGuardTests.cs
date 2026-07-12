@@ -89,8 +89,6 @@ public sealed class Phase5ScopeGuardTests
         Assert.DoesNotContain(routes, route => route.Contains("settlement", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("analytics", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("withdraw", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(routes, route => route.Contains("weekly-enforcement", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(routes, route => route.Contains("activity-score", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("payment-gateway", StringComparison.OrdinalIgnoreCase));
     }
 

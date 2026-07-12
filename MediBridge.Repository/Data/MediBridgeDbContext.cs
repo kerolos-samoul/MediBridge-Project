@@ -9,6 +9,8 @@ using MediBridge.Core.Entities.Wallets;
 using MediBridge.Repository.Data.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ProfileActivityScoreHistory = MediBridge.Core.Entities.Profiles.ActivityScoreHistory;
+using PolicyActivityScoreHistory = MediBridge.Core.Entities.Policies.ActivityScoreHistory;
 
 namespace MediBridge.Repository.Data;
 
@@ -48,7 +50,12 @@ public sealed class MediBridgeDbContext : IdentityDbContext<MediBridgeIdentityUs
     public DbSet<FileAccessGrantAudit> FileAccessGrantAudits => Set<FileAccessGrantAudit>();
     public DbSet<DoctorPriceHistory> DoctorPriceHistories => Set<DoctorPriceHistory>();
     public DbSet<PlatformFeePolicyHistory> PlatformFeePolicyHistories => Set<PlatformFeePolicyHistory>();
-    public DbSet<ActivityScoreHistory> ActivityScoreHistories => Set<ActivityScoreHistory>();
+    public DbSet<PolicyActivityScoreHistory> ActivityScoreHistories => Set<PolicyActivityScoreHistory>();
+    public DbSet<ProfileActivityScoreHistory> DoctorActivityScoreHistories => Set<ProfileActivityScoreHistory>();
+    public DbSet<WeeklyEnforcementDecision> WeeklyEnforcementDecisions => Set<WeeklyEnforcementDecision>();
+    public DbSet<DoctorWeeklyViolation> DoctorWeeklyViolations => Set<DoctorWeeklyViolation>();
+    public DbSet<DoctorEnforcementAction> DoctorEnforcementActions => Set<DoctorEnforcementAction>();
+    public DbSet<ActivityEnforcementJobRun> ActivityEnforcementJobRuns => Set<ActivityEnforcementJobRun>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder builder)

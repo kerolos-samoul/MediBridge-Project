@@ -22,9 +22,78 @@ public sealed class DoctorProfile : ISoftDeleteRecord
     public int? RequestedMinimumWeeklyRequirement { get; set; }
     public decimal ActivityScore { get; set; } = 95m;
     public DoctorMarketplaceStatus Status { get; set; } = DoctorMarketplaceStatus.Active;
+    public DateTime? SuspendedAtUtc { get; set; }
+    public DateTime? SuspendedUntilUtc { get; set; }
+    public DateTime? LastStatusChangedAtUtc { get; set; }
     public decimal? PricePerMessage { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
+
+    public void ApplyWarning(DateTime changedAtUtc)
+    {
+        EnsureUtc(changedAtUtc, nameof(changedAtUtc));
+        Status = DoctorMarketplaceStatus.Warned;
+        LastStatusChangedAtUtc = changedAtUtc;
+        UpdatedAtUtc = changedAtUtc;
+    }
+
+    public void ReduceDailyLimit(int newDailyMessageLimit, DateTime changedAtUtc)
+    {
+        if (newDailyMessageLimit < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(newDailyMessageLimit), newDailyMessageLimit, "Daily message limit cannot be negative.");
+        }
+
+        EnsureUtc(changedAtUtc, nameof(changedAtUtc));
+        DailyMessageLimit = newDailyMessageLimit;
+        UpdatedAtUtc = changedAtUtc;
+    }
+
+    public void SuspendUntil(DateTime suspendedAtUtc, DateTime suspendedUntilUtc)
+    {
+        EnsureUtc(suspendedAtUtc, nameof(suspendedAtUtc));
+        EnsureUtc(suspendedUntilUtc, nameof(suspendedUntilUtc));
+        if (suspendedUntilUtc <= suspendedAtUtc)
+        {
+            throw new ArgumentException("Suspension expiry must be in the future relative to the suspension timestamp.", nameof(suspendedUntilUtc));
+        }
+
+        Status = DoctorMarketplaceStatus.Suspended;
+        SuspendedAtUtc = suspendedAtUtc;
+        SuspendedUntilUtc = suspendedUntilUtc;
+        LastStatusChangedAtUtc = suspendedAtUtc;
+        UpdatedAtUtc = suspendedAtUtc;
+    }
+
+    public void Reactivate(DateTime reactivatedAtUtc)
+    {
+        EnsureUtc(reactivatedAtUtc, nameof(reactivatedAtUtc));
+        Status = DoctorMarketplaceStatus.Active;
+        SuspendedAtUtc = null;
+        SuspendedUntilUtc = null;
+        LastStatusChangedAtUtc = reactivatedAtUtc;
+        UpdatedAtUtc = reactivatedAtUtc;
+    }
+
+    public void ApplyActivityScore(decimal activityScore, DateTime calculatedAtUtc)
+    {
+        EnsureUtc(calculatedAtUtc, nameof(calculatedAtUtc));
+        if (activityScore is < 0m or > 100m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(activityScore), activityScore, "Activity score must be between 0.0 and 100.0.");
+        }
+
+        ActivityScore = Math.Round(activityScore, 1, MidpointRounding.AwayFromZero);
+        UpdatedAtUtc = calculatedAtUtc;
+    }
+
+    private static void EnsureUtc(DateTime value, string parameterName)
+    {
+        if (value.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("Profile status timestamps must be UTC.", parameterName);
+        }
+    }
 }

@@ -79,6 +79,15 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<IAdminPricingService, AdminPricingService>();
         services.AddScoped<IAdminPlatformFeePolicyService, AdminPlatformFeePolicyService>();
         services.AddScoped<IAdminDeliveryJobService, AdminDeliveryJobService>();
+        services.AddScoped<Validators.Admin.DoctorEnforcementActionRequestValidator>();
+        services.AddScoped<Validators.Admin.RunDailyActivityScoreRequestDtoValidator>();
+        services.AddScoped<Validators.Admin.RunWeeklyEnforcementRequestDtoValidator>();
+        services.AddSingleton<ActivityScoreCalculator>();
+        services.AddScoped<ActivityEnforcementJobRunTracker>();
+        services.AddScoped<IActivityScoreService, ActivityScoreService>();
+        services.AddSingleton<WeeklyEnforcementPolicy>();
+        services.AddScoped<IWeeklyEnforcementService, WeeklyEnforcementService>();
+        services.AddScoped<IAdminActivityEnforcementService, AdminActivityEnforcementService>();
         services.AddScoped<DeliveryJobRunTracker>();
         services.AddScoped<IDeliveryJobRecoveryCoordinator, DeliveryJobRecoveryCoordinator>();
         services.AddScoped<IDeliveryExpiryService, DeliveryExpiryService>();

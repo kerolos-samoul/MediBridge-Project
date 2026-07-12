@@ -759,6 +759,70 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("RefreshCredentials", (string)null);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Messaging.ActivityEnforcementJobRun", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JobType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProcessedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestedByAdminUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SafeFailureSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("SkippedCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("TargetScoreDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("TargetWeekStartDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<int>("UpdatedCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobType", "StartedAtUtc");
+
+                    b.HasIndex("JobType", "TargetScoreDateEgypt");
+
+                    b.HasIndex("JobType", "TargetWeekStartDateEgypt");
+
+                    b.ToTable("ActivityEnforcementJobRuns", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ActivityEnforcementJobRuns_Counters_NonNegative", "[ProcessedCount] >= 0 AND [SkippedCount] >= 0 AND [CreatedCount] >= 0 AND [UpdatedCount] >= 0 AND [FailedCount] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Messaging.DeliveryInteraction", b =>
                 {
                     b.Property<string>("Id")
@@ -1378,6 +1442,84 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("PlatformFeePolicyHistories", (string)null);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.ActivityScoreHistory", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CalculatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CalculationMode")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DeliveredCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DoctorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("DoctorWasSuspended")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("EngagementScore")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<int>("FeedbackQualifiedCount")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("FeedbackScore")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("FinalScore")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<int>("InteractedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("JobRunId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<decimal>("ResponseSpeedScore")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<DateOnly>("ScoreDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("WindowEndDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("WindowStartDateEgypt")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobRunId");
+
+                    b.HasIndex("DoctorId", "ScoreDateEgypt")
+                        .IsUnique();
+
+                    b.HasIndex("ScoreDateEgypt", "DoctorId");
+
+                    b.ToTable("DoctorActivityScoreHistories", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DoctorActivityScoreHistories_Counts_NonNegative", "[DeliveredCount] >= 0 AND [InteractedCount] >= 0 AND [FeedbackQualifiedCount] >= 0");
+
+                            t.HasCheckConstraint("CK_DoctorActivityScoreHistories_Scores_Range", "[ResponseSpeedScore] >= 0 AND [ResponseSpeedScore] <= 100 AND [EngagementScore] >= 0 AND [EngagementScore] <= 100 AND [FeedbackScore] >= 0 AND [FeedbackScore] <= 100 AND [FinalScore] >= 0 AND [FinalScore] <= 100");
+                        });
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Profiles.CompanyProfile", b =>
                 {
                     b.Property<string>("Id")
@@ -1449,6 +1591,74 @@ namespace MediBridge.Repository.Migrations
                     b.ToTable("CompanyProfiles", (string)null);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.DoctorEnforcementAction", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ActorAdminUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AuditEventId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DoctorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("EffectiveAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("NewDailyMessageLimit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PreviousDailyMessageLimit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PreviousStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("SuspendedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("SuspendedUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditEventId");
+
+                    b.HasIndex("ActorAdminUserId", "CreatedAtUtc");
+
+                    b.HasIndex("DoctorId", "CreatedAtUtc");
+
+                    b.ToTable("DoctorEnforcementActions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DoctorEnforcementActions_DailyLimits_NonNegative", "[PreviousDailyMessageLimit] >= 0 AND ([NewDailyMessageLimit] IS NULL OR [NewDailyMessageLimit] >= 0)");
+                        });
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Profiles.DoctorProfile", b =>
                 {
                     b.Property<string>("Id")
@@ -1472,6 +1682,9 @@ namespace MediBridge.Repository.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastStatusChangedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Location")
                         .IsRequired()
@@ -1498,6 +1711,12 @@ namespace MediBridge.Repository.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("SuspendedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("SuspendedUntilUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
@@ -1534,7 +1753,118 @@ namespace MediBridge.Repository.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
+                    b.HasIndex("Status", "SuspendedUntilUtc");
+
                     b.ToTable("DoctorProfiles", (string)null);
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.DoctorWeeklyViolation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("AuditEventId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DoctorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("InteractionCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinimumWeeklyRequirement")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RollingViolationCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("WeekEndDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("WeekStartDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<string>("WeeklyEnforcementDecisionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditEventId");
+
+                    b.HasIndex("WeeklyEnforcementDecisionId");
+
+                    b.HasIndex("DoctorId", "WeekStartDateEgypt")
+                        .IsUnique();
+
+                    b.HasIndex("WeekStartDateEgypt", "DoctorId");
+
+                    b.ToTable("DoctorWeeklyViolations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DoctorWeeklyViolations_Counts", "[MinimumWeeklyRequirement] >= 0 AND [InteractionCount] >= 0 AND [RollingViolationCount] >= 0 AND [InteractionCount] < [MinimumWeeklyRequirement]");
+                        });
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.WeeklyEnforcementDecision", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Decision")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DoctorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("InteractionCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("JobRunId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("MinimumWeeklyRequirement")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RollingViolationCountAfterDecision")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SuspensionOverlapped")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("WeekEndDateEgypt")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("WeekStartDateEgypt")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobRunId");
+
+                    b.HasIndex("DoctorId", "WeekStartDateEgypt")
+                        .IsUnique();
+
+                    b.HasIndex("WeekStartDateEgypt", "Decision", "DoctorId");
+
+                    b.ToTable("WeeklyEnforcementDecisions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_WeeklyEnforcementDecisions_Counts_NonNegative", "[MinimumWeeklyRequirement] >= 0 AND [InteractionCount] >= 0 AND [RollingViolationCountAfterDecision] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Wallets.Wallet", b =>
@@ -2366,11 +2696,39 @@ namespace MediBridge.Repository.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.ActivityScoreHistory", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Profiles.DoctorProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Messaging.ActivityEnforcementJobRun", null)
+                        .WithMany()
+                        .HasForeignKey("JobRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("MediBridge.Core.Entities.Profiles.CompanyProfile", b =>
                 {
                     b.HasOne("MediBridge.Repository.Data.Identity.MediBridgeIdentityUser", null)
                         .WithOne()
                         .HasForeignKey("MediBridge.Core.Entities.Profiles.CompanyProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.DoctorEnforcementAction", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Policies.AuditEvent", null)
+                        .WithMany()
+                        .HasForeignKey("AuditEventId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MediBridge.Core.Entities.Profiles.DoctorProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -2382,6 +2740,40 @@ namespace MediBridge.Repository.Migrations
                         .HasForeignKey("MediBridge.Core.Entities.Profiles.DoctorProfile", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.DoctorWeeklyViolation", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Policies.AuditEvent", null)
+                        .WithMany()
+                        .HasForeignKey("AuditEventId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MediBridge.Core.Entities.Profiles.DoctorProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Profiles.WeeklyEnforcementDecision", null)
+                        .WithMany()
+                        .HasForeignKey("WeeklyEnforcementDecisionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediBridge.Core.Entities.Profiles.WeeklyEnforcementDecision", b =>
+                {
+                    b.HasOne("MediBridge.Core.Entities.Profiles.DoctorProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Messaging.ActivityEnforcementJobRun", null)
+                        .WithMany()
+                        .HasForeignKey("JobRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Wallets.Wallet", b =>

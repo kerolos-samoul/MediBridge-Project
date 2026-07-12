@@ -15,6 +15,7 @@ using MediBridge.Core.Interfaces.Identity;
 using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Core.Interfaces.Payments;
 using MediBridge.Core.Interfaces.Policies;
+using MediBridge.Core.Interfaces.Profiles;
 using MediBridge.Core.Interfaces.Wallets;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +62,10 @@ public static class RepositoryServiceCollectionExtensions
         services.AddScoped<IDeliveryInteractionRepository, DeliveryInteractionRepository>();
         services.AddScoped<IDeliveryJobRunRepository, DeliveryJobRunRepository>();
         services.AddScoped<IDeliveryRecoveryDispatchRepository, DeliveryRecoveryDispatchRepository>();
+        services.AddScoped<IActivityEnforcementJobRunRepository, ActivityEnforcementJobRunRepository>();
+        services.AddScoped<IActivityScoreHistoryRepository, ActivityScoreHistoryRepository>();
+        services.AddScoped<IWeeklyEnforcementRepository, WeeklyEnforcementRepository>();
+        services.AddScoped<IDoctorEnforcementActionRepository, DoctorEnforcementActionRepository>();
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
         services.AddScoped<IWalletLedgerEntryRepository, WalletLedgerEntryRepository>();
