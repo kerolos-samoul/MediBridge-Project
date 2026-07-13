@@ -18,6 +18,13 @@ public interface ICampaignRepository
     Task<IReadOnlyList<Campaign>> ListCompanyCampaignsAsync(string companyId, CampaignStatus? status, int skip, int take, CancellationToken cancellationToken = default);
     Task<int> CountCompanyCampaignsAsync(string companyId, CampaignStatus? status, CancellationToken cancellationToken = default);
     Task<Campaign?> FindCompanyCampaignAsync(string companyId, string campaignId, CancellationToken cancellationToken = default);
+    Task<bool> IsReportVisibleCampaignOwnedByCompanyAsync(string companyId, string campaignId, CancellationToken cancellationToken = default);
+    Task<CompanyReportingPageReadModel<CampaignReportSummaryReadModel>> ListCompanyCampaignReportSummariesAsync(
+        string companyId,
+        CampaignStatus? status,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken = default);
     Task<Campaign?> FindApprovedCampaignForQueueAsync(string campaignId, CancellationToken cancellationToken = default);
     Task AddCampaignTargetAsync(string campaignTargetId, string campaignId, string doctorId, CancellationToken cancellationToken = default);
     Task AddCampaignTargetAsync(CampaignTarget campaignTarget, CancellationToken cancellationToken = default);

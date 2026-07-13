@@ -19,6 +19,14 @@ public interface IAuditEventRepository
         string? metadata,
         DateTime createdAtUtc,
         CancellationToken cancellationToken = default);
+    Task AddReportingDiscrepancyAsync(
+        string auditEventId,
+        string? actorUserId,
+        string? actorRole,
+        string campaignId,
+        string metadata,
+        DateTime createdAtUtc,
+        CancellationToken cancellationToken = default);
     Task<string?> FindAuditEventIdAsync(string auditEventId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListAuditEventIdsAsync(AuditTargetType? targetType = null, string? targetId = null, DateTime? createdFromUtc = null, DateTime? createdToUtc = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListAuditEventTargetIdsIncludingHistoricalTargetsAsync(AuditTargetType targetType, CancellationToken cancellationToken = default);

@@ -39,6 +39,9 @@ public sealed class Phase5ScopeGuardTests
             [
                 "api/company/campaigns",
                 "api/company/campaigns/{campaignId}",
+                "api/company/campaigns/{campaignId}/analytics",
+                "api/company/campaigns/{campaignId}/deliveries",
+                "api/company/campaigns/{campaignId}/feedback",
                 "api/company/campaigns/{campaignId}/queue-summary",
                 "api/company/campaigns/{campaignId}/review-outcome",
                 "api/company/campaigns/{campaignId}/submit",
@@ -87,7 +90,12 @@ public sealed class Phase5ScopeGuardTests
                 .OrderBy(route => route, StringComparer.Ordinal)
                 .ToArray());
         Assert.DoesNotContain(routes, route => route.Contains("settlement", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(routes, route => route.Contains("analytics", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(
+            ["api/company/campaigns/{campaignId}/analytics"],
+            routes
+                .Where(route => route.Contains("analytics", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(route => route, StringComparer.Ordinal)
+                .ToArray());
         Assert.DoesNotContain(routes, route => route.Contains("withdraw", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("weekly-enforcement", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(routes, route => route.Contains("activity-score", StringComparison.OrdinalIgnoreCase));

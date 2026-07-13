@@ -63,6 +63,28 @@ public class SwaggerEnvironmentPolicyTests
     }
 
     [Fact]
+    public async Task Swagger_DocumentsPhase10CompanyReportingRoutes()
+    {
+        await using var factory = new WebAppFactory();
+        using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
+
+        using var response = await client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        var paths = document.RootElement.GetProperty("paths");
+        Assert.True(paths.GetProperty("/api/company/campaigns").TryGetProperty("get", out var summaries));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/deliveries").TryGetProperty("get", out var deliveries));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/feedback").TryGetProperty("get", out var feedback));
+        Assert.True(paths.GetProperty("/api/company/campaigns/{campaignId}/analytics").TryGetProperty("get", out var analytics));
+
+        AssertResponses(summaries, "200", "400", "401", "403", "409");
+        AssertResponses(deliveries, "200", "400", "401", "403", "404");
+        AssertResponses(feedback, "200", "400", "401", "403", "404");
+        AssertResponses(analytics, "200", "400", "401", "403", "404", "409");
+    }
+
+    [Fact]
     public async Task Swagger_DocumentsTheSecuredPhase7AndPhase8DoctorRoutesAndContractedResponses()
     {
         await using var factory = new WebAppFactory();

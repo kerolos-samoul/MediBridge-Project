@@ -119,6 +119,9 @@ public static class ServiceCollectionExtensions
             options.AddPolicy(
                 AuthorizationPolicies.Phase7DoctorMessagesRead,
                 policy => policy.RequireRole(AuthorizationPolicies.Doctor));
+            options.AddPolicy(
+                AuthorizationPolicies.Phase10CompanyReportingAccess,
+                policy => policy.RequireRole(AuthorizationPolicies.Company));
         });
 
         return services;
