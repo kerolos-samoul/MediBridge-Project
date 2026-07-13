@@ -1,5 +1,6 @@
 using MediBridge.Core.Entities.Messaging;
 using MediBridge.Core.Enums;
+using MediBridge.Core.Interfaces.Campaigns;
 using MediBridge.Core.Interfaces.Messaging;
 using MediBridge.Repository.Data;
 using Microsoft.EntityFrameworkCore;
@@ -474,5 +475,255 @@ public sealed class DeliveryRepository : IDeliveryRepository
     private static int CountNonWhitespace(string? value)
     {
         return string.IsNullOrEmpty(value) ? 0 : value.Count(character => !char.IsWhiteSpace(character));
+    }
+
+    public Task<IReadOnlyList<CompanyReportingDeliveryAggregateReadModel>> ListCompanyCampaignDeliveryAggregatesAsync(
+        string companyId,
+        IReadOnlyCollection<string> campaignIds,
+        CompanyReportingDateRange dateRange,
+        CancellationToken cancellationToken = default)
+    {
+        var scopedCampaignIds = campaignIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (scopedCampaignIds.Length == 0)
+        {
+            return Task.FromResult<IReadOnlyList<CompanyReportingDeliveryAggregateReadModel>>(Array.Empty<CompanyReportingDeliveryAggregateReadModel>());
+        }
+
+        return ListCompanyCampaignDeliveryAggregatesCoreAsync(companyId, scopedCampaignIds, dateRange, cancellationToken);
+    }
+
+    public Task<CompanyReportingPageReadModel<CampaignDeliveryReportRowReadModel>> ListCompanyCampaignDeliveryReportsAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingDeliveryFilters filters,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken = default)
+    {
+        return ListCompanyCampaignDeliveryReportsCoreAsync(companyId, campaignId, dateRange, filters, pagination, cancellationToken);
+    }
+
+    public Task<CompanyReportingPageReadModel<CampaignFeedbackReportRowReadModel>> ListCompanyCampaignFeedbackReportsAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingFeedbackFilters filters,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken = default)
+    {
+        return ListCompanyCampaignFeedbackReportsCoreAsync(companyId, campaignId, dateRange, filters, pagination, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<CompanyReportingDeliverySourceReadModel>> ListCompanyCampaignAnalyticsDeliveriesAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CancellationToken cancellationToken = default)
+    {
+        return await QueryCompanyCampaignDeliveries(companyId, campaignId, dateRange)
+            .OrderBy(delivery => delivery.DeliveryDateEgypt)
+            .ThenBy(delivery => delivery.Id)
+            .Select(delivery => new CompanyReportingDeliverySourceReadModel(
+                delivery.Id,
+                delivery.CampaignId,
+                delivery.Status,
+                delivery.ReservationStatus,
+                delivery.DeliveryDateEgypt,
+                delivery.ReservedAmount,
+                delivery.PricePerMessageSnapshot,
+                delivery.DoctorEarnings,
+                delivery.PlatformFeeAmount,
+                delivery.FeedbackText != null && delivery.FeedbackText.Trim() != string.Empty))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> ListCompanyCampaignDeliveryIdsAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CancellationToken cancellationToken = default)
+    {
+        return await QueryCompanyCampaignDeliveries(companyId, campaignId, dateRange)
+            .OrderBy(delivery => delivery.Id)
+            .Select(delivery => delivery.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<CompanyReportingDeliveryAggregateReadModel>> ListCompanyCampaignDeliveryAggregatesCoreAsync(
+        string companyId,
+        IReadOnlyCollection<string> campaignIds,
+        CompanyReportingDateRange dateRange,
+        CancellationToken cancellationToken)
+    {
+        return await context.DoctorAdDeliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.CompanyId == companyId
+                && campaignIds.Contains(delivery.CampaignId)
+                && delivery.DeliveryDateEgypt >= dateRange.FromDateEgypt
+                && delivery.DeliveryDateEgypt <= dateRange.ToDateEgypt)
+            .GroupBy(delivery => delivery.CampaignId)
+            .Select(group => new CompanyReportingDeliveryAggregateReadModel(
+                group.Key,
+                group.Count(),
+                group.Count(delivery => delivery.Status == DeliveryStatus.Active),
+                group.Count(delivery => delivery.Status == DeliveryStatus.Accepted),
+                group.Count(delivery => delivery.Status == DeliveryStatus.Rejected),
+                group.Count(delivery => delivery.Status == DeliveryStatus.Expired),
+                group.Count(delivery => delivery.FeedbackText != null && delivery.FeedbackText.Trim() != string.Empty),
+                group.Where(delivery => delivery.Status == DeliveryStatus.Active).Sum(delivery => delivery.ReservedAmount),
+                group.Where(delivery => delivery.Status == DeliveryStatus.Accepted || delivery.Status == DeliveryStatus.Rejected).Sum(delivery => delivery.PricePerMessageSnapshot),
+                group.Where(delivery => delivery.Status == DeliveryStatus.Accepted || delivery.Status == DeliveryStatus.Rejected).Sum(delivery => delivery.DoctorEarnings),
+                group.Where(delivery => delivery.Status == DeliveryStatus.Accepted || delivery.Status == DeliveryStatus.Rejected).Sum(delivery => delivery.PlatformFeeAmount),
+                group.Select(delivery => (DateTime?)delivery.DeliveredAtUtc).Max(),
+                group.Select(delivery => delivery.ReadAtUtc).Max(),
+                group.Select(delivery => delivery.InteractedAtUtc).Max(),
+                group.Select(delivery => delivery.FeedbackCreatedAtUtc).Max()))
+            .ToListAsync(cancellationToken);
+    }
+
+    private IQueryable<DoctorAdDelivery> QueryCompanyCampaignDeliveries(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange)
+        => context.DoctorAdDeliveries
+            .AsNoTracking()
+            .Where(delivery => delivery.CompanyId == companyId
+                && delivery.CampaignId == campaignId
+                && delivery.DeliveryDateEgypt >= dateRange.FromDateEgypt
+                && delivery.DeliveryDateEgypt <= dateRange.ToDateEgypt);
+
+    private async Task<CompanyReportingPageReadModel<CampaignDeliveryReportRowReadModel>> ListCompanyCampaignDeliveryReportsCoreAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingDeliveryFilters filters,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken)
+    {
+        var query =
+            from delivery in QueryCompanyCampaignDeliveries(companyId, campaignId, dateRange)
+            join doctor in context.DoctorProfiles.AsNoTracking() on delivery.DoctorId equals doctor.Id
+            select new { delivery, doctor };
+
+        if (filters.Status is not null)
+        {
+            query = query.Where(item => item.delivery.Status == filters.Status);
+        }
+
+        query = filters.State switch
+        {
+            CompanyReportingDeliveryState.Read => query.Where(item => item.delivery.ReadAtUtc != null),
+            CompanyReportingDeliveryState.Unread => query.Where(item => item.delivery.ReadAtUtc == null),
+            CompanyReportingDeliveryState.Interacted => query.Where(item => item.delivery.InteractedAtUtc != null),
+            CompanyReportingDeliveryState.Uninteracted => query.Where(item => item.delivery.InteractedAtUtc == null),
+            _ => query
+        };
+
+        if (filters.DoctorSpecialization is not null)
+        {
+            query = query.Where(item => item.doctor.Specialization == filters.DoctorSpecialization);
+        }
+
+        if (filters.DoctorLocation is not null)
+        {
+            query = query.Where(item => item.doctor.Location == filters.DoctorLocation);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderByDescending(item => item.delivery.DeliveryDateEgypt)
+            .ThenByDescending(item => item.delivery.DeliveredAtUtc)
+            .ThenBy(item => item.delivery.Id)
+            .Skip(pagination.Skip)
+            .Take(pagination.PageSize)
+            .Select(item => new CampaignDeliveryReportRowReadModel(
+                item.delivery.Id,
+                item.delivery.CampaignId,
+                new PublicDoctorSummaryReadModel(
+                    item.doctor.Id,
+                    item.doctor.Specialization,
+                    item.doctor.ExperienceYears <= 5 ? "0-5 years" : item.doctor.ExperienceYears <= 10 ? "6-10 years" : "11+ years",
+                    item.doctor.Location),
+                item.delivery.DeliveryDateEgypt,
+                item.delivery.DeliveredAtUtc,
+                item.delivery.ReadAtUtc,
+                item.delivery.Status,
+                item.delivery.InteractedAtUtc,
+                item.delivery.PricePerMessageSnapshot,
+                item.delivery.Status == DeliveryStatus.Active ? item.delivery.ReservedAmount : 0m,
+                item.delivery.Status == DeliveryStatus.Accepted || item.delivery.Status == DeliveryStatus.Rejected ? item.delivery.PricePerMessageSnapshot : 0m,
+                item.delivery.Status == DeliveryStatus.Accepted || item.delivery.Status == DeliveryStatus.Rejected ? item.delivery.DoctorEarnings : 0m,
+                item.delivery.Status == DeliveryStatus.Accepted || item.delivery.Status == DeliveryStatus.Rejected ? item.delivery.PlatformFeeAmount : 0m))
+            .ToListAsync(cancellationToken);
+
+        return new CompanyReportingPageReadModel<CampaignDeliveryReportRowReadModel>(items, totalCount);
+    }
+
+    private async Task<CompanyReportingPageReadModel<CampaignFeedbackReportRowReadModel>> ListCompanyCampaignFeedbackReportsCoreAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingFeedbackFilters filters,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken)
+    {
+        var query =
+            from delivery in QueryCompanyCampaignDeliveries(companyId, campaignId, dateRange)
+            join doctor in context.DoctorProfiles.AsNoTracking() on delivery.DoctorId equals doctor.Id
+            where delivery.FeedbackText != null
+                && delivery.FeedbackText.Trim() != string.Empty
+                && delivery.FeedbackCreatedAtUtc != null
+                && (delivery.Status == DeliveryStatus.Accepted || delivery.Status == DeliveryStatus.Rejected)
+            select new { delivery, doctor };
+
+        if (filters.Outcome is not null)
+        {
+            var status = filters.Outcome == CompanyReportingFeedbackOutcome.Accepted
+                ? DeliveryStatus.Accepted
+                : DeliveryStatus.Rejected;
+            query = query.Where(item => item.delivery.Status == status);
+        }
+
+        if (filters.FeedbackEligibility is not null)
+        {
+            query = filters.FeedbackEligibility == CompanyReportingFeedbackEligibility.Eligible
+                ? query.Where(item => item.delivery.FeedbackQualityStatus == FeedbackQualityStatus.Accepted)
+                : query.Where(item => item.delivery.FeedbackQualityStatus != FeedbackQualityStatus.Accepted);
+        }
+
+        if (filters.DoctorSpecialization is not null)
+        {
+            query = query.Where(item => item.doctor.Specialization == filters.DoctorSpecialization);
+        }
+
+        if (filters.DoctorLocation is not null)
+        {
+            query = query.Where(item => item.doctor.Location == filters.DoctorLocation);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderByDescending(item => item.delivery.FeedbackCreatedAtUtc)
+            .ThenBy(item => item.delivery.Id)
+            .Skip(pagination.Skip)
+            .Take(pagination.PageSize)
+            .Select(item => new CampaignFeedbackReportRowReadModel(
+                item.delivery.Id,
+                item.delivery.CampaignId,
+                item.delivery.Status == DeliveryStatus.Accepted ? CompanyReportingFeedbackOutcome.Accepted : CompanyReportingFeedbackOutcome.Rejected,
+                item.delivery.FeedbackText!.Trim(),
+                item.delivery.FeedbackCreatedAtUtc!.Value,
+                item.delivery.FeedbackQualityStatus == FeedbackQualityStatus.Accepted,
+                new PublicDoctorSummaryReadModel(
+                    item.doctor.Id,
+                    item.doctor.Specialization,
+                    item.doctor.ExperienceYears <= 5 ? "0-5 years" : item.doctor.ExperienceYears <= 10 ? "6-10 years" : "11+ years",
+                    item.doctor.Location)))
+            .ToListAsync(cancellationToken);
+
+        return new CompanyReportingPageReadModel<CampaignFeedbackReportRowReadModel>(items, totalCount);
     }
 }

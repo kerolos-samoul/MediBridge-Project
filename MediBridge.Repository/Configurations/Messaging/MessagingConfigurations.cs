@@ -84,6 +84,29 @@ public sealed class DoctorAdDeliveryConfiguration : IEntityTypeConfiguration<Doc
             delivery.DeliveryDateEgypt,
             delivery.Id
         });
+        builder.HasIndex(delivery => new
+        {
+            delivery.CompanyId,
+            delivery.CampaignId,
+            delivery.DeliveryDateEgypt,
+            delivery.Status,
+            delivery.DeliveredAtUtc,
+            delivery.Id
+        });
+        builder.HasIndex(delivery => new
+        {
+            delivery.CompanyId,
+            delivery.CampaignId,
+            delivery.FeedbackCreatedAtUtc,
+            delivery.Id
+        });
+        builder.HasIndex(delivery => new
+        {
+            delivery.CompanyId,
+            delivery.CampaignId,
+            delivery.InteractedAtUtc,
+            delivery.Status
+        });
     }
 }
 

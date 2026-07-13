@@ -130,21 +130,31 @@ public sealed class Phase7LayeringAndScopeGuardTests
         var forbiddenRouteMarkers = new[]
         {
             "hangfire", "/jobs", "job-control",
-            "notification", "analytics"
+            "weekly", "activity", "notification"
         };
         Assert.DoesNotContain(routes, route => forbiddenRouteMarkers.Any(marker =>
             route.Contains(marker, StringComparison.OrdinalIgnoreCase)));
+        Assert.Equal(
+            ["api/company/campaigns/{campaignId}/analytics"],
+            routes
+                .Where(route => route.Contains("analytics", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(route => route, StringComparer.Ordinal)
+                .ToArray());
 
         var forbiddenServiceMarkers = new[]
         {
-            "Notification", "Analytics"
+            "WeeklyEnforcement", "ActivityScore", "Notification"
         };
-        var serviceTypeNames = typeof(DeliveryExpiryService).Assembly.GetTypes()
+        var serviceTypes = typeof(DeliveryExpiryService).Assembly.GetTypes()
             .Where(type => type.Namespace == "MediBridge.Services.Services")
-            .Select(type => type.Name)
             .ToArray();
-        Assert.DoesNotContain(serviceTypeNames, name => forbiddenServiceMarkers.Any(marker =>
-            name.Contains(marker, StringComparison.OrdinalIgnoreCase)));
+        Assert.DoesNotContain(serviceTypes, type => forbiddenServiceMarkers.Any(marker =>
+            type.Name.Contains(marker, StringComparison.OrdinalIgnoreCase)));
+        Assert.All(
+            serviceTypes.Where(type => type.Name.Contains("Analytics", StringComparison.OrdinalIgnoreCase)),
+            type => Assert.True(
+                type == typeof(CompanyReportingService) || type.DeclaringType == typeof(CompanyReportingService),
+                $"Unexpected analytics service type {type.FullName}."));
     }
 
     [Fact]

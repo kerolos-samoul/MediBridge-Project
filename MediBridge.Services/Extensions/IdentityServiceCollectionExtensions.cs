@@ -73,6 +73,10 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<IFileWorkflowService, FileWorkflowService>();
         services.AddScoped<ICompanyDoctorSearchService, CompanyDoctorSearchService>();
         services.AddScoped<ICampaignWorkflowService, CampaignWorkflowService>();
+        services.AddScoped<Validators.Campaigns.CompanyReportingDateRangeValidator>();
+        services.AddScoped<Validators.Campaigns.CompanyReportingPaginationValidator>();
+        services.AddScoped<Validators.Campaigns.CompanyReportingFilterValidator>();
+        services.AddScoped<ICompanyReportingService, CompanyReportingService>();
         services.AddScoped<ICampaignDraftService, CampaignDraftService>();
         services.AddScoped<IAdminCampaignReviewService, AdminCampaignReviewService>();
         services.AddScoped<ICompanyWalletService, CompanyWalletService>();

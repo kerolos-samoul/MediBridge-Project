@@ -1,5 +1,6 @@
 using MediBridge.Core.Entities.Wallets;
 using MediBridge.Core.Enums;
+using MediBridge.Core.Interfaces.Campaigns;
 
 namespace MediBridge.Core.Interfaces.Wallets;
 
@@ -14,4 +15,7 @@ public interface IWalletTransactionRepository
     Task<IReadOnlyList<string>> ListWalletTransactionIdsAsync(string walletId, DateTime? createdFromUtc = null, DateTime? createdToUtc = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<WalletTransaction>> ListWalletTransactionsAsync(string walletId, int skip, int take, CancellationToken cancellationToken = default);
     Task<int> CountWalletTransactionsAsync(string walletId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<CompanyReportingFinancialEvidenceReadModel>> ListFinancialEvidenceByDeliveryIdsAsync(
+        IReadOnlyCollection<string> deliveryIds,
+        CancellationToken cancellationToken = default);
 }

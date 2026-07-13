@@ -46,6 +46,7 @@ public sealed class WalletTransactionConfiguration : IEntityTypeConfiguration<Wa
         // Retries are deduplicated per wallet operation type, not by idempotency key alone.
         builder.HasIndex(transaction => new { transaction.OperationType, transaction.IdempotencyKey }).IsUnique();
         builder.HasIndex(transaction => new { transaction.WalletId, transaction.CreatedAtUtc });
+        builder.HasIndex(transaction => new { transaction.RelatedDeliveryId, transaction.OperationType, transaction.CreatedAtUtc });
     }
 }
 

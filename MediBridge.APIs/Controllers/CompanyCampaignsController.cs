@@ -18,22 +18,45 @@ namespace MediBridge.APIs.Controllers;
 public sealed class CompanyCampaignsController : ControllerBase
 {
     private readonly ICampaignWorkflowService campaignWorkflowService;
+    private readonly ICompanyReportingService companyReportingService;
 
-    public CompanyCampaignsController(ICampaignWorkflowService campaignWorkflowService)
+    public CompanyCampaignsController(
+        ICampaignWorkflowService campaignWorkflowService,
+        ICompanyReportingService companyReportingService)
     {
         this.campaignWorkflowService = campaignWorkflowService;
+        this.companyReportingService = companyReportingService;
     }
 
     [HttpGet]
     [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
-    public async Task<ActionResult<ApiEnvelope<CampaignPageDto>>> GetCampaigns([FromQuery] CampaignStatus? status, [FromQuery] int PageNumber = 1, [FromQuery] int PageSize = 20, CancellationToken cancellationToken = default)
+    [Authorize(Policy = AuthorizationPolicies.Phase10CompanyReportingAccess)]
+    [ProducesResponseType(typeof(ApiEnvelope<CampaignReportPageDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiEnvelope<CampaignReportPageDto>>> GetCampaigns(
+        [FromQuery] CampaignStatus? status,
+        [FromQuery] string? fromDateEgypt,
+        [FromQuery] string? toDateEgypt,
+        [FromQuery] int? PageNumber = null,
+        [FromQuery] int? PageSize = null,
+        CancellationToken cancellationToken = default)
     {
         if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
         {
             return unauthorizedResult;
         }
 
-        var result = await campaignWorkflowService.GetCompanyCampaignsAsync(actorUserId, status, PageNumber, PageSize, cancellationToken);
+        var result = await companyReportingService.GetCompanyCampaignReportsAsync(
+            actorUserId,
+            fromDateEgypt,
+            toDateEgypt,
+            status?.ToString(),
+            PageNumber,
+            PageSize,
+            cancellationToken);
         return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }
 
@@ -90,6 +113,115 @@ public sealed class CompanyCampaignsController : ControllerBase
         var result = await campaignWorkflowService.GetQueueSummaryAsync(
             actorUserId,
             campaignId,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    [HttpGet("{campaignId}/deliveries")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    [Authorize(Policy = AuthorizationPolicies.Phase10CompanyReportingAccess)]
+    [ProducesResponseType(typeof(ApiEnvelope<DeliveryReportPageDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiEnvelope<DeliveryReportPageDto>>> GetDeliveryReports(
+        string campaignId,
+        [FromQuery] string? fromDateEgypt,
+        [FromQuery] string? toDateEgypt,
+        [FromQuery] string? status,
+        [FromQuery] string? state,
+        [FromQuery] string? doctorSpecialization,
+        [FromQuery] string? doctorLocation,
+        [FromQuery] int? PageNumber = null,
+        [FromQuery] int? PageSize = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var result = await companyReportingService.GetCampaignDeliveryReportsAsync(
+            actorUserId,
+            campaignId,
+            fromDateEgypt,
+            toDateEgypt,
+            status,
+            state,
+            doctorSpecialization,
+            doctorLocation,
+            PageNumber,
+            PageSize,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    [HttpGet("{campaignId}/feedback")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    [Authorize(Policy = AuthorizationPolicies.Phase10CompanyReportingAccess)]
+    [ProducesResponseType(typeof(ApiEnvelope<FeedbackReportPageDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiEnvelope<FeedbackReportPageDto>>> GetFeedbackReports(
+        string campaignId,
+        [FromQuery] string? fromDateEgypt,
+        [FromQuery] string? toDateEgypt,
+        [FromQuery] string? outcome,
+        [FromQuery] string? feedbackEligibility,
+        [FromQuery] string? doctorSpecialization,
+        [FromQuery] string? doctorLocation,
+        [FromQuery] int? PageNumber = null,
+        [FromQuery] int? PageSize = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var result = await companyReportingService.GetCampaignFeedbackReportsAsync(
+            actorUserId,
+            campaignId,
+            fromDateEgypt,
+            toDateEgypt,
+            outcome,
+            feedbackEligibility,
+            doctorSpecialization,
+            doctorLocation,
+            PageNumber,
+            PageSize,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    [HttpGet("{campaignId}/analytics")]
+    [EnableRateLimiting(RateLimitPolicyNames.Envelope)]
+    [Authorize(Policy = AuthorizationPolicies.Phase10CompanyReportingAccess)]
+    [ProducesResponseType(typeof(ApiEnvelope<CampaignAnalyticsDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiEnvelope<CampaignAnalyticsDto>>> GetAnalytics(
+        string campaignId,
+        [FromQuery] string? fromDateEgypt,
+        [FromQuery] string? toDateEgypt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetActorUserId(out var actorUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        var result = await companyReportingService.GetCampaignAnalyticsAsync(
+            actorUserId,
+            campaignId,
+            fromDateEgypt,
+            toDateEgypt,
             cancellationToken);
         return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }

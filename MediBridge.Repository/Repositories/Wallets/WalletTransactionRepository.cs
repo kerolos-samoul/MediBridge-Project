@@ -1,5 +1,6 @@
 using MediBridge.Core.Entities.Wallets;
 using MediBridge.Core.Enums;
+using MediBridge.Core.Interfaces.Campaigns;
 using MediBridge.Core.Interfaces.Wallets;
 using MediBridge.Repository.Data;
 using Microsoft.EntityFrameworkCore;
@@ -103,5 +104,45 @@ public sealed class WalletTransactionRepository : IWalletTransactionRepository
     public Task<int> CountWalletTransactionsAsync(string walletId, CancellationToken cancellationToken = default)
     {
         return context.WalletTransactions.CountAsync(transaction => transaction.WalletId == walletId, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<CompanyReportingFinancialEvidenceReadModel>> ListFinancialEvidenceByDeliveryIdsAsync(
+        IReadOnlyCollection<string> deliveryIds,
+        CancellationToken cancellationToken = default)
+    {
+        var scopedDeliveryIds = deliveryIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (scopedDeliveryIds.Length == 0)
+        {
+            return Task.FromResult<IReadOnlyList<CompanyReportingFinancialEvidenceReadModel>>(Array.Empty<CompanyReportingFinancialEvidenceReadModel>());
+        }
+
+        return ListFinancialEvidenceByDeliveryIdsCoreAsync(scopedDeliveryIds, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<CompanyReportingFinancialEvidenceReadModel>> ListFinancialEvidenceByDeliveryIdsCoreAsync(
+        IReadOnlyCollection<string> deliveryIds,
+        CancellationToken cancellationToken)
+    {
+        return await context.WalletTransactions
+            .AsNoTracking()
+            .Where(transaction => transaction.RelatedDeliveryId != null
+                && deliveryIds.Contains(transaction.RelatedDeliveryId)
+                && (transaction.OperationType == WalletTransactionType.Reserve
+                    || transaction.OperationType == WalletTransactionType.Release
+                    || transaction.OperationType == WalletTransactionType.Charge
+                    || transaction.OperationType == WalletTransactionType.Earn))
+            .GroupBy(transaction => transaction.RelatedDeliveryId!)
+            .Select(group => new CompanyReportingFinancialEvidenceReadModel(
+                group.Key,
+                group.Where(transaction => transaction.OperationType == WalletTransactionType.Reserve).Sum(transaction => transaction.Amount),
+                group.Where(transaction => transaction.OperationType == WalletTransactionType.Release).Sum(transaction => transaction.Amount),
+                group.Where(transaction => transaction.OperationType == WalletTransactionType.Charge).Sum(transaction => transaction.Amount),
+                group.Where(transaction => transaction.OperationType == WalletTransactionType.Earn).Sum(transaction => transaction.Amount),
+                group.Where(transaction => transaction.OperationType == WalletTransactionType.Charge).Sum(transaction => transaction.Amount)
+                    - group.Where(transaction => transaction.OperationType == WalletTransactionType.Earn).Sum(transaction => transaction.Amount)))
+            .ToListAsync(cancellationToken);
     }
 }
