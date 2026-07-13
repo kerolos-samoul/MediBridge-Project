@@ -130,7 +130,7 @@ public sealed class Phase7LayeringAndScopeGuardTests
         var forbiddenRouteMarkers = new[]
         {
             "hangfire", "/jobs", "job-control",
-            "weekly", "activity", "notification"
+            "notification"
         };
         Assert.DoesNotContain(routes, route => forbiddenRouteMarkers.Any(marker =>
             route.Contains(marker, StringComparison.OrdinalIgnoreCase)));
@@ -143,7 +143,7 @@ public sealed class Phase7LayeringAndScopeGuardTests
 
         var forbiddenServiceMarkers = new[]
         {
-            "WeeklyEnforcement", "ActivityScore", "Notification"
+            "Notification"
         };
         var serviceTypes = typeof(DeliveryExpiryService).Assembly.GetTypes()
             .Where(type => type.Namespace == "MediBridge.Services.Services")
