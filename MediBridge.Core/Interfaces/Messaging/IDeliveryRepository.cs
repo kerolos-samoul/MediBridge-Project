@@ -1,5 +1,6 @@
 using MediBridge.Core.Entities.Messaging;
 using MediBridge.Core.Enums;
+using MediBridge.Core.Interfaces.Campaigns;
 
 namespace MediBridge.Core.Interfaces.Messaging;
 
@@ -38,4 +39,33 @@ public interface IDeliveryRepository
     Task<bool> TryMarkInteractedAndChargedAsync(string deliveryId, DeliveryInteractionOutcome outcome, DateTime interactedAtUtc, string? feedbackText, FeedbackQualityStatus? feedbackQualityStatus, CancellationToken cancellationToken = default);
     Task<ActivityScoreAggregateReadModel> GetActivityScoreAggregateAsync(string doctorId, DateOnly windowStartDateEgypt, DateOnly windowEndDateEgypt, CancellationToken cancellationToken = default) => throw new NotSupportedException("Phase 9 activity score aggregates are not available.");
     Task<WeeklyInteractionCountReadModel> GetWeeklyInteractionCountAsync(string doctorId, DateOnly weekStartDateEgypt, DateOnly weekEndDateEgypt, CancellationToken cancellationToken = default) => throw new NotSupportedException("Phase 9 weekly interaction counts are not available.");
+    Task<IReadOnlyList<CompanyReportingDeliveryAggregateReadModel>> ListCompanyCampaignDeliveryAggregatesAsync(
+        string companyId,
+        IReadOnlyCollection<string> campaignIds,
+        CompanyReportingDateRange dateRange,
+        CancellationToken cancellationToken = default);
+    Task<CompanyReportingPageReadModel<CampaignDeliveryReportRowReadModel>> ListCompanyCampaignDeliveryReportsAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingDeliveryFilters filters,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken = default);
+    Task<CompanyReportingPageReadModel<CampaignFeedbackReportRowReadModel>> ListCompanyCampaignFeedbackReportsAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingFeedbackFilters filters,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<CompanyReportingDeliverySourceReadModel>> ListCompanyCampaignAnalyticsDeliveriesAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> ListCompanyCampaignDeliveryIdsAsync(
+        string companyId,
+        string campaignId,
+        CompanyReportingDateRange dateRange,
+        CancellationToken cancellationToken = default);
 }

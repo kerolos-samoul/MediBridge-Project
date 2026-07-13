@@ -65,6 +65,30 @@ public sealed class AuditEventRepository : IAuditEventRepository
         }, cancellationToken);
     }
 
+    public Task AddReportingDiscrepancyAsync(
+        string auditEventId,
+        string? actorUserId,
+        string? actorRole,
+        string campaignId,
+        string metadata,
+        DateTime createdAtUtc,
+        CancellationToken cancellationToken = default)
+    {
+        return AddPhase5AuditEventAsync(
+            auditEventId,
+            "Phase10ReportingReconciliationDiscrepancy",
+            actorUserId,
+            actorRole,
+            AuditTargetType.Campaign,
+            campaignId,
+            AuditOutcome.Denied,
+            "Company reporting blocked because source evidence did not reconcile.",
+            correlationId: null,
+            metadata,
+            createdAtUtc,
+            cancellationToken);
+    }
+
     public Task<string?> FindAuditEventIdAsync(string auditEventId, CancellationToken cancellationToken = default)
     {
         return context.AuditEvents

@@ -1,0 +1,585 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 10 Company Reporting API
+  version: 1.0.0
+  description: >-
+    Company-owned campaign reporting contracts for live delivery, feedback,
+    analytics, and spend reporting. All date filters use DeliveryDateEgypt and
+    are capped at 90 inclusive Egypt business days.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /api/company/campaigns:
+    get:
+      summary: List company campaigns with reporting summary fields
+      operationId: listCompanyCampaignReports
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FromDateEgypt'
+        - $ref: '#/components/parameters/ToDateEgypt'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CampaignStatus'
+      responses:
+        '200':
+          description: Reporting-enhanced campaign page for the authenticated company.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCampaignReportPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/ReportingDiscrepancy'
+  /api/company/campaigns/{campaignId}/deliveries:
+    get:
+      summary: List delivery-level reporting rows for one owned campaign
+      operationId: listCompanyCampaignDeliveries
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - $ref: '#/components/parameters/FromDateEgypt'
+        - $ref: '#/components/parameters/ToDateEgypt'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/DeliveryStatus'
+        - name: doctorSpecialization
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 120
+        - name: doctorLocation
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 120
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Read, Unread, Interacted, Uninteracted]
+      responses:
+        '200':
+          description: Delivery report rows for the owned campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeDeliveryReportPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ReportingDiscrepancy'
+  /api/company/campaigns/{campaignId}/feedback:
+    get:
+      summary: List non-empty doctor feedback for one owned campaign
+      operationId: listCompanyCampaignFeedback
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - $ref: '#/components/parameters/FromDateEgypt'
+        - $ref: '#/components/parameters/ToDateEgypt'
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: outcome
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Accepted, Rejected]
+        - name: feedbackEligibility
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [Eligible, Ineligible]
+        - name: doctorSpecialization
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 120
+        - name: doctorLocation
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 120
+      responses:
+        '200':
+          description: Feedback rows for the owned campaign.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeFeedbackReportPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/company/campaigns/{campaignId}/analytics:
+    get:
+      summary: Get live analytics and spend totals for one owned campaign
+      operationId: getCompanyCampaignAnalytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+        - $ref: '#/components/parameters/FromDateEgypt'
+        - $ref: '#/components/parameters/ToDateEgypt'
+      responses:
+        '200':
+          description: Analytics for the owned campaign and date scope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeCampaignAnalytics'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ReportingDiscrepancy'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    CampaignId:
+      name: campaignId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    FromDateEgypt:
+      name: fromDateEgypt
+      in: query
+      required: false
+      description: >-
+        Inclusive delivery Egypt business date lower bound. If both date bounds
+        are omitted, the service uses the latest 90 inclusive delivery Egypt
+        business days ending on the current Egypt business date. If only
+        toDateEgypt is provided, this defaults to 89 days before toDateEgypt.
+        If only fromDateEgypt is provided, toDateEgypt defaults to the earlier
+        of 89 days after fromDateEgypt or the current Egypt business date.
+      schema:
+        type: string
+        format: date
+    ToDateEgypt:
+      name: toDateEgypt
+      in: query
+      required: false
+      description: >-
+        Inclusive delivery Egypt business date upper bound. The resolved range
+        may not exceed 90 inclusive days. If omitted while fromDateEgypt is
+        present, this defaults to the earlier of 89 days after fromDateEgypt or
+        the current Egypt business date.
+      schema:
+        type: string
+        format: date
+    PageNumber:
+      name: PageNumber
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+    PageSize:
+      name: PageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+  responses:
+    BadRequest:
+      description: Invalid query, pagination, filter, or date range.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Unauthorized:
+      description: Missing, expired, or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Forbidden:
+      description: Caller is not an approved Pharmaceutical Company user for this reporting path.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    NotFound:
+      description: Campaign is absent, not owned by caller, or not report-visible to the caller.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    ReportingDiscrepancy:
+      description: Delivery and append-only financial evidence do not reconcile for the affected report scope; no partial monetary totals are returned.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+  schemas:
+    EnvelopeEmpty:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    EnvelopeCampaignReportPage:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/CampaignReportPage'
+    EnvelopeDeliveryReportPage:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/DeliveryReportPage'
+    EnvelopeFeedbackReportPage:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/FeedbackReportPage'
+    EnvelopeCampaignAnalytics:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/CampaignAnalytics'
+    PageMetadata:
+      type: object
+      required: [PageNumber, PageSize, TotalCount, TotalPages, HasPreviousPage, HasNextPage]
+      properties:
+        PageNumber:
+          type: integer
+        PageSize:
+          type: integer
+        TotalCount:
+          type: integer
+        TotalPages:
+          type: integer
+        HasPreviousPage:
+          type: boolean
+        HasNextPage:
+          type: boolean
+    CampaignReportPage:
+      type: object
+      required: [Page, Items]
+      properties:
+        Page:
+          $ref: '#/components/schemas/PageMetadata'
+        Items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampaignReportSummary'
+    DeliveryReportPage:
+      type: object
+      required: [Page, Items]
+      properties:
+        Page:
+          $ref: '#/components/schemas/PageMetadata'
+        Items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampaignDeliveryReportRow'
+    FeedbackReportPage:
+      type: object
+      required: [Page, Items]
+      properties:
+        Page:
+          $ref: '#/components/schemas/PageMetadata'
+        Items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CampaignFeedbackReportRow'
+    CampaignStatus:
+      type: string
+      enum: [Draft, PendingReview, Approved, Rejected, Active, Paused, Completed, Cancelled]
+    DeliveryStatus:
+      type: string
+      enum: [Active, Accepted, Rejected, Expired]
+    CampaignReportSummary:
+      type: object
+      required:
+        - CampaignId
+        - Title
+        - Status
+        - TargetCount
+        - DeliveredCount
+        - ActiveUnansweredCount
+        - AcceptedCount
+        - RejectedCount
+        - ExpiredCount
+        - FeedbackCount
+        - ReservedAmount
+        - ChargedSpend
+        - DoctorEarnings
+        - PlatformFee
+      properties:
+        CampaignId:
+          type: string
+        Title:
+          type: string
+        Status:
+          $ref: '#/components/schemas/CampaignStatus'
+        SubmittedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        ReviewedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        TargetCount:
+          type: integer
+        DeliveredCount:
+          type: integer
+        ActiveUnansweredCount:
+          type: integer
+        AcceptedCount:
+          type: integer
+        RejectedCount:
+          type: integer
+        ExpiredCount:
+          type: integer
+        FeedbackCount:
+          type: integer
+        ReservedAmount:
+          type: number
+          format: decimal
+        ChargedSpend:
+          type: number
+          format: decimal
+        DoctorEarnings:
+          type: number
+          format: decimal
+        PlatformFee:
+          type: number
+          format: decimal
+    CampaignDeliveryReportRow:
+      type: object
+      required:
+        - DeliveryId
+        - CampaignId
+        - PublicDoctorId
+        - DoctorSpecialization
+        - DoctorExperienceBand
+        - DoctorLocation
+        - DeliveryDateEgypt
+        - DeliveredAtUtc
+        - Status
+        - PriceSnapshot
+        - ReservedAmount
+        - ChargedAmount
+        - DoctorEarnings
+        - PlatformFee
+      properties:
+        DeliveryId:
+          type: string
+        CampaignId:
+          type: string
+        PublicDoctorId:
+          type: string
+        DoctorSpecialization:
+          type: string
+        DoctorExperienceBand:
+          type: string
+        DoctorLocation:
+          type: string
+        DeliveryDateEgypt:
+          type: string
+          format: date
+        DeliveredAtUtc:
+          type: string
+          format: date-time
+        ReadAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        Status:
+          $ref: '#/components/schemas/DeliveryStatus'
+        InteractedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        PriceSnapshot:
+          type: number
+          format: decimal
+        ReservedAmount:
+          type: number
+          format: decimal
+        ChargedAmount:
+          type: number
+          format: decimal
+        DoctorEarnings:
+          type: number
+          format: decimal
+        PlatformFee:
+          type: number
+          format: decimal
+    CampaignFeedbackReportRow:
+      type: object
+      required:
+        - DeliveryId
+        - CampaignId
+        - Outcome
+        - FeedbackText
+        - FeedbackCreatedAtUtc
+        - FeedbackQualifiesForScore
+        - PublicDoctorId
+        - DoctorSpecialization
+        - DoctorExperienceBand
+        - DoctorLocation
+      properties:
+        DeliveryId:
+          type: string
+        CampaignId:
+          type: string
+        Outcome:
+          type: string
+          enum: [Accepted, Rejected]
+        FeedbackText:
+          type: string
+        FeedbackCreatedAtUtc:
+          type: string
+          format: date-time
+        FeedbackQualifiesForScore:
+          type: boolean
+        PublicDoctorId:
+          type: string
+        DoctorSpecialization:
+          type: string
+        DoctorExperienceBand:
+          type: string
+        DoctorLocation:
+          type: string
+    RateMetric:
+      type: object
+      required: [Value, Numerator, Denominator, HasEligibleRecords]
+      properties:
+        Value:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+        Numerator:
+          type: integer
+        Denominator:
+          type: integer
+        HasEligibleRecords:
+          type: boolean
+    CampaignAnalytics:
+      type: object
+      required:
+        - CampaignId
+        - DeliveredCount
+        - ActiveUnansweredCount
+        - AcceptedCount
+        - RejectedCount
+        - ExpiredCount
+        - FeedbackCount
+        - InteractionRate
+        - AcceptanceRate
+        - RejectionRate
+        - ExpiryRate
+        - FeedbackRate
+        - ReservedAmount
+        - ChargedSpend
+        - DoctorEarnings
+        - PlatformFee
+      properties:
+        CampaignId:
+          type: string
+        FromDateEgypt:
+          type: string
+          format: date
+          nullable: true
+        ToDateEgypt:
+          type: string
+          format: date
+          nullable: true
+        DeliveredCount:
+          type: integer
+        ActiveUnansweredCount:
+          type: integer
+        AcceptedCount:
+          type: integer
+        RejectedCount:
+          type: integer
+        ExpiredCount:
+          type: integer
+        FeedbackCount:
+          type: integer
+        InteractionRate:
+          $ref: '#/components/schemas/RateMetric'
+        AcceptanceRate:
+          $ref: '#/components/schemas/RateMetric'
+        RejectionRate:
+          $ref: '#/components/schemas/RateMetric'
+        ExpiryRate:
+          $ref: '#/components/schemas/RateMetric'
+        FeedbackRate:
+          $ref: '#/components/schemas/RateMetric'
+        ReservedAmount:
+          type: number
+          format: decimal
+        ChargedSpend:
+          type: number
+          format: decimal
+        DoctorEarnings:
+          type: number
+          format: decimal
+        PlatformFee:
+          type: number
+          format: decimal

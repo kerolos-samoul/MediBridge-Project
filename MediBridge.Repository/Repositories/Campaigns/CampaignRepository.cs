@@ -120,6 +120,121 @@ public sealed class CampaignRepository : ICampaignRepository
             cancellationToken);
     }
 
+    public Task<bool> IsReportVisibleCampaignOwnedByCompanyAsync(string companyId, string campaignId, CancellationToken cancellationToken = default)
+    {
+        return context.Campaigns
+            .AsNoTracking()
+            .AnyAsync(campaign => campaign.Id == campaignId && campaign.CompanyId == companyId && !campaign.IsDeleted, cancellationToken);
+    }
+
+    public Task<CompanyReportingPageReadModel<CampaignReportSummaryReadModel>> ListCompanyCampaignReportSummariesAsync(
+        string companyId,
+        CampaignStatus? status,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken = default)
+    {
+        return ListCompanyCampaignReportSummariesCoreAsync(companyId, status, dateRange, pagination, cancellationToken);
+    }
+
+    private async Task<CompanyReportingPageReadModel<CampaignReportSummaryReadModel>> ListCompanyCampaignReportSummariesCoreAsync(
+        string companyId,
+        CampaignStatus? status,
+        CompanyReportingDateRange dateRange,
+        CompanyReportingPagination pagination,
+        CancellationToken cancellationToken)
+    {
+        var query = context.Campaigns
+            .AsNoTracking()
+            .Where(campaign => campaign.CompanyId == companyId && !campaign.IsDeleted);
+        if (status is not null)
+        {
+            query = query.Where(campaign => campaign.Status == status);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var rows = await query
+            .Select(campaign => new
+            {
+                campaign.Id,
+                campaign.Title,
+                campaign.Status,
+                campaign.SubmittedAtUtc,
+                campaign.CreatedAtUtc,
+                TargetCount = context.CampaignTargets.Count(target => target.CampaignId == campaign.Id),
+                ReviewedAtUtc = context.CampaignReviewHistories
+                    .Where(history => history.CampaignId == campaign.Id)
+                    .Select(history => (DateTime?)history.CreatedAtUtc)
+                    .Max(),
+                LatestDeliveredAtUtc = context.DoctorAdDeliveries
+                    .Where(delivery => delivery.CompanyId == companyId
+                        && delivery.CampaignId == campaign.Id
+                        && delivery.DeliveryDateEgypt >= dateRange.FromDateEgypt
+                        && delivery.DeliveryDateEgypt <= dateRange.ToDateEgypt)
+                    .Select(delivery => (DateTime?)delivery.DeliveredAtUtc)
+                    .Max(),
+                LatestReadAtUtc = context.DoctorAdDeliveries
+                    .Where(delivery => delivery.CompanyId == companyId
+                        && delivery.CampaignId == campaign.Id
+                        && delivery.DeliveryDateEgypt >= dateRange.FromDateEgypt
+                        && delivery.DeliveryDateEgypt <= dateRange.ToDateEgypt)
+                    .Select(delivery => delivery.ReadAtUtc)
+                    .Max(),
+                LatestInteractedAtUtc = context.DoctorAdDeliveries
+                    .Where(delivery => delivery.CompanyId == companyId
+                        && delivery.CampaignId == campaign.Id
+                        && delivery.DeliveryDateEgypt >= dateRange.FromDateEgypt
+                        && delivery.DeliveryDateEgypt <= dateRange.ToDateEgypt)
+                    .Select(delivery => delivery.InteractedAtUtc)
+                    .Max(),
+                LatestFeedbackCreatedAtUtc = context.DoctorAdDeliveries
+                    .Where(delivery => delivery.CompanyId == companyId
+                        && delivery.CampaignId == campaign.Id
+                        && delivery.DeliveryDateEgypt >= dateRange.FromDateEgypt
+                        && delivery.DeliveryDateEgypt <= dateRange.ToDateEgypt)
+                    .Select(delivery => delivery.FeedbackCreatedAtUtc)
+                    .Max()
+            })
+            .ToListAsync(cancellationToken);
+
+        var items = rows
+            .Select(row => new CampaignReportSummaryReadModel(
+                row.Id,
+                row.Title,
+                row.Status,
+                row.SubmittedAtUtc,
+                row.ReviewedAtUtc,
+                row.TargetCount,
+                DeliveredCount: 0,
+                ActiveUnansweredCount: 0,
+                AcceptedCount: 0,
+                RejectedCount: 0,
+                ExpiredCount: 0,
+                FeedbackCount: 0,
+                ReservedAmount: 0m,
+                ChargedSpend: 0m,
+                DoctorEarnings: 0m,
+                PlatformFee: 0m,
+                MaxUtc(
+                    row.LatestDeliveredAtUtc,
+                    row.LatestReadAtUtc,
+                    row.LatestInteractedAtUtc,
+                    row.LatestFeedbackCreatedAtUtc,
+                    row.ReviewedAtUtc,
+                    row.SubmittedAtUtc,
+                    row.CreatedAtUtc)))
+            .OrderByDescending(summary => summary.CampaignActivityAtUtc)
+            .ThenBy(summary => summary.CampaignId, StringComparer.Ordinal)
+            .Skip(pagination.Skip)
+            .Take(pagination.PageSize)
+            .ToArray();
+
+        return new CompanyReportingPageReadModel<CampaignReportSummaryReadModel>(items, totalCount);
+    }
+
+    private static DateTime MaxUtc(params DateTime?[] values)
+        => values.Where(value => value.HasValue).Select(value => value!.Value).DefaultIfEmpty(DateTime.MinValue).Max();
+
     public Task<Campaign?> FindApprovedCampaignForQueueAsync(string campaignId, CancellationToken cancellationToken = default)
     {
         return context.Campaigns.FirstOrDefaultAsync(
