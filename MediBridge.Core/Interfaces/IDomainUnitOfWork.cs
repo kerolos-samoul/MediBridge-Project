@@ -25,6 +25,7 @@ public interface IDomainUnitOfWork
     IWalletRepository Wallets { get; }
     IWalletTransactionRepository WalletTransactions { get; }
     IWalletLedgerEntryRepository WalletLedgerEntries { get; }
+    IWithdrawalRequestRepository WithdrawalRequests => throw new NotSupportedException("Phase 11 withdrawal requests are not available in this unit of work.");
     IPaymentRepository Payments { get; }
     IStoredFileRepository StoredFiles { get; }
     IFileReviewRepository FileReviews { get; }

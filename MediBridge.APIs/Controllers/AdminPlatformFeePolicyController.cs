@@ -38,6 +38,9 @@ public sealed class AdminPlatformFeePolicyController : ControllerBase
         return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }
 
+    /// <summary>
+    /// Sets the platform fee policy for future delivery settlement snapshots.
+    /// </summary>
     [HttpPut]
     [ProducesResponseType(typeof(ApiEnvelope<PlatformFeePolicyDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]

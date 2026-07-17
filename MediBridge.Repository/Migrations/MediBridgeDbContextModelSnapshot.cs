@@ -1391,6 +1391,11 @@ namespace MediBridge.Repository.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("PricingIsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Reason")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -1402,6 +1407,8 @@ namespace MediBridge.Repository.Migrations
                     b.HasIndex("CorrectsHistoryId");
 
                     b.HasIndex("DoctorId", "CreatedAtUtc");
+
+                    b.HasIndex("DoctorId", "PricingIsActive", "CreatedAtUtc");
 
                     b.ToTable("DoctorPriceHistories", (string)null);
                 });
@@ -1701,6 +1708,11 @@ namespace MediBridge.Repository.Migrations
                     b.Property<decimal?>("PricePerMessage")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("PricingIsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<int?>("RequestedDailyMessageLimit")
                         .HasColumnType("int");
@@ -2031,6 +2043,10 @@ namespace MediBridge.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("WithdrawalRequestId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CorrectsTransactionId");
@@ -2041,6 +2057,8 @@ namespace MediBridge.Repository.Migrations
                     b.HasIndex("WalletId", "CreatedAtUtc");
 
                     b.HasIndex("RelatedDeliveryId", "OperationType", "CreatedAtUtc");
+
+                    b.HasIndex("WithdrawalRequestId", "OperationType", "CreatedAtUtc");
 
                     b.ToTable("WalletTransactions", null, t =>
                         {
@@ -2071,9 +2089,20 @@ namespace MediBridge.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("PayoutFailureReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("PayoutReference")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("PayoutStatusChangedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PayoutStatusChangedByAdminUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("RequestedAtUtc")
                         .HasColumnType("datetime2");
@@ -2089,9 +2118,17 @@ namespace MediBridge.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DoctorId");
+                    b.HasIndex("PayoutReference");
+
+                    b.HasIndex("PayoutStatusChangedByAdminUserId");
 
                     b.HasIndex("ReviewedByAdminUserId");
+
+                    b.HasIndex("ReviewedAtUtc", "ReviewedByAdminUserId");
+
+                    b.HasIndex("DoctorId", "RequestedAtUtc", "Id");
+
+                    b.HasIndex("Status", "RequestedAtUtc", "Id");
 
                     b.ToTable("WithdrawalRequests", null, t =>
                         {
@@ -2820,6 +2857,11 @@ namespace MediBridge.Repository.Migrations
                         .HasForeignKey("WalletId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("MediBridge.Core.Entities.Wallets.WithdrawalRequest", null)
+                        .WithMany()
+                        .HasForeignKey("WithdrawalRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MediBridge.Core.Entities.Wallets.WithdrawalRequest", b =>
@@ -2829,6 +2871,11 @@ namespace MediBridge.Repository.Migrations
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("MediBridge.Repository.Data.Identity.MediBridgeIdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("PayoutStatusChangedByAdminUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MediBridge.Repository.Data.Identity.MediBridgeIdentityUser", null)
                         .WithMany()

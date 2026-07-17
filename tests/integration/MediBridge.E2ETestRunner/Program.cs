@@ -27,6 +27,7 @@ namespace MediBridge.E2ETestRunner
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  dotnet run --project tests/integration/MediBridge.E2ETestRunner -- stage1");
                 Console.WriteLine("  dotnet run --project tests/integration/MediBridge.E2ETestRunner -- stage2 <doctor_otp> <company_otp>");
+                Console.WriteLine("  dotnet run --project tests/integration/MediBridge.E2ETestRunner -- coverage");
                 return;
             }
 
@@ -46,6 +47,10 @@ namespace MediBridge.E2ETestRunner
                 string doctorOtp = args[1];
                 string companyOtp = args[2];
                 await RunStage2Async(doctorOtp, companyOtp);
+            }
+            else if (mode == "coverage")
+            {
+                await RunCoverageAsync();
             }
             else
             {

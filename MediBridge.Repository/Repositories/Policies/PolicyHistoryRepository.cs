@@ -38,6 +38,35 @@ public sealed class PolicyHistoryRepository : IPolicyHistoryRepository
         await AddDoctorPriceHistoryAsync(historyId, doctorId, previousPricePerMessage, newPricePerMessage, adminUserId, reason: null, correctsHistoryId, cancellationToken);
     }
 
+    public async Task AddDoctorPricingDeactivationHistoryAsync(
+        string historyId,
+        string doctorId,
+        decimal? previousPricePerMessage,
+        string adminUserId,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        await context.DoctorPriceHistories.AddAsync(new DoctorPriceHistory
+        {
+            Id = historyId,
+            DoctorId = doctorId,
+            PreviousPricePerMessage = previousPricePerMessage is null ? null : MoneyRules.EnsureValid(previousPricePerMessage.Value, nameof(previousPricePerMessage)),
+            NewPricePerMessage = null,
+            PricingIsActive = false,
+            ChangedByAdminUserId = adminUserId,
+            Reason = string.IsNullOrWhiteSpace(reason) ? throw new ArgumentException("Reason is required.", nameof(reason)) : reason.Trim()
+        }, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> ListDoctorPricingDeactivationHistoryIdsAsync(string doctorId, CancellationToken cancellationToken = default)
+    {
+        return await context.DoctorPriceHistories
+            .Where(history => history.DoctorId == doctorId && !history.PricingIsActive)
+            .OrderBy(history => history.CreatedAtUtc)
+            .Select(history => history.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     private async Task AddDoctorPriceHistoryAsync(
         string historyId,
         string doctorId,
@@ -54,6 +83,7 @@ public sealed class PolicyHistoryRepository : IPolicyHistoryRepository
             DoctorId = doctorId,
             PreviousPricePerMessage = previousPricePerMessage is null ? null : MoneyRules.EnsureValid(previousPricePerMessage.Value, nameof(previousPricePerMessage)),
             NewPricePerMessage = newPricePerMessage is null ? null : MoneyRules.EnsureValid(newPricePerMessage.Value, nameof(newPricePerMessage)),
+            PricingIsActive = true,
             ChangedByAdminUserId = adminUserId,
             Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
             CorrectsHistoryId = correctsHistoryId

@@ -36,6 +36,7 @@ if (builder.Environment.IsDevelopment())
         options.DocumentFilter<MediBridge.APIs.OpenApi.BearerSecurityDocumentFilter>();
         options.OperationFilter<MediBridge.APIs.OpenApi.AuthorizeOperationFilter>();
         options.OperationFilter<MediBridge.APIs.OpenApi.IdempotencyKeyOperationFilter>();
+        options.CustomSchemaIds(type => (type.FullName ?? type.Name).Replace("+", ".", StringComparison.Ordinal));
         
         // Include XML comments for API documentation
         var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -84,6 +85,7 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Ide
 
 app.UseFoundationPipeline();
 app.UseRouting();
+app.UseCors(ServiceCollectionExtensions.FrontendCorsPolicyName);
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseHttpsRedirection();

@@ -74,6 +74,7 @@ public sealed class DeliveryCandidateEligibilityPolicy
         LockedCampaignCompanyEligibilityReadModel campaign) =>
         doctor.AccountStatus != AccountStatus.Approved ||
         doctor.MarketplaceStatus != DoctorMarketplaceStatus.Active ||
+        !doctor.PricingIsActive ||
         doctor.PricePerMessage is null or <= 0m ||
         campaign.CompanyAccountStatus != AccountStatus.Approved ||
         campaign.CampaignStatus is not (CampaignStatus.Approved or CampaignStatus.Active);

@@ -61,7 +61,7 @@ public sealed class AdminAccountService : IAdminAccountService
 
         return await identityUnitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
         {
-            var adminUser = await identityUnitOfWork.Users.FindByIdAsync(adminUserId, transactionCancellationToken)
+            var adminUser = await identityUnitOfWork.Users.FindByIdForUpdateAsync(adminUserId, transactionCancellationToken)
                 ?? throw new KeyNotFoundException("Admin account was not found.");
 
             if (adminUser.Role != UserRole.Admin || adminUser.AccountStatus != AccountStatus.Approved || adminUser.IsDeleted)
@@ -69,20 +69,23 @@ public sealed class AdminAccountService : IAdminAccountService
                 throw new UnauthorizedAccessException("Admin role is required.");
             }
 
-            var targetUser = await identityUnitOfWork.Users.FindByIdAsync(targetUserId, transactionCancellationToken)
+            var targetUser = await identityUnitOfWork.Users.FindByIdForUpdateAsync(targetUserId, transactionCancellationToken)
                 ?? throw new KeyNotFoundException("Target account was not found.");
 
             var now = DateTime.UtcNow;
-            ValidateDecisionTransition(targetUser, request.Decision);
+            var priorStatus = targetUser.AccountStatus;
+            await ValidateDecisionTransitionAsync(targetUser, request.Decision, transactionCancellationToken);
             var resultingStatus = MapDecisionToStatus(request.Decision);
+            var publicReason = NormalizeOptionalText(request.Reason);
+            var internalNotes = NormalizeOptionalText(request.Notes);
             var decision = new AdminAccountDecision
             {
                 AdminUserId = adminUser.Id,
                 TargetUserId = targetUser.Id,
                 Decision = request.Decision,
                 ResultingAccountStatus = resultingStatus,
-                Reason = request.Reason?.Trim(),
-                Notes = request.Notes?.Trim(),
+                Reason = publicReason,
+                Notes = internalNotes,
                 CreatedAtUtc = now
             };
 
@@ -122,8 +125,8 @@ public sealed class AdminAccountService : IAdminAccountService
                 ActorUserId = adminUser.Id,
                 TargetUserId = targetUser.Id,
                 Role = adminUser.Role,
-                Outcome = request.Decision.ToString(),
-                Reason = request.Reason?.Trim(),
+                Outcome = $"{request.Decision}:{priorStatus}->{resultingStatus}",
+                Reason = publicReason,
                 CorrelationId = Guid.NewGuid().ToString("N"),
                 CreatedAtUtc = now
             }, transactionCancellationToken);
@@ -185,7 +188,10 @@ public sealed class AdminAccountService : IAdminAccountService
         };
     }
 
-    private static void ValidateDecisionTransition(ApplicationUser targetUser, AdminAccountDecisionType decision)
+    private async Task ValidateDecisionTransitionAsync(
+        ApplicationUser targetUser,
+        AdminAccountDecisionType decision,
+        CancellationToken cancellationToken)
     {
         if (targetUser.IsDeleted)
         {
@@ -205,7 +211,21 @@ public sealed class AdminAccountService : IAdminAccountService
 
         if (!isAllowed)
         {
+            var priorDecisions = await identityUnitOfWork.AdminAccountDecisions.ListByTargetUserIdAsync(
+                targetUser.Id,
+                cancellationToken);
+            if (priorDecisions.Count > 0)
+            {
+                throw new Phase5ConflictException("Account decision conflicts with an existing moderation decision.");
+            }
+
             throw new ValidationException("Validation failed.");
         }
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 }

@@ -15,11 +15,13 @@ public sealed class DoctorPriceHistoryConfiguration : IEntityTypeConfiguration<D
         builder.HasKey(history => history.Id);
         builder.Property(history => history.PreviousPricePerMessage).HasPrecision(18, 2);
         builder.Property(history => history.NewPricePerMessage).HasPrecision(18, 2);
+        builder.Property(history => history.PricingIsActive).HasDefaultValue(true);
         builder.Property(history => history.Reason).HasMaxLength(1000);
         builder.HasOne<DoctorProfile>().WithMany().HasForeignKey(history => history.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<MediBridgeIdentityUser>().WithMany().HasForeignKey(history => history.ChangedByAdminUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorPriceHistory>().WithMany().HasForeignKey(history => history.CorrectsHistoryId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(history => new { history.DoctorId, history.CreatedAtUtc });
+        builder.HasIndex(history => new { history.DoctorId, history.PricingIsActive, history.CreatedAtUtc });
     }
 }
 

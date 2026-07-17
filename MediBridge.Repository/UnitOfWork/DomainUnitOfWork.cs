@@ -32,6 +32,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         IWalletRepository wallets,
         IWalletTransactionRepository walletTransactions,
         IWalletLedgerEntryRepository walletLedgerEntries,
+        IWithdrawalRequestRepository withdrawalRequests,
         IPaymentRepository payments,
         IStoredFileRepository storedFiles,
         IFileReviewRepository fileReviews,
@@ -54,6 +55,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
         Wallets = wallets;
         WalletTransactions = walletTransactions;
         WalletLedgerEntries = walletLedgerEntries;
+        WithdrawalRequests = withdrawalRequests;
         Payments = payments;
         StoredFiles = storedFiles;
         FileReviews = fileReviews;
@@ -76,6 +78,7 @@ public sealed class DomainUnitOfWork : IDomainUnitOfWork
     public IWalletRepository Wallets { get; }
     public IWalletTransactionRepository WalletTransactions { get; }
     public IWalletLedgerEntryRepository WalletLedgerEntries { get; }
+    public IWithdrawalRequestRepository WithdrawalRequests { get; }
     public IPaymentRepository Payments { get; }
     public IStoredFileRepository StoredFiles { get; }
     public IFileReviewRepository FileReviews { get; }

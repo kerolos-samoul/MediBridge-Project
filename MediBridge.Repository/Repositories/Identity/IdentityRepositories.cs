@@ -297,6 +297,7 @@ public sealed class ProfileRepository : IProfileRepository
             user.IsDeleted,
             profile.IsDeleted,
             profile.Status,
+            profile.PricingIsActive,
             profile.PricePerMessage,
             profile.DailyMessageLimit);
     }
@@ -423,6 +424,7 @@ public sealed class ProfileRepository : IProfileRepository
             join user in context.Users on profile.UserId equals user.Id
             where !profile.IsDeleted
                   && profile.Status == DoctorMarketplaceStatus.Active
+                  && profile.PricingIsActive
                   && profile.PricePerMessage > 0
                   && profile.DailyMessageLimit > 0
                   && !user.IsDeleted

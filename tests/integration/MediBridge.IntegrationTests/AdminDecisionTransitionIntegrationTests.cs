@@ -76,6 +76,40 @@ public sealed class AdminDecisionTransitionIntegrationTests
         Assert.Empty(await db.AuthenticationAuditEvents.Where(candidate => candidate.TargetUserId == target.Id).ToListAsync());
     }
 
+    [Fact]
+    public async Task ConflictingAccountDecisions_OnlyFirstDecisionPersistsAndSecondReturnsConflict()
+    {
+        await using var factory = new WebAppFactory();
+        await factory.InitializeDatabaseAsync();
+        using var firstClient = factory.CreateClient();
+        using var secondClient = factory.CreateClient();
+
+        var firstAdmin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
+        var secondAdmin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
+        var target = await CreateTargetAsync(factory.Services, AccountStatus.Pending);
+        firstClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Admin", firstAdmin.Id));
+        secondClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Admin", secondAdmin.Id));
+
+        using var approved = await firstClient.PutAsJsonAsync($"/api/admin/accounts/{target.Id}/decision", new
+        {
+            Decision = "Approve"
+        });
+        using var rejected = await secondClient.PutAsJsonAsync($"/api/admin/accounts/{target.Id}/decision", new
+        {
+            Decision = "Reject",
+            Reason = "Conflicting moderation decision."
+        });
+
+        Assert.Equal(HttpStatusCode.OK, approved.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, rejected.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        Assert.Equal(AccountStatus.Approved, await db.Users.Where(candidate => candidate.Id == target.Id).Select(candidate => candidate.AccountStatus).SingleAsync());
+        Assert.Equal(1, await db.AdminAccountDecisions.CountAsync(candidate => candidate.TargetUserId == target.Id));
+        Assert.Equal(1, await db.AuthenticationAuditEvents.CountAsync(candidate => candidate.TargetUserId == target.Id));
+    }
+
     private static async Task<MediBridgeIdentityUser> CreateTargetAsync(IServiceProvider services, AccountStatus status, bool isDeleted = false)
     {
         using var scope = services.CreateScope();

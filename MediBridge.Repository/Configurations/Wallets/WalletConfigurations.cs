@@ -37,16 +37,19 @@ public sealed class WalletTransactionConfiguration : IEntityTypeConfiguration<Wa
         builder.Property(transaction => transaction.OperationType).HasConversion<int>();
         builder.Property(transaction => transaction.IdempotencyKey).HasMaxLength(160).IsRequired();
         builder.Property(transaction => transaction.Amount).HasPrecision(18, 2);
+        builder.Property(transaction => transaction.WithdrawalRequestId).HasMaxLength(450);
         builder.Property(transaction => transaction.Description).HasMaxLength(1000);
         builder.Property(transaction => transaction.Metadata).HasMaxLength(4000);
         builder.ToTable(table => table.HasCheckConstraint("CK_WalletTransactions_Amount_Positive", "[Amount] > 0"));
         builder.HasOne<Wallet>().WithMany().HasForeignKey(transaction => transaction.WalletId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<DoctorAdDelivery>().WithMany().HasForeignKey(transaction => transaction.RelatedDeliveryId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<WithdrawalRequest>().WithMany().HasForeignKey(transaction => transaction.WithdrawalRequestId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<WalletTransaction>().WithMany().HasForeignKey(transaction => transaction.CorrectsTransactionId).OnDelete(DeleteBehavior.Restrict);
         // Retries are deduplicated per wallet operation type, not by idempotency key alone.
         builder.HasIndex(transaction => new { transaction.OperationType, transaction.IdempotencyKey }).IsUnique();
         builder.HasIndex(transaction => new { transaction.WalletId, transaction.CreatedAtUtc });
         builder.HasIndex(transaction => new { transaction.RelatedDeliveryId, transaction.OperationType, transaction.CreatedAtUtc });
+        builder.HasIndex(transaction => new { transaction.WithdrawalRequestId, transaction.OperationType, transaction.CreatedAtUtc });
     }
 }
 
@@ -79,9 +82,16 @@ public sealed class WithdrawalRequestConfiguration : IEntityTypeConfiguration<Wi
         builder.Property(request => request.Status).HasConversion<int>();
         builder.Property(request => request.DecisionReason).HasMaxLength(1000);
         builder.Property(request => request.PayoutReference).HasMaxLength(200);
+        builder.Property(request => request.PayoutStatusChangedByAdminUserId).HasMaxLength(450);
+        builder.Property(request => request.PayoutFailureReason).HasMaxLength(1000);
         builder.Property(request => request.ConcurrencyToken).IsRowVersion();
         builder.ToTable(table => table.HasCheckConstraint("CK_WithdrawalRequests_Amount_Positive", "[Amount] > 0"));
         builder.HasOne<DoctorProfile>().WithMany().HasForeignKey(request => request.DoctorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<MediBridgeIdentityUser>().WithMany().HasForeignKey(request => request.ReviewedByAdminUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<MediBridgeIdentityUser>().WithMany().HasForeignKey(request => request.PayoutStatusChangedByAdminUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(request => new { request.Status, request.RequestedAtUtc, request.Id });
+        builder.HasIndex(request => new { request.DoctorId, request.RequestedAtUtc, request.Id });
+        builder.HasIndex(request => new { request.ReviewedAtUtc, request.ReviewedByAdminUserId });
+        builder.HasIndex(request => request.PayoutReference);
     }
 }

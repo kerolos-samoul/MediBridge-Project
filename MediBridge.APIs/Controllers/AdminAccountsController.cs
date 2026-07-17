@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using FluentValidation;
 using MediBridge.APIs.Contracts;
 using MediBridge.APIs.Security;
 using MediBridge.Services.DTOs.Admin;
@@ -27,15 +26,8 @@ public sealed class AdminAccountsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var result = await adminAccountService.ListPendingAccountsAsync(pageNumber, pageSize, cancellationToken);
-            return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
-        }
-        catch (ValidationException)
-        {
-            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
-        }
+        var result = await adminAccountService.ListPendingAccountsAsync(pageNumber, pageSize, cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }
 
     [HttpPut("accounts/{id}/decision")]
@@ -50,22 +42,7 @@ public sealed class AdminAccountsController : ControllerBase
             return Unauthorized(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status401Unauthorized, "Authentication denied.", null));
         }
 
-        try
-        {
-            var result = await adminAccountService.ApplyDecisionAsync(adminUserId, id, request, cancellationToken);
-            return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
-        }
-        catch (ValidationException)
-        {
-            return BadRequest(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, ApiEnvelopeFactory.Create<object?>(StatusCodes.Status403Forbidden, "Forbidden.", null));
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound(ApiEnvelopeFactory.Create<object?>(StatusCodes.Status404NotFound, "Not found.", null));
-        }
+        var result = await adminAccountService.ApplyDecisionAsync(adminUserId, id, request, cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
     }
 }

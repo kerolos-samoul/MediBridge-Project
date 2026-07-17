@@ -1,5 +1,6 @@
 using MediBridge.Repository.Data;
 using MediBridge.Repository.Data.Identity;
+using MediBridge.Repository.Repositories.Admin;
 using MediBridge.Repository.Repositories.Campaigns;
 using MediBridge.Repository.Repositories.Files;
 using MediBridge.Repository.Repositories.Identity;
@@ -9,6 +10,7 @@ using MediBridge.Repository.Repositories.Policies;
 using MediBridge.Repository.Repositories.Wallets;
 using MediBridge.Repository.UnitOfWork;
 using MediBridge.Core.Interfaces;
+using MediBridge.Core.Interfaces.Admin;
 using MediBridge.Core.Interfaces.Campaigns;
 using MediBridge.Core.Interfaces.Files;
 using MediBridge.Core.Interfaces.Identity;
@@ -69,6 +71,9 @@ public static class RepositoryServiceCollectionExtensions
         services.AddScoped<IWalletRepository, WalletRepository>();
         services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
         services.AddScoped<IWalletLedgerEntryRepository, WalletLedgerEntryRepository>();
+        services.AddScoped<IWithdrawalRequestRepository, WithdrawalRequestRepository>();
+        services.AddScoped<IAdminWorkQueueRepository, AdminWorkQueueRepository>();
+        services.AddScoped<IAdminStatisticsRepository, AdminStatisticsRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IStoredFileRepository, StoredFileRepository>();
         services.AddScoped<IFileReviewRepository, FileReviewRepository>();

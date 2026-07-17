@@ -108,7 +108,11 @@ public sealed class Phase4CampaignFileIntegrationTests
         await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, companyEmail, AccountStatus.Approved);
         var company = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, companyEmail);
         var campaignId = await SeedCampaignAsync(factory.Services, company.Id);
-        var fileId = await SeedOwnedCampaignFileAsync(factory.Services, company.Id, campaignId);
+        var fileId = await SeedOwnedCampaignFileAsync(
+            factory.Services,
+            company.Id,
+            campaignId,
+            StoredFileReviewStatus.Pending);
         var admin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Admin", admin.Id));
 

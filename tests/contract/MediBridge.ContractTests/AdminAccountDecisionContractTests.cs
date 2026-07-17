@@ -38,7 +38,10 @@ public sealed class AdminAccountDecisionContractTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var responseJson = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("Reviewed.", responseJson, StringComparison.Ordinal);
+        Assert.DoesNotContain("Notes", responseJson, StringComparison.OrdinalIgnoreCase);
+        using var document = JsonDocument.Parse(responseJson);
         AssertEnvelope(document.RootElement, 200, "Success");
         var data = document.RootElement.GetProperty("Data");
         Assert.Equal(targetId, data.GetProperty("UserId").GetString());

@@ -334,10 +334,13 @@ public sealed class FileWorkflowContractTests
         using var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ContractJwtFactory.CreateToken(adminUserId, "Admin"));
 
-        using var response = await client.PutAsync($"/api/admin/files/{fileId}/review", CreateJson("""{"Decision":"Approved","Reason":"Looks valid."}"""));
+        using var response = await client.PutAsync($"/api/admin/files/{fileId}/review", CreateJson("""{"Decision":"Approved","Reason":"Looks valid.","Notes":"Internal file note."}"""));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var responseJson = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("Internal file note.", responseJson, StringComparison.Ordinal);
+        Assert.DoesNotContain("Notes", responseJson, StringComparison.OrdinalIgnoreCase);
+        using var document = JsonDocument.Parse(responseJson);
         AssertEnvelope(document.RootElement, 200, "Success");
         var data = document.RootElement.GetProperty("Data");
         Assert.Equal(fileId, data.GetProperty("StoredFileId").GetString());

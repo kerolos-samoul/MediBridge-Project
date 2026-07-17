@@ -92,6 +92,11 @@ public static class IdentityServiceCollectionExtensions
         services.AddSingleton<WeeklyEnforcementPolicy>();
         services.AddScoped<IWeeklyEnforcementService, WeeklyEnforcementService>();
         services.AddScoped<IAdminActivityEnforcementService, AdminActivityEnforcementService>();
+        services.AddScoped<Validators.Admin.AdminToolsPaginationValidator>();
+        services.AddScoped<Validators.Admin.AdminStatisticsDateRangeValidator>();
+        services.AddScoped<IAdminWorkQueueService, AdminWorkQueueService>();
+        services.AddScoped<IAdminStatisticsService, AdminStatisticsService>();
+        services.AddScoped<IWithdrawalService, WithdrawalService>();
         services.AddScoped<DeliveryJobRunTracker>();
         services.AddScoped<IDeliveryJobRecoveryCoordinator, DeliveryJobRecoveryCoordinator>();
         services.AddScoped<IDeliveryExpiryService, DeliveryExpiryService>();

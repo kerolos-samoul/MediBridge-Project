@@ -16,6 +16,9 @@ namespace MediBridge.APIs.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    public const string FrontendCorsPolicyName = "MediBridgeFrontend";
+    private const string LocalFrontendOrigin = "http://localhost:5173";
+
     public static IServiceCollection AddFoundationServices(this IServiceCollection services, IConfiguration configuration)
     {
         services
@@ -50,6 +53,16 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<CloudinaryStorageOptions>, CloudinaryStorageOptionsValidator>();
 
         services.AddHttpContextAccessor();
+        services.AddCors(options =>
+        {
+            options.AddPolicy(FrontendCorsPolicyName, policy =>
+            {
+                policy
+                    .WithOrigins(LocalFrontendOrigin)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            });
+        });
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
         services.AddSingleton<IAuditLogger, NoopAuditLogger>();
         services.AddSingleton<IOwnershipAuthorizationService, OwnershipAuthorizationService>();

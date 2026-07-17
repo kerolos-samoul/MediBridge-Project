@@ -180,18 +180,17 @@ public sealed class StoredFileRepository : IStoredFileRepository
 
     public async Task<bool> UpdateReviewSummaryAsync(string storedFileId, StoredFileReviewStatus reviewStatus, string adminUserId, string? reason, DateTime reviewedAtUtc, string expectedConcurrencyStamp, CancellationToken cancellationToken = default)
     {
-        var file = await context.StoredFiles.FirstOrDefaultAsync(item => item.Id == storedFileId, cancellationToken);
-        if (file is null || file.ConcurrencyStamp != expectedConcurrencyStamp)
-        {
-            return false;
-        }
-
-        file.ReviewStatus = reviewStatus;
-        file.ReviewedByAdminId = adminUserId;
-        file.ReviewReason = reason;
-        file.ReviewedAtUtc = reviewedAtUtc;
-        file.ConcurrencyStamp = Guid.NewGuid().ToString("N");
-        return true;
+        var newConcurrencyStamp = Guid.NewGuid().ToString("N");
+        var updatedRows = await context.StoredFiles
+            .Where(file => file.Id == storedFileId && file.ConcurrencyStamp == expectedConcurrencyStamp)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(file => file.ReviewStatus, reviewStatus)
+                .SetProperty(file => file.ReviewedByAdminId, adminUserId)
+                .SetProperty(file => file.ReviewReason, reason)
+                .SetProperty(file => file.ReviewedAtUtc, reviewedAtUtc)
+                .SetProperty(file => file.ConcurrencyStamp, newConcurrencyStamp),
+                cancellationToken);
+        return updatedRows == 1;
     }
 
     public async Task MarkDeletedAsync(string storedFileId, DateTime deletedAtUtc, CancellationToken cancellationToken = default)

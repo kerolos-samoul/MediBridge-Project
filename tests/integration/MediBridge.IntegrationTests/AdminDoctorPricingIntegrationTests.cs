@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using MediBridge.Core.Interfaces;
 using MediBridge.Core.Enums;
 using MediBridge.IntegrationTests.TestHost;
 using MediBridge.Repository.Data;
@@ -45,10 +46,66 @@ public sealed class AdminDoctorPricingIntegrationTests : IClassFixture<WebAppFac
         var profile = await context.DoctorProfiles.AsNoTracking().SingleAsync(item => item.Id == doctor.DoctorId);
         var history = await context.DoctorPriceHistories.AsNoTracking().SingleAsync(item => item.DoctorId == doctor.DoctorId);
         Assert.Equal(64.25m, profile.PricePerMessage);
+        Assert.True(profile.PricingIsActive);
         Assert.Equal(40m, history.PreviousPricePerMessage);
         Assert.Equal(64.25m, history.NewPricePerMessage);
+        Assert.True(history.PricingIsActive);
         Assert.Equal(adminUserId, history.ChangedByAdminUserId);
         Assert.Equal("Initial campaign rate", history.Reason);
+    }
+
+    [Fact]
+    public async Task DeactivateDoctorPricing_RemovesFutureEligibilityUntilPositivePriceIsSet()
+    {
+        await factory.InitializeDatabaseAsync();
+        var adminUserId = await SeedApprovedAdminAsync();
+        var doctor = await Phase5CampaignQueueTestHelpers.SeedApprovedDoctorAsync(factory.Services, pricePerMessage: 40m);
+        using var client = CreateClient("Admin", adminUserId);
+
+        using var deactivateResponse = await client.PutAsJsonAsync(
+            $"/api/admin/doctors/{doctor.DoctorId}/price/deactivate",
+            new { Reason = "  pause paid campaign eligibility  " });
+
+        Assert.Equal(HttpStatusCode.OK, deactivateResponse.StatusCode);
+        using (var document = await JsonDocument.ParseAsync(await deactivateResponse.Content.ReadAsStreamAsync()))
+        {
+            var data = document.RootElement.GetProperty("Data");
+            Assert.False(data.GetProperty("pricingIsActive").GetBoolean());
+            Assert.Equal(JsonValueKind.Null, data.GetProperty("pricePerMessage").ValueKind);
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+            var profile = await context.DoctorProfiles.AsNoTracking().SingleAsync(item => item.Id == doctor.DoctorId);
+            var history = await context.DoctorPriceHistories.AsNoTracking().SingleAsync(item => item.DoctorId == doctor.DoctorId);
+            Assert.False(profile.PricingIsActive);
+            Assert.Equal(40m, profile.PricePerMessage);
+            Assert.Equal(40m, history.PreviousPricePerMessage);
+            Assert.Null(history.NewPricePerMessage);
+            Assert.False(history.PricingIsActive);
+            Assert.Equal(adminUserId, history.ChangedByAdminUserId);
+            Assert.Equal("pause paid campaign eligibility", history.Reason);
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IDomainUnitOfWork>();
+            Assert.Empty(await unitOfWork.Profiles.ListEligibleDoctorsByIdsAsync([doctor.DoctorId]));
+        }
+
+        using var reactivateResponse = await client.PutAsJsonAsync(
+            $"/api/admin/doctors/{doctor.DoctorId}/price",
+            new { PricePerMessage = 55m, Reason = "Reactivate paid campaigns" });
+
+        Assert.Equal(HttpStatusCode.OK, reactivateResponse.StatusCode);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IDomainUnitOfWork>();
+            var eligible = await unitOfWork.Profiles.ListEligibleDoctorsByIdsAsync([doctor.DoctorId]);
+            Assert.Single(eligible);
+            Assert.Equal(55m, eligible[0].PricePerMessage);
+        }
     }
 
     [Theory]
@@ -100,6 +157,12 @@ public sealed class AdminDoctorPricingIntegrationTests : IClassFixture<WebAppFac
             new { PricePerMessage = 50m, Reason = "Forbidden" });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        using var deactivateResponse = await client.PutAsJsonAsync(
+            $"/api/admin/doctors/{doctor.DoctorId}/price/deactivate",
+            new { Reason = "Forbidden" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, deactivateResponse.StatusCode);
     }
 
     private HttpClient CreateClient(string role, string userId)

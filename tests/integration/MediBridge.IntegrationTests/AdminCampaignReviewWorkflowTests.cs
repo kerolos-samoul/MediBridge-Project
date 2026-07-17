@@ -82,6 +82,36 @@ public sealed class AdminCampaignReviewWorkflowTests : IClassFixture<WebAppFacto
     }
 
     [Fact]
+    public async Task ReviewCampaign_WithSameIdempotencyKeyAndDifferentDecision_ReturnsConflictWithoutDuplicateSideEffects()
+    {
+        await factory.InitializeDatabaseAsync();
+        var seed = await SeedReviewableCampaignAsync(StoredFileReviewStatus.Approved);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var service = scope.ServiceProvider.GetRequiredService<IAdminCampaignReviewService>();
+            await service.ReviewCampaignAsync(
+                seed.AdminUserId,
+                seed.CampaignId,
+                "review-conflict-001",
+                new ReviewDecisionRequestDto("Approved", null, "Ready for delivery."));
+            await Assert.ThrowsAsync<Phase5ConflictException>(() => service.ReviewCampaignAsync(
+                seed.AdminUserId,
+                seed.CampaignId,
+                "review-conflict-001",
+                new ReviewDecisionRequestDto("Rejected", "Conflicting moderation decision.", null)));
+        }
+
+        using var verificationScope = factory.Services.CreateScope();
+        var context = verificationScope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        Assert.Equal(1, await context.CampaignReviewHistories.CountAsync(history => history.CampaignId == seed.CampaignId));
+        Assert.Equal(1, await context.DoctorMessageQueues.CountAsync(queue => queue.CampaignId == seed.CampaignId));
+        Assert.Equal(0, await context.WalletTransactions.CountAsync());
+        Assert.Equal(0, await context.WalletLedgerEntries.CountAsync());
+        Assert.Equal(1000m, await context.Wallets.Where(wallet => wallet.Id == seed.WalletId).Select(wallet => wallet.AvailableBalance).SingleAsync());
+    }
+
+    [Fact]
     public async Task ChangesRequestedAlias_PersistsAndReturnsCanonicalRevisionRequired()
     {
         await factory.InitializeDatabaseAsync();

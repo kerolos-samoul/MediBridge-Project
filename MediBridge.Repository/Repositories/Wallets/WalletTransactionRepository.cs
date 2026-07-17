@@ -71,6 +71,16 @@ public sealed class WalletTransactionRepository : IWalletTransactionRepository
         return context.WalletTransactions.AnyAsync(transaction => transaction.OperationType == operationType && transaction.IdempotencyKey == idempotencyKey, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<WalletTransaction>> ListByWithdrawalRequestAsync(string withdrawalRequestId, CancellationToken cancellationToken = default)
+    {
+        return await context.WalletTransactions
+            .AsNoTracking()
+            .Where(transaction => transaction.WithdrawalRequestId == withdrawalRequestId)
+            .OrderBy(transaction => transaction.CreatedAtUtc)
+            .ThenBy(transaction => transaction.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> ListWalletTransactionIdsAsync(string walletId, DateTime? createdFromUtc = null, DateTime? createdToUtc = null, CancellationToken cancellationToken = default)
     {
         var query = context.WalletTransactions.Where(transaction => transaction.WalletId == walletId);
