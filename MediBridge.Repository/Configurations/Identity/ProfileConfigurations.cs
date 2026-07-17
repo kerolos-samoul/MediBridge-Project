@@ -21,6 +21,7 @@ public sealed class DoctorProfileConfiguration : IEntityTypeConfiguration<Doctor
         builder.Property(profile => profile.VerificationReference).HasMaxLength(500).IsRequired();
         builder.Property(profile => profile.ActivityScore).HasPrecision(5, 2);
         builder.Property(profile => profile.PricePerMessage).HasPrecision(18, 2);
+        builder.Property(profile => profile.PricingIsActive).HasDefaultValue(true);
         builder.Property(profile => profile.Status).HasConversion<int>();
         builder.HasIndex(profile => new { profile.Status, profile.SuspendedUntilUtc });
         builder.HasOne<MediBridgeIdentityUser>()

@@ -96,7 +96,20 @@ public sealed class Phase5ScopeGuardTests
                 .Where(route => route.Contains("analytics", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(route => route, StringComparer.Ordinal)
                 .ToArray());
-        Assert.DoesNotContain(routes, route => route.Contains("withdraw", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(
+            [
+                "api/admin/withdrawals",
+                "api/admin/withdrawals/{withdrawalId}/approve",
+                "api/admin/withdrawals/{withdrawalId}/mark-failed",
+                "api/admin/withdrawals/{withdrawalId}/mark-paid",
+                "api/admin/withdrawals/{withdrawalId}/reject",
+                "api/doctor/withdrawals"
+            ],
+            routes
+                .Where(route => route.Contains("withdrawal", StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(route => route, StringComparer.Ordinal)
+                .ToArray());
         Assert.DoesNotContain(routes, route => route.Contains("payment-gateway", StringComparison.OrdinalIgnoreCase));
     }
 

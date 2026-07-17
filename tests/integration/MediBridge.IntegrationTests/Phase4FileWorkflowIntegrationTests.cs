@@ -416,6 +416,31 @@ public sealed class Phase4FileWorkflowIntegrationTests
         Assert.Contains(await db.AuditEvents.Select(audit => audit.EventType).ToListAsync(), item => item == "FileReviewDecisionRecorded");
     }
 
+    [Fact]
+    public async Task ReviewFile_AfterFinalDecision_ReturnsConflictWithoutAppendingReviewOrAudit()
+    {
+        await using var factory = CreateFactory(out _);
+        await factory.InitializeDatabaseAsync();
+        using var client = factory.CreateClient();
+        var ownerEmail = await Phase6IdentityTestHelpers.RegisterDoctorAsync(client);
+        await Phase6IdentityTestHelpers.SetStatusAsync(factory.Services, ownerEmail, AccountStatus.Approved);
+        var owner = await Phase6IdentityTestHelpers.FindUserByEmailAsync(factory.Services, ownerEmail);
+        var fileId = await SeedStoredVerificationFileAsync(factory.Services, owner.Id, StoredFileOwnerType.Doctor);
+        var admin = await Phase6IdentityTestHelpers.CreateAdminAsync(factory.Services);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken("Admin", admin.Id));
+
+        using var firstResponse = await client.PutAsync($"/api/admin/files/{fileId}/review", CreateJson("""{"Decision":"Approved"}"""));
+        using var secondResponse = await client.PutAsync($"/api/admin/files/{fileId}/review", CreateJson("""{"Decision":"Rejected","Reason":"Conflicting review decision."}"""));
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<MediBridgeDbContext>();
+        Assert.Equal(StoredFileReviewStatus.Approved, await db.StoredFiles.Where(file => file.Id == fileId).Select(file => file.ReviewStatus).SingleAsync());
+        Assert.Equal(1, await db.FileReviews.CountAsync(review => review.StoredFileId == fileId));
+        Assert.Equal(1, await db.AuditEvents.CountAsync(audit => audit.TargetId == fileId && audit.EventType == "FileReviewDecisionRecorded"));
+    }
+
     [Theory]
     [InlineData(FileReviewDecision.Rejected)]
     [InlineData(FileReviewDecision.Quarantined)]

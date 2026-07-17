@@ -1,0 +1,687 @@
+openapi: 3.0.3
+info:
+  title: MediBridge Phase 11 Admin Tools API
+  version: 1.0.0
+  description: >-
+    Admin operations, withdrawal payout stub, pricing deactivation, and
+    read-only statistics contracts for Phase 11. All responses use the standard
+    MediBridge envelope. Envelope fields remain `Code`, `Message`, and `Data`;
+    JSON request and response payload fields inside `Data` use camelCase.
+servers:
+  - url: https://api.medibridge.local
+paths:
+  /api/admin/work-queue:
+    get:
+      summary: List consolidated admin work queue items
+      operationId: listAdminWorkQueue
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AdminWorkQueueCategory'
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        '200':
+          description: Admin work queue page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeAdminWorkQueuePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/doctor/withdrawals:
+    post:
+      summary: Create a doctor withdrawal request
+      operationId: createDoctorWithdrawal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWithdrawalRequest'
+      responses:
+        '201':
+          description: Withdrawal request created and amount held.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeWithdrawal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      summary: List authenticated doctor's withdrawal requests
+      operationId: listDoctorWithdrawals
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/WithdrawalStatus'
+      responses:
+        '200':
+          description: Doctor-owned withdrawal page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeWithdrawalPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/admin/withdrawals:
+    get:
+      summary: List withdrawal requests for admin review
+      operationId: listAdminWithdrawals
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageNumber'
+        - $ref: '#/components/parameters/PageSize'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/WithdrawalStatus'
+        - name: doctorId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: requestedFromUtc
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: requestedToUtc
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: payoutReference
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+      responses:
+        '200':
+          description: Admin withdrawal page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeWithdrawalPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/admin/withdrawals/{withdrawalId}/approve:
+    put:
+      summary: Approve a requested withdrawal
+      operationId: approveWithdrawal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WithdrawalId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminWithdrawalNoteRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/WithdrawalOk'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/admin/withdrawals/{withdrawalId}/reject:
+    put:
+      summary: Reject a requested withdrawal and release the hold
+      operationId: rejectWithdrawal
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WithdrawalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminWithdrawalReasonRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/WithdrawalOk'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/admin/withdrawals/{withdrawalId}/mark-paid:
+    put:
+      summary: Mark an approved withdrawal as paid
+      operationId: markWithdrawalPaid
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WithdrawalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkWithdrawalPaidRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/WithdrawalOk'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/admin/withdrawals/{withdrawalId}/mark-failed:
+    put:
+      summary: Mark an approved withdrawal as failed and release the hold
+      operationId: markWithdrawalFailed
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WithdrawalId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminWithdrawalReasonRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/WithdrawalOk'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/admin/doctors/{doctorId}/price/deactivate:
+    put:
+      summary: Deactivate a doctor's paid-campaign pricing
+      operationId: deactivateDoctorPricing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+      responses:
+        '200':
+          description: Doctor pricing deactivated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeDoctorPricing'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/admin/statistics:
+    get:
+      summary: Get read-only admin statistics for a bounded Egypt date range
+      operationId: getAdminStatistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/FromDateEgypt'
+        - $ref: '#/components/parameters/ToDateEgypt'
+      responses:
+        '200':
+          description: Admin statistics snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeAdminStatistics'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PageNumber:
+      name: PageNumber
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+    PageSize:
+      name: PageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    WithdrawalId:
+      name: withdrawalId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    FromDateEgypt:
+      name: fromDateEgypt
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+    ToDateEgypt:
+      name: toDateEgypt
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+  responses:
+    BadRequest:
+      description: Invalid request, pagination, amount, date range, or transition input.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Unauthorized:
+      description: Missing, expired, or invalid authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Forbidden:
+      description: Authenticated caller is not allowed to perform this action.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    NotFound:
+      description: Resource is absent or not visible to the caller.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    Conflict:
+      description: Stale state, concurrent update, incompatible transition, insufficient withdrawable earnings, or withheld financial evidence.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeEmpty'
+    WithdrawalOk:
+      description: Withdrawal transition succeeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnvelopeWithdrawal'
+  schemas:
+    EnvelopeEmpty:
+      type: object
+      required: [Code, Message, Data]
+      properties:
+        Code:
+          type: integer
+        Message:
+          type: string
+        Data:
+          nullable: true
+    EnvelopeAdminWorkQueuePage:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/AdminWorkQueuePage'
+    EnvelopeWithdrawal:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/Withdrawal'
+    EnvelopeWithdrawalPage:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/WithdrawalPage'
+    EnvelopeDoctorPricing:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/DoctorPricing'
+    EnvelopeAdminStatistics:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeEmpty'
+        - type: object
+          properties:
+            Data:
+              $ref: '#/components/schemas/AdminStatistics'
+    PageMetadata:
+      type: object
+      required: [pageNumber, pageSize, totalCount, totalPages, hasPreviousPage, hasNextPage]
+      properties:
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+        totalPages:
+          type: integer
+        hasPreviousPage:
+          type: boolean
+        hasNextPage:
+          type: boolean
+    AdminWorkQueuePage:
+      type: object
+      required: [page, items, categoryCounts]
+      properties:
+        page:
+          $ref: '#/components/schemas/PageMetadata'
+        categoryCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminWorkQueueItem'
+    AdminWorkQueueCategory:
+      type: string
+      enum: [Account, File, Campaign, Enforcement, Withdrawal]
+    AdminWorkQueueItem:
+      type: object
+      required: [itemId, category, status, urgencyRank, submittedAtUtc, summary, nextActions]
+      properties:
+        itemId:
+          type: string
+        category:
+          $ref: '#/components/schemas/AdminWorkQueueCategory'
+        status:
+          type: string
+        urgencyRank:
+          type: integer
+        submittedAtUtc:
+          type: string
+          format: date-time
+        ownerType:
+          type: string
+          nullable: true
+        ownerId:
+          type: string
+          nullable: true
+        ownerDisplay:
+          type: string
+          nullable: true
+        summary:
+          type: string
+        nextActions:
+          type: array
+          items:
+            type: string
+        sensitiveFlags:
+          type: array
+          items:
+            type: string
+    CreateWithdrawalRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          format: decimal
+          exclusiveMinimum: true
+          minimum: 0
+    AdminWithdrawalNoteRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 1000
+    AdminWithdrawalReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+    MarkWithdrawalPaidRequest:
+      type: object
+      required: [payoutReference]
+      properties:
+        payoutReference:
+          type: string
+          minLength: 1
+          maxLength: 200
+    ReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+    WithdrawalStatus:
+      type: string
+      enum: [Requested, Approved, Rejected, Paid, Failed]
+    Withdrawal:
+      type: object
+      required:
+        - withdrawalId
+        - doctorId
+        - amount
+        - currency
+        - status
+        - requestedAtUtc
+      properties:
+        withdrawalId:
+          type: string
+        doctorId:
+          type: string
+        doctorPublicId:
+          type: string
+          nullable: true
+        amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+          enum: [EGP]
+        status:
+          $ref: '#/components/schemas/WithdrawalStatus'
+        requestedAtUtc:
+          type: string
+          format: date-time
+        reviewedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+        decisionReason:
+          type: string
+          nullable: true
+        payoutReference:
+          type: string
+          nullable: true
+        payoutStatusChangedAtUtc:
+          type: string
+          format: date-time
+          nullable: true
+    WithdrawalPage:
+      type: object
+      required: [page, items]
+      properties:
+        page:
+          $ref: '#/components/schemas/PageMetadata'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Withdrawal'
+    DoctorPricing:
+      type: object
+      required: [doctorId, pricingIsActive]
+      description: >-
+        Pricing active state is represented only by `pricingIsActive`. When
+        `pricingIsActive` is false, `pricePerMessage` may be null or absent in
+        the response to indicate that no active price is available for display;
+        implementations must not persist null, zero, or any numeric value as an
+        inactive-price marker.
+      properties:
+        doctorId:
+          type: string
+        pricePerMessage:
+          type: number
+          format: decimal
+          nullable: true
+          description: >-
+            Current active price when `pricingIsActive` is true. Null is only a
+            response-display absence for inactive pricing; it is not the stored
+            inactive state.
+        pricingIsActive:
+          type: boolean
+        updatedAtUtc:
+          type: string
+          format: date-time
+    AdminStatistics:
+      type: object
+      required:
+        - fromDateEgypt
+        - toDateEgypt
+        - accountCounts
+        - reviewCounts
+        - campaignCounts
+        - deliveryOutcomeCounts
+        - interactionOutcomeCounts
+        - withdrawalStatusCounts
+        - pricingPolicySummary
+        - enforcementActionCounts
+        - withheldFinancialScopes
+      properties:
+        fromDateEgypt:
+          type: string
+          format: date
+        toDateEgypt:
+          type: string
+          format: date
+        accountCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        reviewCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        campaignCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        deliveryOutcomeCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        interactionOutcomeCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        withdrawalStatusCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        walletMovementSummary:
+          type: object
+          nullable: true
+          additionalProperties: true
+        pricingPolicySummary:
+          type: object
+          additionalProperties: true
+        enforcementActionCounts:
+          type: object
+          additionalProperties:
+            type: integer
+        withheldFinancialScopes:
+          type: array
+          items:
+            type: string

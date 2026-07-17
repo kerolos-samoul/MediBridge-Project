@@ -150,7 +150,10 @@ public enum WalletTransactionType
     WithdrawRequest = 30,
     WithdrawApproved = 31,
     WithdrawRejected = 32,
-    WithdrawPayout = 33
+    WithdrawPayout = 33,
+    WithdrawalHold = 34,
+    WithdrawalRelease = 35,
+    WithdrawalFinalizePayout = 36
 }
 
 public enum WalletLedgerEntryDirection

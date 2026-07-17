@@ -13,5 +13,8 @@ public sealed class WithdrawalRequest : IConcurrencyTrackedRecord
     public DateTime? ReviewedAtUtc { get; set; }
     public string? DecisionReason { get; set; }
     public string? PayoutReference { get; set; }
+    public string? PayoutStatusChangedByAdminUserId { get; set; }
+    public DateTime? PayoutStatusChangedAtUtc { get; set; }
+    public string? PayoutFailureReason { get; set; }
     public byte[] ConcurrencyToken { get; set; } = Array.Empty<byte>();
 }

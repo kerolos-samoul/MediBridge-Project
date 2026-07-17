@@ -10,6 +10,7 @@ public sealed class WalletTransaction
     public string IdempotencyKey { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string? RelatedDeliveryId { get; set; }
+    public string? WithdrawalRequestId { get; set; }
     public string? Description { get; set; }
     public string? Metadata { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

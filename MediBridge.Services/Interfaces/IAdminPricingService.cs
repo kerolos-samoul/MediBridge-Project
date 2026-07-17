@@ -10,6 +10,12 @@ public interface IAdminPricingService
         SetDoctorPriceRequestDto request,
         CancellationToken cancellationToken = default);
 
+    Task<DoctorPriceDto> DeactivateDoctorPricingAsync(
+        string adminUserId,
+        string doctorId,
+        DeactivateDoctorPricingRequestDto request,
+        CancellationToken cancellationToken = default);
+
     Task<DoctorDeliverySettingsDto> GetDoctorDeliverySettingsAsync(
         string adminUserId,
         string doctorId,

@@ -534,16 +534,24 @@ public sealed class FileWorkflowService : IFileWorkflowService
                 throw new ValidationException("Validation failed.");
             }
         }
+        else if (file.ReviewStatus != StoredFileReviewStatus.Pending)
+        {
+            throw new Phase5ConflictException("File review decision conflicts with the current review state.");
+        }
 
         var now = DateTime.UtcNow;
+        var priorStatus = file.ReviewStatus;
+        var resultingStatus = MapReviewStatus(file.ReviewStatus, request.Decision);
+        var publicReason = NormalizeOptionalText(request.Reason);
+        var internalNotes = NormalizeOptionalText(request.Notes);
         var review = new FileReview
         {
             Id = Guid.NewGuid().ToString("N"),
             StoredFileId = storedFileId,
             AdminUserId = adminUserId,
             Decision = request.Decision,
-            Reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason,
-            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes,
+            Reason = publicReason,
+            Notes = internalNotes,
             CorrectsReviewId = string.IsNullOrWhiteSpace(request.CorrectsReviewId) ? null : request.CorrectsReviewId,
             CreatedAtUtc = now
         };
@@ -551,7 +559,7 @@ public sealed class FileWorkflowService : IFileWorkflowService
         await domainUnitOfWork.FileReviews.AddReviewAsync(review, cancellationToken);
         var updated = await domainUnitOfWork.StoredFiles.UpdateReviewSummaryAsync(
             storedFileId,
-            MapReviewStatus(file.ReviewStatus, request.Decision),
+            resultingStatus,
             adminUserId,
             review.Reason,
             now,
@@ -559,10 +567,10 @@ public sealed class FileWorkflowService : IFileWorkflowService
             cancellationToken);
         if (!updated)
         {
-            throw new InvalidOperationException("File review conflict.");
+            throw new Phase5ConflictException("File review decision conflicts with the current review state.");
         }
 
-        await AddReviewAuditAsync(storedFileId, review.Id, adminUserId, request.Decision, cancellationToken);
+        await AddReviewAuditAsync(storedFileId, review.Id, adminUserId, request.Decision, priorStatus, resultingStatus, publicReason, now, cancellationToken);
         await domainUnitOfWork.SaveChangesAsync(cancellationToken);
         return ToFileReviewDto(review);
     }
@@ -914,19 +922,32 @@ public sealed class FileWorkflowService : IFileWorkflowService
             cancellationToken: cancellationToken);
     }
 
-    private Task AddReviewAuditAsync(string storedFileId, string reviewId, string adminUserId, FileReviewDecision decision, CancellationToken cancellationToken)
+    private Task AddReviewAuditAsync(
+        string storedFileId,
+        string reviewId,
+        string adminUserId,
+        FileReviewDecision decision,
+        StoredFileReviewStatus priorStatus,
+        StoredFileReviewStatus resultingStatus,
+        string? reason,
+        DateTime reviewedAtUtc,
+        CancellationToken cancellationToken)
     {
         return domainUnitOfWork.AuditEvents.AddAuditEventAsync(
             Guid.NewGuid().ToString("N"),
             "FileReviewDecisionRecorded",
             AuditOutcome.Success,
-            DateTime.UtcNow,
+            reviewedAtUtc,
             JsonSerializer.Serialize(new
             {
                 StoredFileId = storedFileId,
                 ReviewId = reviewId,
                 AdminUserId = adminUserId,
-                Decision = decision.ToString()
+                PriorStatus = priorStatus.ToString(),
+                ResultingStatus = resultingStatus.ToString(),
+                Decision = decision.ToString(),
+                Reason = reason,
+                ReviewedAtUtc = reviewedAtUtc
             }),
             targetType: AuditTargetType.StoredFile,
             targetId: storedFileId,
@@ -964,6 +985,12 @@ public sealed class FileWorkflowService : IFileWorkflowService
             FileReviewDecision.Correction => currentStatus,
             _ => currentStatus
         };
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 
     private static FileReviewDto ToFileReviewDto(FileReview review)

@@ -10,5 +10,6 @@ public interface IWalletLedgerEntryRepository
     Task<IReadOnlyList<string>> ListLedgerEntryIdsByWalletAsync(string walletId, DateTime? createdFromUtc = null, DateTime? createdToUtc = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListLedgerEntryIdsByWalletTransactionAsync(string walletTransactionId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<WalletLedgerEntry>> ListLedgerEntriesByWalletTransactionAsync(string walletTransactionId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<WithdrawalLedgerEvidenceReadModel>> ListWithdrawalLedgerEvidenceAsync(string withdrawalRequestId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> ListLedgerEntryIdsByReferencesAsync(string? campaignId = null, string? deliveryId = null, string? withdrawalRequestId = null, CancellationToken cancellationToken = default);
 }

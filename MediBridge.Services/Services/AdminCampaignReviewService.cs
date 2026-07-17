@@ -153,8 +153,10 @@ public sealed class AdminCampaignReviewService : IAdminCampaignReviewService
                     reviewerId,
                     campaign.Id,
                     decision,
+                    priorReview.PriorStatus,
                     priorReview.ResultingStatus,
                     priorReview.Id,
+                    priorReview.Reason,
                     replayCount,
                     AuditOutcome.Info,
                     transactionCancellationToken);
@@ -199,8 +201,10 @@ public sealed class AdminCampaignReviewService : IAdminCampaignReviewService
                 reviewerId,
                 campaign.Id,
                 decision,
+                history.PriorStatus,
                 resultingStatus,
                 history.Id,
+                reason,
                 queuedCount,
                 AuditOutcome.Success,
                 transactionCancellationToken);
@@ -331,19 +335,24 @@ public sealed class AdminCampaignReviewService : IAdminCampaignReviewService
         string reviewerId,
         string campaignId,
         CampaignReviewDecision decision,
+        CampaignStatus priorStatus,
         CampaignStatus resultingStatus,
         string reviewHistoryId,
+        string? reason,
         int queuedCount,
         AuditOutcome outcome,
         CancellationToken cancellationToken)
     {
+        var createdAtUtc = DateTime.UtcNow;
         var metadata = JsonSerializer.Serialize(new
         {
             ReviewerId = reviewerId,
             Decision = CampaignReviewTransitionPolicy.GetCanonicalDecisionName(decision),
+            PriorStatus = priorStatus.ToString(),
             ResultingStatus = resultingStatus.ToString(),
             ReviewHistoryId = reviewHistoryId,
-            QueuedCount = queuedCount
+            QueuedCount = queuedCount,
+            ReviewedAtUtc = createdAtUtc
         });
         return domainUnitOfWork.AuditEvents.AddPhase5AuditEventAsync(
             Guid.NewGuid().ToString("N"),
@@ -353,10 +362,10 @@ public sealed class AdminCampaignReviewService : IAdminCampaignReviewService
             AuditTargetType.Campaign,
             campaignId,
             outcome,
-            "Campaign moderation action.",
+            reason ?? "Campaign moderation action.",
             correlationId: null,
             metadata,
-            DateTime.UtcNow,
+            createdAtUtc,
             cancellationToken);
     }
 

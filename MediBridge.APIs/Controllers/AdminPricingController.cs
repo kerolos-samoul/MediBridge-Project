@@ -31,6 +31,11 @@ public sealed class AdminPricingController : ControllerBase
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The updated doctor pricing information.</returns>
     [HttpPut("{doctorId}/price")]
+    [ProducesResponseType(typeof(ApiEnvelope<DoctorPriceDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiEnvelope<DoctorPriceDto>>> SetDoctorPrice(
         string doctorId,
         [FromBody] SetDoctorPriceRequestDto? request,
@@ -50,6 +55,40 @@ public sealed class AdminPricingController : ControllerBase
         }
 
         var result = await adminPricingService.SetDoctorPriceAsync(
+            adminUserId,
+            doctorId,
+            request,
+            cancellationToken);
+        return Ok(ApiEnvelopeFactory.Create(StatusCodes.Status200OK, "Success", result));
+    }
+
+    /// <summary>
+    /// Deactivates a doctor's pricing for future paid delivery activation without writing a numeric inactive marker.
+    /// </summary>
+    [HttpPut("{doctorId}/price/deactivate")]
+    [ProducesResponseType(typeof(ApiEnvelope<DoctorPriceDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiEnvelope<object>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiEnvelope<DoctorPriceDto>>> DeactivateDoctorPrice(
+        string doctorId,
+        [FromBody] DeactivateDoctorPricingRequestDto? request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActorUserId(out var adminUserId, out var unauthorizedResult))
+        {
+            return unauthorizedResult;
+        }
+
+        if (request is null)
+        {
+            return BadRequest(
+                ApiEnvelopeFactory.Create<object?>(StatusCodes.Status400BadRequest, "Validation failed.", null));
+        }
+
+        var result = await adminPricingService.DeactivateDoctorPricingAsync(
             adminUserId,
             doctorId,
             request,

@@ -1,5 +1,6 @@
 using MediBridge.APIs.Contracts;
 using MediBridge.Services.Interfaces;
+using FluentValidation;
 using System.Text.Json;
 
 namespace MediBridge.APIs.Middleware;
@@ -55,6 +56,9 @@ public sealed class GlobalExceptionMiddleware
                 Phase5NotFoundException => (StatusCodes.Status404NotFound, "Not found."),
                 Phase5ConflictException => (StatusCodes.Status409Conflict, "Conflict."),
                 Phase5ServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Service unavailable."),
+                ValidationException => (StatusCodes.Status400BadRequest, "Validation failed."),
+                UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Forbidden."),
+                KeyNotFoundException => (StatusCodes.Status404NotFound, "Not found."),
                 Phase7BadRequestException => (StatusCodes.Status400BadRequest, "Invalid request."),
                 Phase7ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden."),
                 Phase7NotFoundException => (StatusCodes.Status404NotFound, "Not found."),

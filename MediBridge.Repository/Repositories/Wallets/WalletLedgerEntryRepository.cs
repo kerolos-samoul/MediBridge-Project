@@ -71,6 +71,26 @@ public sealed class WalletLedgerEntryRepository : IWalletLedgerEntryRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<WithdrawalLedgerEvidenceReadModel>> ListWithdrawalLedgerEvidenceAsync(string withdrawalRequestId, CancellationToken cancellationToken = default)
+    {
+        return await (
+                from entry in context.WalletLedgerEntries.AsNoTracking()
+                join transaction in context.WalletTransactions.AsNoTracking()
+                    on entry.WalletTransactionId equals transaction.Id
+                where entry.WithdrawalRequestId == withdrawalRequestId
+                orderby entry.CreatedAtUtc, entry.Id
+                select new WithdrawalLedgerEvidenceReadModel(
+                    transaction.Id,
+                    entry.Id,
+                    withdrawalRequestId,
+                    entry.Direction,
+                    entry.BalanceType,
+                    entry.Amount,
+                    transaction.OperationType,
+                    entry.CreatedAtUtc))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> ListLedgerEntryIdsByReferencesAsync(string? campaignId = null, string? deliveryId = null, string? withdrawalRequestId = null, CancellationToken cancellationToken = default)
     {
         var query = context.WalletLedgerEntries.AsQueryable();

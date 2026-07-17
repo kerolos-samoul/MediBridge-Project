@@ -63,6 +63,8 @@ public sealed class DeliveryCandidateEligibilityPolicyTests
         Assert.Equal(DeliveryCandidateEligibilityDecision.KeepQueuedTemporary,
             policy.Evaluate(Doctor(price: 0m), Campaign(), 0, 50m, 50m, false).Decision);
         Assert.Equal(DeliveryCandidateEligibilityDecision.KeepQueuedTemporary,
+            policy.Evaluate(Doctor(pricingIsActive: false), Campaign(), 0, 50m, 50m, false).Decision);
+        Assert.Equal(DeliveryCandidateEligibilityDecision.KeepQueuedTemporary,
             policy.Evaluate(Doctor(), Campaign(CampaignStatus.Paused), 0, 50m, 50m, false).Decision);
         Assert.Equal(DeliveryCandidateEligibilityDecision.KeepQueuedTemporary,
             policy.Evaluate(Doctor(), Campaign(companyStatus: AccountStatus.Suspended), 0, 50m, 50m, false).Decision);
@@ -93,9 +95,10 @@ public sealed class DeliveryCandidateEligibilityPolicyTests
         bool userDeleted = false,
         bool profileDeleted = false,
         DoctorMarketplaceStatus marketplaceStatus = DoctorMarketplaceStatus.Active,
+        bool pricingIsActive = true,
         decimal? price = 50m,
         int limit = 2) =>
-        new("doctor", "doctor-user", role, accountStatus, userDeleted, profileDeleted, marketplaceStatus, price, limit);
+        new("doctor", "doctor-user", role, accountStatus, userDeleted, profileDeleted, marketplaceStatus, pricingIsActive, price, limit);
 
     private static LockedCampaignCompanyEligibilityReadModel Campaign(
         CampaignStatus status = CampaignStatus.Approved,

@@ -6,6 +6,7 @@ public sealed class DoctorPriceHistory
     public string DoctorId { get; set; } = string.Empty;
     public decimal? PreviousPricePerMessage { get; set; }
     public decimal? NewPricePerMessage { get; set; }
+    public bool PricingIsActive { get; set; } = true;
     public string ChangedByAdminUserId { get; set; } = string.Empty;
     public string? Reason { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

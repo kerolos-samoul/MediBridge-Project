@@ -26,6 +26,7 @@ public sealed class DoctorProfile : ISoftDeleteRecord
     public DateTime? SuspendedUntilUtc { get; set; }
     public DateTime? LastStatusChangedAtUtc { get; set; }
     public decimal? PricePerMessage { get; set; }
+    public bool PricingIsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
     public bool IsDeleted { get; set; }
